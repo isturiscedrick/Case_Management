@@ -59,9 +59,44 @@ const setTotalPaid = (
   });
 };
 
-const setProgress = (key: keyof CaseProgress, v: StageProgress) => {
-  onChange({ ...value, caseProgress: { ...value.caseProgress, [key]: v } });
+const setProgress = (key: "la" | "nlrc" | "ca" | "sc", v: StageProgress) => {
+  const specKey = `${key}Specification` as const;
+  onChange({
+    ...value,
+    caseProgress: {
+      ...value.caseProgress,
+      [key]: v,
+      ...(v === "Others" ? {} : { [specKey]: "" }),
+    },
+  });
 };
+
+const setProgressSpecification = (key: "la" | "nlrc" | "ca" | "sc", v: string) => {
+  const specKey = `${key}Specification` as const;
+  onChange({
+    ...value,
+    caseProgress: {
+      ...value.caseProgress,
+      [specKey]: v,
+    },
+  });
+};
+
+// All SEnA fields must be filled in (Remarks is optional on its own),
+// but LA/NLRC/CA/SC only unlock once Remarks is "Not Settled" or "Others".
+const senaAllFilled =
+  value.company.trim() !== "" &&
+  value.caseTitle.trim() !== "" &&
+  value.caseNo.trim() !== "" &&
+  value.complainants.every((c) => c.trim() !== "") &&
+  value.venue.trim() !== "" &&
+  value.cause.trim() !== "" &&
+  (value.cause !== "Others" || (value.causeSpecification ?? "").trim() !== "") &&
+  value.filingDate.trim() !== "";
+
+const senaRemarksOk = value.remarks === "Not Settled" || value.remarks === "Others";
+
+const senaFilled = senaAllFilled && senaRemarksOk;
 
   return (
     <div className="space-y-6">
@@ -220,6 +255,12 @@ const setProgress = (key: keyof CaseProgress, v: StageProgress) => {
 
       <div>
         <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-sky-600">Labor Arbiter (LA)</h3>
+        {!senaFilled && (
+          <p className="mb-2 text-[11px] text-slate-400">
+            Complete all SEnA fields above, with Remarks set to "Not Settled" or "Others", to unlock this section.
+          </p>
+        )}
+        <fieldset disabled={!senaFilled} className={!senaFilled ? "opacity-50" : ""}>
         <div className="grid gap-4 sm:grid-cols-4">
           <Field label="Date">
             <input type="date" className={inputCls} value={value.la.date} onChange={(e) => setLa("date", e.target.value)} />
@@ -281,6 +322,7 @@ const setProgress = (key: keyof CaseProgress, v: StageProgress) => {
               value={value.caseProgress.la}
               onChange={(e) => setProgress("la", e.target.value as StageProgress)}
             >
+              <option value="">Select Progress</option>
               {PROGRESS_OPTIONS.filter((p): p is StageProgress => p !== "All").map((p) => (
                 <option key={p} value={p}>
                   {p}
@@ -289,10 +331,30 @@ const setProgress = (key: keyof CaseProgress, v: StageProgress) => {
             </select>
           </Field>
         </div>
+
+        {value.caseProgress.la === "Others" && (
+          <div className="mt-3 grid gap-4 sm:grid-cols-3">
+            <Field label="Specify LA Progress">
+              <input
+                className={inputCls}
+                placeholder="Enter progress"
+                value={value.caseProgress.laSpecification ?? ""}
+                onChange={(e) => setProgressSpecification("la", e.target.value)}
+              />
+            </Field>
+          </div>
+        )}
+        </fieldset>
       </div>
 
       <div>
         <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-violet-600">NLRC</h3>
+        {!senaFilled && (
+          <p className="mb-2 text-[11px] text-slate-400">
+            Complete all SEnA fields above, with Remarks set to "Not Settled" or "Others", to unlock this section.
+          </p>
+        )}
+        <fieldset disabled={!senaFilled} className={!senaFilled ? "opacity-50" : ""}>
         <div className="grid gap-4 sm:grid-cols-4">
           <Field label="Date">
             <input type="date" className={inputCls} value={value.nlrc.date} onChange={(e) => setNlrc("date", e.target.value)} />
@@ -354,6 +416,7 @@ const setProgress = (key: keyof CaseProgress, v: StageProgress) => {
               value={value.caseProgress.nlrc}
               onChange={(e) => setProgress("nlrc", e.target.value as StageProgress)}
             >
+              <option value="">Select Progress</option>
               {PROGRESS_OPTIONS.filter((p): p is StageProgress => p !== "All").map((p) => (
                 <option key={p} value={p}>
                   {p}
@@ -362,10 +425,30 @@ const setProgress = (key: keyof CaseProgress, v: StageProgress) => {
             </select>
           </Field>
         </div>
+
+        {value.caseProgress.nlrc === "Others" && (
+          <div className="mt-3 grid gap-4 sm:grid-cols-3">
+            <Field label="Specify NLRC Progress">
+              <input
+                className={inputCls}
+                placeholder="Enter progress"
+                value={value.caseProgress.nlrcSpecification ?? ""}
+                onChange={(e) => setProgressSpecification("nlrc", e.target.value)}
+              />
+            </Field>
+          </div>
+        )}
+        </fieldset>
       </div>
 
       <div>
         <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-fuchsia-600">Court of Appeals (CA)</h3>
+        {!senaFilled && (
+          <p className="mb-2 text-[11px] text-slate-400">
+            Complete all SEnA fields above, with Remarks set to "Not Settled" or "Others", to unlock this section.
+          </p>
+        )}
+        <fieldset disabled={!senaFilled} className={!senaFilled ? "opacity-50" : ""}>
         <div className="grid gap-4 sm:grid-cols-4">
           <Field label="Date">
             <input type="date" className={inputCls} value={value.ca.date} onChange={(e) => setCa("date", e.target.value)} />
@@ -427,6 +510,7 @@ const setProgress = (key: keyof CaseProgress, v: StageProgress) => {
               value={value.caseProgress.ca}
               onChange={(e) => setProgress("ca", e.target.value as StageProgress)}
             >
+              <option value="">Select Progress</option>
               {PROGRESS_OPTIONS.filter((p): p is StageProgress => p !== "All").map((p) => (
                 <option key={p} value={p}>
                   {p}
@@ -435,10 +519,30 @@ const setProgress = (key: keyof CaseProgress, v: StageProgress) => {
             </select>
           </Field>
         </div>
+
+        {value.caseProgress.ca === "Others" && (
+          <div className="mt-3 grid gap-4 sm:grid-cols-3">
+            <Field label="Specify CA Progress">
+              <input
+                className={inputCls}
+                placeholder="Enter progress"
+                value={value.caseProgress.caSpecification ?? ""}
+                onChange={(e) => setProgressSpecification("ca", e.target.value)}
+              />
+            </Field>
+          </div>
+        )}
+        </fieldset>
       </div>
 
       <div>
         <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-rose-600">Supreme Court (SC)</h3>
+        {!senaFilled && (
+          <p className="mb-2 text-[11px] text-slate-400">
+            Complete all SEnA fields above, with Remarks set to "Not Settled" or "Others", to unlock this section.
+          </p>
+        )}
+        <fieldset disabled={!senaFilled} className={!senaFilled ? "opacity-50" : ""}>
         <div className="grid gap-4 sm:grid-cols-4">
           <Field label="Date">
             <input type="date" className={inputCls} value={value.sc.date} onChange={(e) => setSc("date", e.target.value)} />
@@ -500,6 +604,7 @@ const setProgress = (key: keyof CaseProgress, v: StageProgress) => {
               value={value.caseProgress.sc}
               onChange={(e) => setProgress("sc", e.target.value as StageProgress)}
             >
+              <option value="">Select Progress</option>
               {PROGRESS_OPTIONS.filter((p): p is StageProgress => p !== "All").map((p) => (
                 <option key={p} value={p}>
                   {p}
@@ -508,6 +613,20 @@ const setProgress = (key: keyof CaseProgress, v: StageProgress) => {
             </select>
           </Field>
         </div>
+
+        {value.caseProgress.sc === "Others" && (
+          <div className="mt-3 grid gap-4 sm:grid-cols-3">
+            <Field label="Specify SC Progress">
+              <input
+                className={inputCls}
+                placeholder="Enter progress"
+                value={value.caseProgress.scSpecification ?? ""}
+                onChange={(e) => setProgressSpecification("sc", e.target.value)}
+              />
+            </Field>
+          </div>
+        )}
+        </fieldset>
               <div>
         <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-emerald-600">
           Total Amount Paid

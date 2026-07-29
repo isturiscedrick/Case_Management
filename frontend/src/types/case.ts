@@ -1,5 +1,5 @@
 export type CaseStatus = "Filed" | "Pending" | "Closed";
-export type StageProgress = "Not Started" | "Pending" | "Completed";
+export type StageProgress = "" | "Settled" | "Not Settled" | "Others";
 
 export interface LaInfo {
   date: string;
@@ -38,6 +38,10 @@ export interface CaseProgress {
   nlrc: StageProgress;
   ca: StageProgress;
   sc: StageProgress;
+  laSpecification?: string;
+  nlrcSpecification?: string;
+  caSpecification?: string;
+  scSpecification?: string;
 }
 
 export type TotalPaidCategory =

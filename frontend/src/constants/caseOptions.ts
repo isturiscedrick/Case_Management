@@ -3,9 +3,9 @@ export const STATUS_OPTIONS: Array<"All" | CaseStatus> = ["All", "Filed", "Pendi
 
 export const PROGRESS_OPTIONS: Array<"All" | StageProgress> = [
   "All",
-  "Not Started",
-  "Pending",
-  "Completed",
+  "Settled",
+  "Not Settled",
+  "Others",
 ];
 
 export const STATUS_STYLES: Record<CaseStatus, { badge: string; dot: string }> = {
@@ -19,7 +19,7 @@ export const DEFAULT_STATUS_STYLE = {
   dot: "bg-slate-400",
 };
 
-export const PROGRESS_STAGES: Array<{ key: keyof CaseProgress; label: string }> = [
+export const PROGRESS_STAGES: Array<{ key: "la" | "nlrc" | "ca" | "sc"; label: string }> = [
   { key: "la", label: "LA" },
   { key: "nlrc", label: "NLRC" },
   { key: "ca", label: "CA" },
@@ -89,7 +89,16 @@ export const EMPTY_CASE: CaseDraft = {
   ca: { date: "", status: "", judgementReward: "", remarks: "", remarksSpecification: "" },
   sc: { date: "", status: "", judgementReward: "", remarks: "", remarksSpecification: "" },
   totalPaid: {amount: "₱150,000", category: "Judgement-Award-L",},
-  caseProgress: { la: "Not Started", nlrc: "Not Started", ca: "Not Started", sc: "Not Started" },
+  caseProgress: {
+    la: "",
+    nlrc: "",
+    ca: "",
+    sc: "",
+    laSpecification: "",
+    nlrcSpecification: "",
+    caSpecification: "",
+    scSpecification: "",
+  },
   createdBy: "",
   createdAt: "",
   archived: false,

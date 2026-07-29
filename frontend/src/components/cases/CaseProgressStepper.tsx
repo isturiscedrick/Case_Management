@@ -2,8 +2,8 @@ import type { CaseProgress, StageProgress } from "@/types/case";
 import { PROGRESS_STAGES } from "@/constants/caseOptions";
 
 function stageColor(stage: StageProgress) {
-  if (stage === "Completed") return "bg-emerald-500 border-emerald-500";
-  if (stage === "Pending") return "bg-amber-400 border-amber-400";
+  if (stage === "Settled") return "bg-emerald-500 border-emerald-500";
+  if (stage === "Others") return "bg-amber-400 border-amber-400";
   return "bg-white border-slate-300";
 }
 
@@ -19,7 +19,7 @@ export function CaseProgressStepper({ progress }: { progress: CaseProgress }) {
           {i < PROGRESS_STAGES.length - 1 && (
             <span
               className={`mx-1 mb-4 h-2px w-5 ${
-                progress[stage.key] === "Completed" ? "bg-emerald-400" : "bg-slate-200"
+                progress[stage.key] === "Settled" ? "bg-emerald-400" : "bg-slate-200"
               }`}
             />
           )}

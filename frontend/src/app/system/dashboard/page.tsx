@@ -100,9 +100,19 @@ export default function CasesPage() {
     setActiveCase(null);
   };
 
-  const requestSaveCreate = () => {
-    if (draft.company === "" || draft.caseNo.trim() === "") {
-      alert("Please select a company and enter a Case No.");
+const requestSaveCreate = () => {
+    const missing =
+      draft.company.trim() === "" ||
+      draft.caseTitle.trim() === "" ||
+      draft.caseNo.trim() === "" ||
+      draft.complainants.some((c) => c.trim() === "") ||
+      draft.venue.trim() === "" ||
+      draft.cause.trim() === "" ||
+      (draft.cause === "Others" && (draft.causeSpecification ?? "").trim() === "") ||
+      draft.filingDate.trim() === "";
+
+    if (missing) {
+      alert("Please fill up all SEnA fields (Remarks is optional) before creating the case.");
       return;
     }
     setConfirmSave("create");
