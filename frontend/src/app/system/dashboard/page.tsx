@@ -18,7 +18,7 @@ import {
 import type { CaseItem, CaseDraft, CaseStatus, StageProgress, ModalType } from "@/types/case";
 import { STATUS_OPTIONS, PROGRESS_OPTIONS, EMPTY_CASE, TABLE_COLUMN_COUNT, CURRENT_USER } from "@/constants/caseOptions";
 import { initialCases, initialCompanies } from "@/data/initialCases";
-import { cloneDraft, formatDate, formatCurrency } from "@/lib/caseHelpers";
+import { cloneDraft, formatDate, formatCurrency, getTotalJudgementReward } from "@/lib/caseHelpers";
 import { getCaseDraftErrors } from "@/lib/caseValidation";
 
 import { StatusBadge } from "@/components/cases/StatusBadge";
@@ -163,7 +163,17 @@ export default function CasesPage() {
   const saveCreate = () => {
     const nextId = Math.max(0, ...cases.map((c) => c.id)) + 1;
     const today = new Date().toISOString().slice(0, 10);
-    setCases((prev) => [...prev, { ...draft, id: nextId, date: today, createdBy: CURRENT_USER, createdAt: today }]);
+    setCases((prev) => [
+      ...prev,
+      {
+        ...draft,
+        id: nextId,
+        date: today,
+        createdBy: CURRENT_USER,
+        createdAt: today,
+        totalPaid: { ...draft.totalPaid, amount: getTotalJudgementReward(draft) },
+      },
+    ]);
     setConfirmSave(null);
     closeModal();
   };
@@ -171,7 +181,13 @@ export default function CasesPage() {
   const saveEdit = () => {
     if (!activeCase) return;
     const today = new Date().toISOString().slice(0, 10);
-    setCases((prev) => prev.map((c) => (c.id === activeCase.id ? { ...draft, id: activeCase.id, date: today } : c)));
+    setCases((prev) =>
+      prev.map((c) =>
+        c.id === activeCase.id
+          ? { ...draft, id: activeCase.id, date: today, totalPaid: { ...draft.totalPaid, amount: getTotalJudgementReward(draft) } }
+          : c
+      )
+    );
     setConfirmSave(null);
     closeModal();
   };

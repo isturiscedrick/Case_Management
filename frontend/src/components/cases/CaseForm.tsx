@@ -5,9 +5,8 @@ import type {
   NlrcInfo,
   CaInfo,
   ScInfo,
-  CaseProgress,
-  StageProgress,
   TotalPaidCategory,
+  StageProgress,
 } from "@/types/case";
 import {
   STATUS_OPTIONS,
@@ -21,6 +20,7 @@ import { Field } from "./Field";
 import { CurrencyField, inputCls } from "./CurrencyField";
 import type { CaseStatus } from "@/types/case";
 import { getStageGates } from "@/lib/caseValidation";
+import { formatCurrency, getTotalJudgementReward } from "@/lib/caseHelpers";
 
 export function CaseForm({
   value,
@@ -51,19 +51,13 @@ export function CaseForm({
   const setSc = <K extends keyof ScInfo>(key: K, v: ScInfo[K]) => {
   onChange({ ...value, sc: { ...value.sc, [key]: v } });
 };
-
-const setTotalPaid = (
-  key: "amount" | "category",
-  valueToSet: string | TotalPaidCategory | ""
-) => {
+const setTotalPaidCategory = (category: TotalPaidCategory | "") => {
   onChange({
     ...value,
-    totalPaid: {
-      ...value.totalPaid,
-      [key]: valueToSet,
-    },
+    totalPaid: { ...value.totalPaid, category },
   });
 };
+
 
 const setProgress = (key: "la" | "nlrc" | "ca" | "sc", v: StageProgress) => {
   const specKey = `${key}Specification` as const;
@@ -103,6 +97,7 @@ const {
   scEnabled,
   scFilled,
 } = getStageGates(value);
+  const totalJudgementReward = getTotalJudgementReward(value);
 
   return (
     <div className="space-y-6">
@@ -834,28 +829,22 @@ const {
           </div>
         )}
         </fieldset>
-              <div>
+      <div>
         <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-emerald-600">
-          Total Amount Paid
+          Total Judgement Reward
         </h3>
-
-        <div className="grid gap-4 sm:grid-cols-2">
-          <CurrencyField
-            label="Total Paid"
-            value={value.totalPaid.amount}
-            onChange={(v) => setTotalPaid("amount", v)}
-          />
-
+        <div className="rounded-lg border border-emerald-100 bg-emerald-50/50 px-3 py-2 text-sm font-medium text-emerald-800">
+          {formatCurrency(totalJudgementReward)}
+        </div>
+        <p className="mt-1 text-[11px] text-slate-400">
+          Calculated automatically from the Judgement Reward/Award values above.
+        </p>
+        <div className="mt-3 max-w-sm">
           <Field label="Category">
             <select
               className={inputCls}
               value={value.totalPaid.category}
-              onChange={(e) =>
-                setTotalPaid(
-                  "category",
-                  e.target.value as TotalPaidCategory | ""
-                )
-              }
+              onChange={(e) => setTotalPaidCategory(e.target.value as TotalPaidCategory | "")}
             >
               <option value="">Select Category</option>
               <option value="Judgement-Award-L">Judgement-Award-L</option>

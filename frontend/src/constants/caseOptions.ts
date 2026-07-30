@@ -88,7 +88,7 @@ export const EMPTY_CASE: CaseDraft = {
   nlrc: { date: "", status: "", judgementReward: "", remarks: "", remarksSpecification: "" },
   ca: { date: "", status: "", judgementReward: "", remarks: "", remarksSpecification: "" },
   sc: { date: "", status: "", judgementReward: "", remarks: "", remarksSpecification: "" },
-  totalPaid: {amount: "₱150,000", category: "Judgement-Award-L",},
+  totalPaid: { amount: "", category: "" },
   caseProgress: {
     la: "",
     nlrc: "",

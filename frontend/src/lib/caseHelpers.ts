@@ -23,3 +23,14 @@ export function formatCurrency(value: string): string {
   if (Number.isNaN(num)) return value; // fallback for legacy non-numeric values
   return `₱${num.toLocaleString()}`;
 }
+
+// The amount shown while creating or editing a case is derived from every
+// stage's Judgement Reward/Award. It is not a separate user-entered payment.
+export function getTotalJudgementReward(draft: CaseDraft): string {
+  const total = [draft.la, draft.nlrc, draft.ca, draft.sc].reduce((sum, stage) => {
+    const amount = Number(stage.judgementReward);
+    return Number.isFinite(amount) && amount >= 0 ? sum + amount : sum;
+  }, 0);
+
+  return String(total);
+}
