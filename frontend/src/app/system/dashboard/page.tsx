@@ -5,7 +5,7 @@ import {
   Plus,
   Search,
   Eye,
-  Pencil,
+  RefreshCw,
   Archive,
   ArchiveRestore,
   Briefcase,
@@ -19,6 +19,7 @@ import type { CaseItem, CaseDraft, CaseStatus, StageProgress, ModalType } from "
 import { STATUS_OPTIONS, PROGRESS_OPTIONS, EMPTY_CASE, TABLE_COLUMN_COUNT, CURRENT_USER } from "@/constants/caseOptions";
 import { initialCases, initialCompanies } from "@/data/initialCases";
 import { cloneDraft, formatDate, formatCurrency } from "@/lib/caseHelpers";
+import { getCaseDraftErrors } from "@/lib/caseValidation";
 
 import { StatusBadge } from "@/components/cases/StatusBadge";
 import { SummaryCard } from "@/components/cases/SummaryCard";
@@ -27,6 +28,33 @@ import { CaseForm } from "@/components/cases/CaseForm";
 import { Modal } from "@/components/cases/Modal";
 import { ConfirmDialog } from "@/components/cases/ConfirmDialog";
 import { ViewCaseContent } from "@/components/cases/ViewCaseContent";
+
+// A case is "SEnA-only" if none of LA/NLRC/CA/SC have any data yet —
+// meaning it was created (or last saved) without escalating past SEnA.
+function isSenaOnlyCase(item: CaseItem) {
+  return (
+    !item.la.date &&
+    !item.la.status &&
+    !item.la.judgementReward &&
+    !item.la.remarks &&
+    !item.la.remarksSpecification &&
+    !item.nlrc.date &&
+    !item.nlrc.status &&
+    !item.nlrc.judgementReward &&
+    !item.nlrc.remarks &&
+    !item.nlrc.remarksSpecification &&
+    !item.ca.date &&
+    !item.ca.status &&
+    !item.ca.judgementReward &&
+    !item.ca.remarks &&
+    !item.ca.remarksSpecification &&
+    !item.sc.date &&
+    !item.sc.status &&
+    !item.sc.judgementReward &&
+    !item.sc.remarks &&
+    !item.sc.remarksSpecification
+  );
+}
 
 export default function CasesPage() {
   const [cases, setCases] = useState<CaseItem[]>(initialCases);
@@ -43,6 +71,10 @@ export default function CasesPage() {
   const [modal, setModal] = useState<ModalType>(null);
   const [activeCase, setActiveCase] = useState<CaseItem | null>(null);
   const [draft, setDraft] = useState<CaseDraft>(EMPTY_CASE);
+  // True when the case being edited has no data in LA/NLRC/CA/SC — i.e. it
+  // hasn't escalated past SEnA yet. In that case, only SEnA's Remarks field
+  // stays editable; the rest of SEnA locks to protect the original filing.
+  const [restrictSenaEditing, setRestrictSenaEditing] = useState(false);
 
   const [confirmSave, setConfirmSave] = useState<"create" | "edit" | null>(null);
   const [confirmArchiveItem, setConfirmArchiveItem] = useState<CaseItem | null>(null);
@@ -81,6 +113,7 @@ export default function CasesPage() {
 
   const openCreate = () => {
     setDraft(cloneDraft(EMPTY_CASE));
+    setRestrictSenaEditing(false);
     setModal("create");
   };
 
@@ -92,33 +125,38 @@ export default function CasesPage() {
   const openEdit = (item: CaseItem) => {
     setActiveCase(item);
     setDraft(cloneDraft(item));
+    setRestrictSenaEditing(isSenaOnlyCase(item));
     setModal("edit");
   };
 
   const closeModal = () => {
     setModal(null);
     setActiveCase(null);
+    setRestrictSenaEditing(false);
   };
 
-const requestSaveCreate = () => {
-    const missing =
-      draft.company.trim() === "" ||
-      draft.caseTitle.trim() === "" ||
-      draft.caseNo.trim() === "" ||
-      draft.complainants.some((c) => c.trim() === "") ||
-      draft.venue.trim() === "" ||
-      draft.cause.trim() === "" ||
-      (draft.cause === "Others" && (draft.causeSpecification ?? "").trim() === "") ||
-      draft.filingDate.trim() === "";
+  // Shared validation: checks SEnA, and — for every stage that's unlocked
+  // (LA always once SEnA qualifies; NLRC/CA/SC once the prior stage is
+  // filled AND its Progress is "Not Settled" or "Others") — requires that
+  // stage's fields (Date, Status, Judgement Reward/Award, Remarks) to be
+  // filled. Progress dropdowns are always optional and never block this.
+  const requestSaveCreate = () => {
+    const errors = getCaseDraftErrors(draft);
 
-    if (missing) {
-      alert("Please fill up all SEnA fields (Remarks is optional) before creating the case.");
+    if (errors.length > 0) {
+      alert(errors.join("\n"));
       return;
     }
     setConfirmSave("create");
   };
 
   const requestSaveEdit = () => {
+    const errors = getCaseDraftErrors(draft);
+
+    if (errors.length > 0) {
+      alert(errors.join("\n"));
+      return;
+    }
     setConfirmSave("edit");
   };
 
@@ -494,11 +532,11 @@ const requestSaveCreate = () => {
                         <Eye size={13} />
                       </button>
                       <button
-                        aria-label="Edit case"
+                        aria-label="Update case"
                         onClick={() => openEdit(item)}
                         className="rounded-md border border-slate-200 p-1.5 text-slate-500 transition hover:border-slate-300 hover:bg-white hover:text-slate-900"
                       >
-                        <Pencil size={13} />
+                        <RefreshCw size={13} />
                       </button>
                       <button
                         aria-label={item.archived ? "Restore case" : "Archive case"}
@@ -569,7 +607,7 @@ const requestSaveCreate = () => {
             </>
           }
         >
-          <CaseForm value={draft} onChange={setDraft} companies={companies} />
+          <CaseForm value={draft} onChange={setDraft} companies={companies} restrictSenaEditing={restrictSenaEditing} />
         </Modal>
       )}
 

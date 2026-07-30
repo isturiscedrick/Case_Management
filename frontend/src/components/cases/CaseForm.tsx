@@ -20,15 +20,21 @@ import {
 import { Field } from "./Field";
 import { CurrencyField, inputCls } from "./CurrencyField";
 import type { CaseStatus } from "@/types/case";
+import { getStageGates } from "@/lib/caseValidation";
 
 export function CaseForm({
   value,
   onChange,
   companies,
+  restrictSenaEditing = false,
 }: {
   value: CaseDraft;
   onChange: (next: CaseDraft) => void;
   companies: string[];
+  // When true, every SEnA field except Remarks (and its "Others" spec) is
+  // locked. Used for editing a case that hasn't escalated past SEnA yet, so
+  // the only thing that can change it is Remarks signaling escalation.
+  restrictSenaEditing?: boolean;
 }) {
   const setTop = <K extends keyof CaseDraft>(key: K, v: CaseDraft[K]) => {
     onChange({ ...value, [key]: v });
@@ -82,21 +88,21 @@ const setProgressSpecification = (key: "la" | "nlrc" | "ca" | "sc", v: string) =
   });
 };
 
-// All SEnA fields must be filled in (Remarks is optional on its own),
-// but LA/NLRC/CA/SC only unlock once Remarks is "Not Settled" or "Others".
-const senaAllFilled =
-  value.company.trim() !== "" &&
-  value.caseTitle.trim() !== "" &&
-  value.caseNo.trim() !== "" &&
-  value.complainants.every((c) => c.trim() !== "") &&
-  value.venue.trim() !== "" &&
-  value.cause.trim() !== "" &&
-  (value.cause !== "Others" || (value.causeSpecification ?? "").trim() !== "") &&
-  value.filingDate.trim() !== "";
-
-const senaRemarksOk = value.remarks === "Not Settled" || value.remarks === "Others";
-
-const senaFilled = senaAllFilled && senaRemarksOk;
+// All stage-gating rules (SEnA complete, LA/NLRC/CA/SC filled+enabled)
+// live in lib/caseValidation.ts so the exact same logic can be reused
+// by the parent's Create Case submit handler.
+const {
+  senaFilled,
+  laEnabled,
+  laRequired,
+  laFilled,
+  nlrcEnabled,
+  nlrcFilled,
+  caEnabled,
+  caFilled,
+  scEnabled,
+  scFilled,
+} = getStageGates(value);
 
   return (
     <div className="space-y-6">
@@ -104,7 +110,13 @@ const senaFilled = senaAllFilled && senaRemarksOk;
         <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400">
           Single Entry Approach (SEnA)
         </h3>
+        {restrictSenaEditing && (
+          <p className="mb-2 text-[11px] text-amber-600">
+            This case hasn't progressed beyond SEnA. Only Remarks can be edited here — set it to "Not Settled" or "Others" to unlock the Labor Arbiter section.
+          </p>
+        )}
         <div className="grid gap-4 sm:grid-cols-3">
+          <fieldset disabled={restrictSenaEditing} className="contents">
           <Field label="Company">
             <select
               className={inputCls}
@@ -218,16 +230,48 @@ const senaFilled = senaAllFilled && senaRemarksOk;
               onChange={(e) => setTop("filingDate", e.target.value)}
             />
           </Field>
+          </fieldset>
           <Field label="Remarks">
             <select
               className={inputCls}
               value={value.remarks}
               onChange={(e) => {
                 const selected = e.target.value;
+                // Reset LA whenever it has ANY data typed in — not just when
+                // it's fully complete. laFilled requires every field to be
+                // filled, which misses the case where the user only
+                // partially filled LA before changing Remarks back.
+                const laHasData =
+                  !!value.la.date ||
+                  !!value.la.status ||
+                  !!value.la.judgementReward ||
+                  !!value.la.remarks ||
+                  !!value.la.remarksSpecification ||
+                  !!value.caseProgress.la ||
+                  !!value.caseProgress.laSpecification;
+                const shouldResetLa =
+                  laHasData && selected !== "Not Settled" && selected !== "Others";
                 onChange({
                   ...value,
                   remarks: selected,
                   remarkSpecification: selected === "Others" ? value.remarkSpecification ?? "" : "",
+                  ...(shouldResetLa
+                    ? {
+                        la: {
+                          ...value.la,
+                          date: "",
+                          status: "",
+                          judgementReward: "",
+                          remarks: "",
+                          remarksSpecification: "",
+                        },
+                        caseProgress: {
+                          ...value.caseProgress,
+                          la: "",
+                          laSpecification: "",
+                        },
+                      }
+                    : {}),
                 });
               }}
             >
@@ -257,10 +301,20 @@ const senaFilled = senaAllFilled && senaRemarksOk;
         <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-sky-600">Labor Arbiter (LA)</h3>
         {!senaFilled && (
           <p className="mb-2 text-[11px] text-slate-400">
-            Complete all SEnA fields above, with Remarks set to "Not Settled" or "Others", to unlock this section.
+            Complete all required SEnA fields above (Remarks is optional) to unlock this section.
           </p>
         )}
-        <fieldset disabled={!senaFilled} className={!senaFilled ? "opacity-50" : ""}>
+        {senaFilled && laRequired && !laFilled && (
+          <p className="mb-2 text-[11px] font-medium text-amber-600">
+            SEnA Remarks is "Not Settled" or "Others" — LA fields (Date, Status, Judgement Reward, Remarks) are now required to create the case. LA Progress is optional.
+          </p>
+        )}
+        {senaFilled && !laRequired && (
+          <p className="mb-2 text-[11px] text-slate-400">
+            Disabled while SEnA Remarks is "Select Remarks" or "Settled". Set Remarks to "Not Settled" or "Others" to unlock and require this section.
+          </p>
+        )}
+        <fieldset disabled={!laEnabled} className={!laEnabled ? "opacity-50" : ""}>
         <div className="grid gap-4 sm:grid-cols-4">
           <Field label="Date">
             <input type="date" className={inputCls} value={value.la.date} onChange={(e) => setLa("date", e.target.value)} />
@@ -320,7 +374,43 @@ const senaFilled = senaAllFilled && senaRemarksOk;
             <select
               className={inputCls}
               value={value.caseProgress.la}
-              onChange={(e) => setProgress("la", e.target.value as StageProgress)}
+              onChange={(e) => {
+                const selected = e.target.value as StageProgress;
+                // Reset NLRC whenever it has ANY data entered — not just
+                // when fully complete — mirroring the SEnA Remarks -> LA
+                // reset above.
+                const nlrcHasData =
+                  !!value.nlrc.date ||
+                  !!value.nlrc.status ||
+                  !!value.nlrc.judgementReward ||
+                  !!value.nlrc.remarks ||
+                  !!value.nlrc.remarksSpecification ||
+                  !!value.caseProgress.nlrc ||
+                  !!value.caseProgress.nlrcSpecification;
+                const shouldResetNlrc =
+                  nlrcHasData && selected !== "Not Settled" && selected !== "Others";
+                onChange({
+                  ...value,
+                  caseProgress: {
+                    ...value.caseProgress,
+                    la: selected,
+                    ...(selected === "Others" ? {} : { laSpecification: "" }),
+                    ...(shouldResetNlrc ? { nlrc: "", nlrcSpecification: "" } : {}),
+                  },
+                  ...(shouldResetNlrc
+                    ? {
+                        nlrc: {
+                          ...value.nlrc,
+                          date: "",
+                          status: "",
+                          judgementReward: "",
+                          remarks: "",
+                          remarksSpecification: "",
+                        },
+                      }
+                    : {}),
+                });
+              }}
             >
               <option value="">Select Progress</option>
               {PROGRESS_OPTIONS.filter((p): p is StageProgress => p !== "All").map((p) => (
@@ -351,10 +441,25 @@ const senaFilled = senaAllFilled && senaRemarksOk;
         <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-violet-600">NLRC</h3>
         {!senaFilled && (
           <p className="mb-2 text-[11px] text-slate-400">
-            Complete all SEnA fields above, with Remarks set to "Not Settled" or "Others", to unlock this section.
+            Complete all required SEnA fields above (Remarks is optional) to unlock this section.
           </p>
         )}
-        <fieldset disabled={!senaFilled} className={!senaFilled ? "opacity-50" : ""}>
+        {senaFilled && !laRequired && (
+          <p className="mb-2 text-[11px] text-slate-400">
+            Set SEnA Remarks to "Not Settled" or "Others" and complete the LA section above to unlock this section.
+          </p>
+        )}
+        {senaFilled && laRequired && !laFilled && (
+          <p className="mb-2 text-[11px] text-slate-400">
+            Complete all Labor Arbiter (LA) fields above (Date, Status, Judgement Reward, Remarks) to unlock this section.
+          </p>
+        )}
+        {senaFilled && laRequired && laFilled && !nlrcEnabled && (
+          <p className="mb-2 text-[11px] text-slate-400">
+            LA Progress must be "Not Settled" or "Others" to unlock NLRC. The case is considered resolved if settled at LA.
+          </p>
+        )}
+        <fieldset disabled={!nlrcEnabled} className={!nlrcEnabled ? "opacity-50" : ""}>
         <div className="grid gap-4 sm:grid-cols-4">
           <Field label="Date">
             <input type="date" className={inputCls} value={value.nlrc.date} onChange={(e) => setNlrc("date", e.target.value)} />
@@ -414,7 +519,43 @@ const senaFilled = senaAllFilled && senaRemarksOk;
             <select
               className={inputCls}
               value={value.caseProgress.nlrc}
-              onChange={(e) => setProgress("nlrc", e.target.value as StageProgress)}
+              onChange={(e) => {
+                const selected = e.target.value as StageProgress;
+                // Reset CA whenever it has ANY data entered — not just when
+                // fully complete — mirroring the LA Progress -> NLRC reset
+                // above.
+                const caHasData =
+                  !!value.ca.date ||
+                  !!value.ca.status ||
+                  !!value.ca.judgementReward ||
+                  !!value.ca.remarks ||
+                  !!value.ca.remarksSpecification ||
+                  !!value.caseProgress.ca ||
+                  !!value.caseProgress.caSpecification;
+                const shouldResetCa =
+                  caHasData && selected !== "Not Settled" && selected !== "Others";
+                onChange({
+                  ...value,
+                  caseProgress: {
+                    ...value.caseProgress,
+                    nlrc: selected,
+                    ...(selected === "Others" ? {} : { nlrcSpecification: "" }),
+                    ...(shouldResetCa ? { ca: "", caSpecification: "" } : {}),
+                  },
+                  ...(shouldResetCa
+                    ? {
+                        ca: {
+                          ...value.ca,
+                          date: "",
+                          status: "",
+                          judgementReward: "",
+                          remarks: "",
+                          remarksSpecification: "",
+                        },
+                      }
+                    : {}),
+                });
+              }}
             >
               <option value="">Select Progress</option>
               {PROGRESS_OPTIONS.filter((p): p is StageProgress => p !== "All").map((p) => (
@@ -445,10 +586,25 @@ const senaFilled = senaAllFilled && senaRemarksOk;
         <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-fuchsia-600">Court of Appeals (CA)</h3>
         {!senaFilled && (
           <p className="mb-2 text-[11px] text-slate-400">
-            Complete all SEnA fields above, with Remarks set to "Not Settled" or "Others", to unlock this section.
+            Complete all required SEnA fields above (Remarks is optional) to unlock this section.
           </p>
         )}
-        <fieldset disabled={!senaFilled} className={!senaFilled ? "opacity-50" : ""}>
+        {senaFilled && !nlrcEnabled && (
+          <p className="mb-2 text-[11px] text-slate-400">
+            Unlock and complete the NLRC section above first to unlock this section.
+          </p>
+        )}
+        {senaFilled && nlrcEnabled && !nlrcFilled && (
+          <p className="mb-2 text-[11px] text-slate-400">
+            Complete all NLRC fields above (Date, Status, Judgement Award, Remarks) to unlock this section.
+          </p>
+        )}
+        {senaFilled && nlrcEnabled && nlrcFilled && !caEnabled && (
+          <p className="mb-2 text-[11px] text-slate-400">
+            NLRC Progress must be "Not Settled" or "Others" to unlock CA. The case is considered resolved if settled at NLRC.
+          </p>
+        )}
+        <fieldset disabled={!caEnabled} className={!caEnabled ? "opacity-50" : ""}>
         <div className="grid gap-4 sm:grid-cols-4">
           <Field label="Date">
             <input type="date" className={inputCls} value={value.ca.date} onChange={(e) => setCa("date", e.target.value)} />
@@ -508,7 +664,43 @@ const senaFilled = senaAllFilled && senaRemarksOk;
             <select
               className={inputCls}
               value={value.caseProgress.ca}
-              onChange={(e) => setProgress("ca", e.target.value as StageProgress)}
+              onChange={(e) => {
+                const selected = e.target.value as StageProgress;
+                // Reset SC whenever it has ANY data entered — not just when
+                // fully complete — mirroring the NLRC Progress -> CA reset
+                // above.
+                const scHasData =
+                  !!value.sc.date ||
+                  !!value.sc.status ||
+                  !!value.sc.judgementReward ||
+                  !!value.sc.remarks ||
+                  !!value.sc.remarksSpecification ||
+                  !!value.caseProgress.sc ||
+                  !!value.caseProgress.scSpecification;
+                const shouldResetSc =
+                  scHasData && selected !== "Not Settled" && selected !== "Others";
+                onChange({
+                  ...value,
+                  caseProgress: {
+                    ...value.caseProgress,
+                    ca: selected,
+                    ...(selected === "Others" ? {} : { caSpecification: "" }),
+                    ...(shouldResetSc ? { sc: "", scSpecification: "" } : {}),
+                  },
+                  ...(shouldResetSc
+                    ? {
+                        sc: {
+                          ...value.sc,
+                          date: "",
+                          status: "",
+                          judgementReward: "",
+                          remarks: "",
+                          remarksSpecification: "",
+                        },
+                      }
+                    : {}),
+                });
+              }}
             >
               <option value="">Select Progress</option>
               {PROGRESS_OPTIONS.filter((p): p is StageProgress => p !== "All").map((p) => (
@@ -539,10 +731,25 @@ const senaFilled = senaAllFilled && senaRemarksOk;
         <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-rose-600">Supreme Court (SC)</h3>
         {!senaFilled && (
           <p className="mb-2 text-[11px] text-slate-400">
-            Complete all SEnA fields above, with Remarks set to "Not Settled" or "Others", to unlock this section.
+            Complete all required SEnA fields above (Remarks is optional) to unlock this section.
           </p>
         )}
-        <fieldset disabled={!senaFilled} className={!senaFilled ? "opacity-50" : ""}>
+        {senaFilled && !caEnabled && (
+          <p className="mb-2 text-[11px] text-slate-400">
+            Unlock and complete the Court of Appeals (CA) section above first to unlock this section.
+          </p>
+        )}
+        {senaFilled && caEnabled && !caFilled && (
+          <p className="mb-2 text-[11px] text-slate-400">
+            Complete all CA fields above (Date, Status, Judgement Award, Remarks) to unlock this section.
+          </p>
+        )}
+        {senaFilled && caEnabled && caFilled && !scEnabled && (
+          <p className="mb-2 text-[11px] text-slate-400">
+            CA Progress must be "Not Settled" or "Others" to unlock SC. The case is considered resolved if settled at CA.
+          </p>
+        )}
+        <fieldset disabled={!scEnabled} className={!scEnabled ? "opacity-50" : ""}>
         <div className="grid gap-4 sm:grid-cols-4">
           <Field label="Date">
             <input type="date" className={inputCls} value={value.sc.date} onChange={(e) => setSc("date", e.target.value)} />
