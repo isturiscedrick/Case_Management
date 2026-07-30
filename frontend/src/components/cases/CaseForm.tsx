@@ -1,3 +1,4 @@
+/* eslint-disable react/no-unescaped-entities */
 import { Plus } from "lucide-react";
 import type {
   CaseDraft,
@@ -95,7 +96,6 @@ const {
   caEnabled,
   caFilled,
   scEnabled,
-  scFilled,
 } = getStageGates(value);
   const totalJudgementReward = getTotalJudgementReward(value);
 
@@ -433,7 +433,7 @@ const {
       </div>
 
       <div>
-        <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-violet-600">NLRC</h3>
+        <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-violet-600">National Labor Relations Commission (NLRC)</h3>
         {!senaFilled && (
           <p className="mb-2 text-[11px] text-slate-400">
             Complete all required SEnA fields above (Remarks is optional) to unlock this section.

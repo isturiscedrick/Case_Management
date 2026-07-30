@@ -66,7 +66,7 @@ export default function CasesPage() {
   const [progressFilter, setProgressFilter] = useState<"All" | StageProgress>("All");
   const [search, setSearch] = useState("");
   const [showMoreFilters, setShowMoreFilters] = useState(false);
-  const [showArchived, setShowArchived] = useState(false);
+  const [showArchived] = useState(false);
 
   const [modal, setModal] = useState<ModalType>(null);
   const [activeCase, setActiveCase] = useState<CaseItem | null>(null);

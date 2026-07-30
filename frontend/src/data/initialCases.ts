@@ -52,10 +52,10 @@ export const initialCases: CaseItem[] = [
     },
 
     caseProgress: {
-      la: "Completed",
-      nlrc: "Pending",
-      ca: "Not Started",
-      sc: "Not Started",
+      la: "Not Settled",
+      nlrc: "Others",
+      ca: "",
+      sc: "",
     },
 
     createdBy: "Maria Santos",
@@ -114,10 +114,10 @@ export const initialCases: CaseItem[] = [
     },
 
     caseProgress: {
-      la: "Completed",
-      nlrc: "Completed",
-      ca: "Completed",
-      sc: "Completed",
+      la: "Settled",
+      nlrc: "Settled",
+      ca: "Settled",
+      sc: "Settled",
     },
 
     createdBy: "John Dela Peña",
@@ -175,10 +175,10 @@ export const initialCases: CaseItem[] = [
     },
 
     caseProgress: {
-      la: "Pending",
-      nlrc: "Not Started",
-      ca: "Not Started",
-      sc: "Not Started",
+      la: "Not Settled",
+      nlrc: "",
+      ca: "",
+      sc: "",
     },
 
     createdBy: "Maria Santos",

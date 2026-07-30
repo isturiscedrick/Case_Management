@@ -1,4 +1,4 @@
-import type { CaseStatus, StageProgress, CaseProgress, CaseDraft, TotalPaidCategory } from "@/types/case";
+import type { CaseStatus, StageProgress, CaseDraft } from "@/types/case";
 export const STATUS_OPTIONS: Array<"All" | CaseStatus> = ["All", "Filed", "Pending", "Closed"];
 
 export const PROGRESS_OPTIONS: Array<"All" | StageProgress> = [

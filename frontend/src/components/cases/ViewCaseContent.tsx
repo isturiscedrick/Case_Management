@@ -1,10 +1,12 @@
 import type { CaseItem } from "@/types/case";
-import { formatDate, formatCurrency } from "@/lib/caseHelpers";
+import { formatDate, formatCurrency, getTotalJudgementReward } from "@/lib/caseHelpers";
 import { DetailRow } from "./DetailRow";
 import { StatusBadge } from "./StatusBadge";
 import { CaseProgressStepper } from "./CaseProgressStepper";
 
 export function ViewCaseContent({ item }: { item: CaseItem }) {
+  const totalJudgementReward = getTotalJudgementReward(item);
+
   return (
     <div className="space-y-6">
       <div className="grid gap-x-6 sm:grid-cols-2">
@@ -103,24 +105,13 @@ export function ViewCaseContent({ item }: { item: CaseItem }) {
         </div>
       </div>
         <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-emerald-600">
-          Total Amount Paid
+          Total Judgement Reward
         </h3>
 
-<div className="grid grid-cols-2 gap-4 mt-3">
-  <DetailRow
-    label="Amount"
-    value={
-      item.totalPaid
-        ? formatCurrency(item.totalPaid.amount)
-        : "-"
-    }
-  />
-
-  <DetailRow
-    label="Category"
-    value={item.totalPaid?.category || "-"}
-  />
-</div>
+      <div className="mt-3 max-w-sm space-y-3">
+        <DetailRow label="Amount" value={formatCurrency(totalJudgementReward)} />
+        <DetailRow label="Category" value={item.totalPaid?.category || "-"} />
+      </div>
       <div>
         <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Progress</h3>
         <CaseProgressStepper progress={item.caseProgress} />
