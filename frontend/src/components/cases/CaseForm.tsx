@@ -319,11 +319,6 @@ const {
 
       <div>
         <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-sky-600">Labor Arbiter (LA)</h3>
-        {!senaFilled && (
-          <p className="mb-2 text-[11px] text-slate-400">
-            Complete all required SEnA fields above (Remarks is optional) to unlock this section.
-          </p>
-        )}
         {senaFilled && laRequired && !laFilled && (
           <p className="mb-2 text-[11px] font-medium text-amber-600">
             SEnA Remarks is "Not Settled" or "Others" — LA fields (Date, Status, Judgement Reward, Remarks) are now required to create the case. LA Progress is optional.
@@ -331,7 +326,7 @@ const {
         )}
         {senaFilled && !laRequired && (
           <p className="mb-2 text-[11px] text-slate-400">
-            Disabled while SEnA Remarks is "Select Remarks" or "Settled". Set Remarks to "Not Settled" or "Others" to unlock and require this section.
+            Disabled while SEnA Remarks is "Select Remarks" or "Settled".
           </p>
         )}
         {restrictLaProgressOnly && (
@@ -469,14 +464,9 @@ const {
 
       <div>
         <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-violet-600">National Labor Relations Commission (NLRC)</h3>
-        {!senaFilled && (
-          <p className="mb-2 text-[11px] text-slate-400">
-            Complete all required SEnA fields above (Remarks is optional) to unlock this section.
-          </p>
-        )}
         {senaFilled && !laRequired && (
           <p className="mb-2 text-[11px] text-slate-400">
-            Set SEnA Remarks to "Not Settled" or "Others" and complete the LA section above to unlock this section.
+            Disabled while LA Progress is "Select Progress" or "Settled".
           </p>
         )}
         {senaFilled && laRequired && !laFilled && (
@@ -624,14 +614,9 @@ const {
 
       <div>
         <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-fuchsia-600">Court of Appeals (CA)</h3>
-        {!senaFilled && (
-          <p className="mb-2 text-[11px] text-slate-400">
-            Complete all required SEnA fields above (Remarks is optional) to unlock this section.
-          </p>
-        )}
         {senaFilled && !nlrcEnabled && (
           <p className="mb-2 text-[11px] text-slate-400">
-            Unlock and complete the NLRC section above first to unlock this section.
+            Disabled while NLRC Progress is "Select Progress" or "Settled".
           </p>
         )}
         {senaFilled && nlrcEnabled && !nlrcFilled && (
@@ -779,14 +764,9 @@ const {
 
       <div>
         <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-rose-600">Supreme Court (SC)</h3>
-        {!senaFilled && (
-          <p className="mb-2 text-[11px] text-slate-400">
-            Complete all required SEnA fields above (Remarks is optional) to unlock this section.
-          </p>
-        )}
         {senaFilled && !caEnabled && (
           <p className="mb-2 text-[11px] text-slate-400">
-            Unlock and complete the Court of Appeals (CA) section above first to unlock this section.
+            Disabled while CA Progress is "Select Progress" or "Settled".
           </p>
         )}
         {senaFilled && caEnabled && !caFilled && (
