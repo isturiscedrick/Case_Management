@@ -19,7 +19,7 @@ import type { CaseItem, CaseDraft, CaseStatus, StageProgress, ModalType } from "
 import { STATUS_OPTIONS, PROGRESS_OPTIONS, EMPTY_CASE, TABLE_COLUMN_COUNT, CURRENT_USER } from "@/constants/caseOptions";
 import { initialCases, initialCompanies } from "@/data/initialCases";
 import { cloneDraft, formatDate, formatCurrency, getTotalJudgementReward } from "@/lib/caseHelpers";
-import { getCaseDraftErrors } from "@/lib/caseValidation";
+import { getCaseDraftErrors, getStageGates } from "@/lib/caseValidation";
 
 import { StatusBadge } from "@/components/cases/StatusBadge";
 import { SummaryCard } from "@/components/cases/SummaryCard";
@@ -75,6 +75,16 @@ export default function CasesPage() {
   // hasn't escalated past SEnA yet. In that case, only SEnA's Remarks field
   // stays editable; the rest of SEnA locks to protect the original filing.
   const [restrictSenaEditing, setRestrictSenaEditing] = useState(false);
+  const [restrictSenaRemarksEditing, setRestrictSenaRemarksEditing] = useState(false);
+  const [restrictLaDetailsEditing, setRestrictLaDetailsEditing] = useState(false);
+  const [restrictLaProgressOnly, setRestrictLaProgressOnly] = useState(false);
+  const [restrictLaProgressEditing, setRestrictLaProgressEditing] = useState(false);
+  const [restrictNlrcDetailsEditing, setRestrictNlrcDetailsEditing] = useState(false);
+  const [restrictNlrcProgressOnly, setRestrictNlrcProgressOnly] = useState(false);
+  const [restrictNlrcProgressEditing, setRestrictNlrcProgressEditing] = useState(false);
+  const [restrictCaDetailsEditing, setRestrictCaDetailsEditing] = useState(false);
+  const [restrictCaProgressOnly, setRestrictCaProgressOnly] = useState(false);
+  const [restrictCaProgressEditing, setRestrictCaProgressEditing] = useState(false);
 
   const [confirmSave, setConfirmSave] = useState<"create" | "edit" | null>(null);
   const [confirmArchiveItem, setConfirmArchiveItem] = useState<CaseItem | null>(null);
@@ -114,6 +124,16 @@ export default function CasesPage() {
   const openCreate = () => {
     setDraft(cloneDraft(EMPTY_CASE));
     setRestrictSenaEditing(false);
+    setRestrictSenaRemarksEditing(false);
+    setRestrictLaDetailsEditing(false);
+    setRestrictLaProgressOnly(false);
+    setRestrictLaProgressEditing(false);
+    setRestrictNlrcDetailsEditing(false);
+    setRestrictNlrcProgressOnly(false);
+    setRestrictNlrcProgressEditing(false);
+    setRestrictCaDetailsEditing(false);
+    setRestrictCaProgressOnly(false);
+    setRestrictCaProgressEditing(false);
     setModal("create");
   };
 
@@ -123,9 +143,24 @@ export default function CasesPage() {
   };
 
   const openEdit = (item: CaseItem) => {
+    const gates = getStageGates(item);
+    const laProgressIsPending = gates.laFilled && item.caseProgress.la === "";
+    const nlrcProgressIsPending = gates.nlrcFilled && item.caseProgress.nlrc === "";
+    const caProgressIsPending = gates.caFilled && item.caseProgress.ca === "";
+
     setActiveCase(item);
     setDraft(cloneDraft(item));
-    setRestrictSenaEditing(isSenaOnlyCase(item));
+    setRestrictSenaEditing(isSenaOnlyCase(item) || gates.laFilled);
+    setRestrictSenaRemarksEditing(gates.laFilled);
+    setRestrictLaDetailsEditing(gates.laFilled);
+    setRestrictLaProgressOnly(laProgressIsPending);
+    setRestrictLaProgressEditing(gates.laFilled && !laProgressIsPending);
+    setRestrictNlrcDetailsEditing(gates.nlrcFilled);
+    setRestrictNlrcProgressOnly(nlrcProgressIsPending);
+    setRestrictNlrcProgressEditing(gates.nlrcFilled && !nlrcProgressIsPending);
+    setRestrictCaDetailsEditing(gates.caFilled);
+    setRestrictCaProgressOnly(caProgressIsPending);
+    setRestrictCaProgressEditing(gates.caFilled && !caProgressIsPending);
     setModal("edit");
   };
 
@@ -133,6 +168,16 @@ export default function CasesPage() {
     setModal(null);
     setActiveCase(null);
     setRestrictSenaEditing(false);
+    setRestrictSenaRemarksEditing(false);
+    setRestrictLaDetailsEditing(false);
+    setRestrictLaProgressOnly(false);
+    setRestrictLaProgressEditing(false);
+    setRestrictNlrcDetailsEditing(false);
+    setRestrictNlrcProgressOnly(false);
+    setRestrictNlrcProgressEditing(false);
+    setRestrictCaDetailsEditing(false);
+    setRestrictCaProgressOnly(false);
+    setRestrictCaProgressEditing(false);
   };
 
   // Shared validation: checks SEnA, and — for every stage that's unlocked
@@ -623,7 +668,22 @@ export default function CasesPage() {
             </>
           }
         >
-          <CaseForm value={draft} onChange={setDraft} companies={companies} restrictSenaEditing={restrictSenaEditing} />
+          <CaseForm
+            value={draft}
+            onChange={setDraft}
+            companies={companies}
+            restrictSenaEditing={restrictSenaEditing}
+            restrictSenaRemarksEditing={restrictSenaRemarksEditing}
+            restrictLaDetailsEditing={restrictLaDetailsEditing}
+            restrictLaProgressOnly={restrictLaProgressOnly}
+            restrictLaProgressEditing={restrictLaProgressEditing}
+            restrictNlrcDetailsEditing={restrictNlrcDetailsEditing}
+            restrictNlrcProgressOnly={restrictNlrcProgressOnly}
+            restrictNlrcProgressEditing={restrictNlrcProgressEditing}
+            restrictCaDetailsEditing={restrictCaDetailsEditing}
+            restrictCaProgressOnly={restrictCaProgressOnly}
+            restrictCaProgressEditing={restrictCaProgressEditing}
+          />
         </Modal>
       )}
 

@@ -28,6 +28,16 @@ export function CaseForm({
   onChange,
   companies,
   restrictSenaEditing = false,
+  restrictSenaRemarksEditing = false,
+  restrictLaDetailsEditing = false,
+  restrictLaProgressOnly = false,
+  restrictLaProgressEditing = false,
+  restrictNlrcDetailsEditing = false,
+  restrictNlrcProgressOnly = false,
+  restrictNlrcProgressEditing = false,
+  restrictCaDetailsEditing = false,
+  restrictCaProgressOnly = false,
+  restrictCaProgressEditing = false,
 }: {
   value: CaseDraft;
   onChange: (next: CaseDraft) => void;
@@ -36,6 +46,16 @@ export function CaseForm({
   // locked. Used for editing a case that hasn't escalated past SEnA yet, so
   // the only thing that can change it is Remarks signaling escalation.
   restrictSenaEditing?: boolean;
+  restrictSenaRemarksEditing?: boolean;
+  restrictLaDetailsEditing?: boolean;
+  restrictLaProgressOnly?: boolean;
+  restrictLaProgressEditing?: boolean;
+  restrictNlrcDetailsEditing?: boolean;
+  restrictNlrcProgressOnly?: boolean;
+  restrictNlrcProgressEditing?: boolean;
+  restrictCaDetailsEditing?: boolean;
+  restrictCaProgressOnly?: boolean;
+  restrictCaProgressEditing?: boolean;
 }) {
   const setTop = <K extends keyof CaseDraft>(key: K, v: CaseDraft[K]) => {
     onChange({ ...value, [key]: v });
@@ -98,6 +118,9 @@ const {
   scEnabled,
 } = getStageGates(value);
   const totalJudgementReward = getTotalJudgementReward(value);
+  const canProceedPastLa = value.caseProgress.la === "Not Settled" || value.caseProgress.la === "Others";
+  const canProceedPastNlrc = value.caseProgress.nlrc === "Not Settled" || value.caseProgress.nlrc === "Others";
+  const canProceedPastCa = value.caseProgress.ca === "Not Settled" || value.caseProgress.ca === "Others";
 
   return (
     <div className="space-y-6">
@@ -226,6 +249,7 @@ const {
             />
           </Field>
           </fieldset>
+          <fieldset disabled={restrictSenaRemarksEditing} className="contents">
           <Field label="Remarks">
             <select
               className={inputCls}
@@ -289,6 +313,7 @@ const {
               />
             </Field>
           )}
+          </fieldset>
         </div>
       </div>
 
@@ -309,7 +334,13 @@ const {
             Disabled while SEnA Remarks is "Select Remarks" or "Settled". Set Remarks to "Not Settled" or "Others" to unlock and require this section.
           </p>
         )}
+        {restrictLaProgressOnly && (
+          <p className="mb-2 text-[11px] font-medium text-amber-600">
+            LA details are saved and locked. Update LA Progress only, then save to continue the case workflow.
+          </p>
+        )}
         <fieldset disabled={!laEnabled} className={!laEnabled ? "opacity-50" : ""}>
+        <fieldset disabled={restrictLaDetailsEditing} className="contents">
         <div className="grid gap-4 sm:grid-cols-4">
           <Field label="Date">
             <input type="date" className={inputCls} value={value.la.date} onChange={(e) => setLa("date", e.target.value)} />
@@ -363,12 +394,14 @@ const {
             </Field>
           </div>
         )}
+        </fieldset>
 
         <div className="mt-3">
           <Field label="LA Progress">
             <select
               className={inputCls}
               value={value.caseProgress.la}
+              disabled={restrictLaProgressEditing}
               onChange={(e) => {
                 const selected = e.target.value as StageProgress;
                 // Reset NLRC whenever it has ANY data entered — not just
@@ -418,6 +451,7 @@ const {
         </div>
 
         {value.caseProgress.la === "Others" && (
+          <fieldset disabled={restrictLaProgressEditing} className="contents">
           <div className="mt-3 grid gap-4 sm:grid-cols-3">
             <Field label="Specify LA Progress">
               <input
@@ -428,6 +462,7 @@ const {
               />
             </Field>
           </div>
+          </fieldset>
         )}
         </fieldset>
       </div>
@@ -454,7 +489,13 @@ const {
             LA Progress must be "Not Settled" or "Others" to unlock NLRC. The case is considered resolved if settled at LA.
           </p>
         )}
-        <fieldset disabled={!nlrcEnabled} className={!nlrcEnabled ? "opacity-50" : ""}>
+        {restrictNlrcProgressOnly && (
+          <p className="mb-2 text-[11px] font-medium text-amber-600">
+            NLRC details are saved and locked. Update NLRC Progress only, then save to continue the case workflow.
+          </p>
+        )}
+        <fieldset disabled={!nlrcEnabled || (restrictLaProgressOnly && !canProceedPastLa)} className={!nlrcEnabled || (restrictLaProgressOnly && !canProceedPastLa) ? "opacity-50" : ""}>
+        <fieldset disabled={restrictNlrcDetailsEditing} className="contents">
         <div className="grid gap-4 sm:grid-cols-4">
           <Field label="Date">
             <input type="date" className={inputCls} value={value.nlrc.date} onChange={(e) => setNlrc("date", e.target.value)} />
@@ -508,12 +549,14 @@ const {
             </Field>
           </div>
         )}
+        </fieldset>
 
         <div className="mt-3">
           <Field label="NLRC Progress">
             <select
               className={inputCls}
               value={value.caseProgress.nlrc}
+              disabled={restrictNlrcProgressEditing}
               onChange={(e) => {
                 const selected = e.target.value as StageProgress;
                 // Reset CA whenever it has ANY data entered — not just when
@@ -563,6 +606,7 @@ const {
         </div>
 
         {value.caseProgress.nlrc === "Others" && (
+          <fieldset disabled={restrictNlrcProgressEditing} className="contents">
           <div className="mt-3 grid gap-4 sm:grid-cols-3">
             <Field label="Specify NLRC Progress">
               <input
@@ -573,6 +617,7 @@ const {
               />
             </Field>
           </div>
+          </fieldset>
         )}
         </fieldset>
       </div>
@@ -599,7 +644,13 @@ const {
             NLRC Progress must be "Not Settled" or "Others" to unlock CA. The case is considered resolved if settled at NLRC.
           </p>
         )}
-        <fieldset disabled={!caEnabled} className={!caEnabled ? "opacity-50" : ""}>
+        {restrictCaProgressOnly && (
+          <p className="mb-2 text-[11px] font-medium text-amber-600">
+            CA details are saved and locked. Update CA Progress only, then save to continue the case workflow.
+          </p>
+        )}
+        <fieldset disabled={!caEnabled || (restrictLaProgressOnly && !canProceedPastLa) || (restrictNlrcProgressOnly && !canProceedPastNlrc)} className={!caEnabled || (restrictLaProgressOnly && !canProceedPastLa) || (restrictNlrcProgressOnly && !canProceedPastNlrc) ? "opacity-50" : ""}>
+        <fieldset disabled={restrictCaDetailsEditing} className="contents">
         <div className="grid gap-4 sm:grid-cols-4">
           <Field label="Date">
             <input type="date" className={inputCls} value={value.ca.date} onChange={(e) => setCa("date", e.target.value)} />
@@ -653,12 +704,14 @@ const {
             </Field>
           </div>
         )}
+        </fieldset>
 
         <div className="mt-3">
           <Field label="CA Progress">
             <select
               className={inputCls}
               value={value.caseProgress.ca}
+              disabled={restrictCaProgressEditing}
               onChange={(e) => {
                 const selected = e.target.value as StageProgress;
                 // Reset SC whenever it has ANY data entered — not just when
@@ -708,6 +761,7 @@ const {
         </div>
 
         {value.caseProgress.ca === "Others" && (
+          <fieldset disabled={restrictCaProgressEditing} className="contents">
           <div className="mt-3 grid gap-4 sm:grid-cols-3">
             <Field label="Specify CA Progress">
               <input
@@ -718,6 +772,7 @@ const {
               />
             </Field>
           </div>
+          </fieldset>
         )}
         </fieldset>
       </div>
@@ -744,7 +799,7 @@ const {
             CA Progress must be "Not Settled" or "Others" to unlock SC. The case is considered resolved if settled at CA.
           </p>
         )}
-        <fieldset disabled={!scEnabled} className={!scEnabled ? "opacity-50" : ""}>
+        <fieldset disabled={!scEnabled || (restrictLaProgressOnly && !canProceedPastLa) || (restrictNlrcProgressOnly && !canProceedPastNlrc) || (restrictCaProgressOnly && !canProceedPastCa)} className={!scEnabled || (restrictLaProgressOnly && !canProceedPastLa) || (restrictNlrcProgressOnly && !canProceedPastNlrc) || (restrictCaProgressOnly && !canProceedPastCa) ? "opacity-50" : ""}>
         <div className="grid gap-4 sm:grid-cols-4">
           <Field label="Date">
             <input type="date" className={inputCls} value={value.sc.date} onChange={(e) => setSc("date", e.target.value)} />
@@ -844,6 +899,7 @@ const {
             <select
               className={inputCls}
               value={value.totalPaid.category}
+              disabled={restrictLaDetailsEditing}
               onChange={(e) => setTotalPaidCategory(e.target.value as TotalPaidCategory | "")}
             >
               <option value="">Select Category</option>
