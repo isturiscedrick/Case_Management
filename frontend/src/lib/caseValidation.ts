@@ -105,6 +105,19 @@ export function getCaseDraftErrors(draft: CaseDraft): string[] {
     errors.push("Complete all Supreme Court (SC) fields (SC Progress is optional).");
   }
 
+  // Category reflects how the case was resolved once it's actually
+  // "Settled" somewhere — require it in that case.
+  const anyStageSettled =
+    draft.remarks === "Settled" ||
+    draft.caseProgress.la === "Settled" ||
+    draft.caseProgress.nlrc === "Settled" ||
+    draft.caseProgress.ca === "Settled" ||
+    draft.caseProgress.sc === "Settled";
+
+  if (anyStageSettled && !draft.totalPaid.category) {
+    errors.push('Category is required when SEnA Remarks or any stage Progress is "Settled".');
+  }
+
   return errors;
 }
 

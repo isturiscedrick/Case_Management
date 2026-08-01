@@ -87,7 +87,7 @@ const setProgress = (key: "la" | "nlrc" | "ca" | "sc", v: StageProgress) => {
     caseProgress: {
       ...value.caseProgress,
       [key]: v,
-      ...(v === "Others" ? {} : { [specKey]: "" }),
+      ...(v === "Others" || v === "Not Settled" ? {} : { [specKey]: "" }),
     },
   });
 };
@@ -121,6 +121,31 @@ const {
   const canProceedPastLa = value.caseProgress.la === "Not Settled" || value.caseProgress.la === "Others";
   const canProceedPastNlrc = value.caseProgress.nlrc === "Not Settled" || value.caseProgress.nlrc === "Others";
   const canProceedPastCa = value.caseProgress.ca === "Not Settled" || value.caseProgress.ca === "Others";
+  // Category only makes sense once the case has actually settled at some
+  // stage — enable it when SEnA Remarks or any of LA/NLRC/CA/SC Progress
+  // is "Settled".
+  const anyStageSettled =
+    value.remarks === "Settled" ||
+    value.caseProgress.la === "Settled" ||
+    value.caseProgress.nlrc === "Settled" ||
+    value.caseProgress.ca === "Settled" ||
+    value.caseProgress.sc === "Settled";
+
+  // Whether each stage's fields should be shown at all. A stage is hidden
+  // (instead of just grayed out) whenever it's not enabled yet, or when an
+  // earlier "progress only" lock hasn't been resolved (Progress hasn't been
+  // set to "Not Settled" / "Others" to permit moving forward).
+  const laVisible = laEnabled;
+  const nlrcVisible = nlrcEnabled && !(restrictLaProgressOnly && !canProceedPastLa);
+  const caVisible =
+    caEnabled &&
+    !(restrictLaProgressOnly && !canProceedPastLa) &&
+    !(restrictNlrcProgressOnly && !canProceedPastNlrc);
+  const scVisible =
+    scEnabled &&
+    !(restrictLaProgressOnly && !canProceedPastLa) &&
+    !(restrictNlrcProgressOnly && !canProceedPastNlrc) &&
+    !(restrictCaProgressOnly && !canProceedPastCa);
 
   return (
     <div className="space-y-6">
@@ -270,10 +295,19 @@ const {
                   !!value.caseProgress.laSpecification;
                 const shouldResetLa =
                   laHasData && selected !== "Not Settled" && selected !== "Others";
+                // Category depends on some stage being "Settled" — if SEnA
+                // Remarks moves to "Select Remarks", "Not Settled", or
+                // "Others", clear it so a stale category doesn't linger
+                // once this stage no longer justifies it.
+                const shouldResetCategory =
+                  selected === "" || selected === "Not Settled" || selected === "Others";
                 onChange({
                   ...value,
                   remarks: selected,
-                  remarkSpecification: selected === "Others" ? value.remarkSpecification ?? "" : "",
+                  remarkSpecification:
+                    selected === "Others" || selected === "Not Settled"
+                      ? value.remarkSpecification ?? ""
+                      : "",
                   ...(shouldResetLa
                     ? {
                         la: {
@@ -291,6 +325,9 @@ const {
                         },
                       }
                     : {}),
+                  ...(shouldResetCategory
+                    ? { totalPaid: { ...value.totalPaid, category: "" } }
+                    : {}),
                 });
               }}
             >
@@ -303,8 +340,8 @@ const {
             </select>
           </Field>
 
-          {value.remarks === "Others" && (
-            <Field label="Specify Remarks">
+          {(value.remarks === "Others" || value.remarks === "Not Settled") && (
+            <Field label="Specify">
               <input
                 className={inputCls}
                 placeholder="Enter remarks"
@@ -334,7 +371,7 @@ const {
             LA details are saved and locked. Update LA Progress only, then save to continue the case workflow.
           </p>
         )}
-        <fieldset disabled={!laEnabled} className={!laEnabled ? "opacity-50" : ""}>
+        {laVisible && (
         <fieldset disabled={restrictLaDetailsEditing} className="contents">
         <div className="grid gap-4 sm:grid-cols-4">
           <Field label="Date">
@@ -390,7 +427,9 @@ const {
           </div>
         )}
         </fieldset>
+        )}
 
+        {laVisible && (
         <div className="mt-3">
           <Field label="LA Progress">
             <select
@@ -412,12 +451,16 @@ const {
                   !!value.caseProgress.nlrcSpecification;
                 const shouldResetNlrc =
                   nlrcHasData && selected !== "Not Settled" && selected !== "Others";
+                // Clear Category if LA Progress moves to "Not Settled" or
+                // "Others" — it no longer reflects a settled outcome here.
+                const shouldResetCategory =
+                  selected === "Not Settled" || selected === "Others";
                 onChange({
                   ...value,
                   caseProgress: {
                     ...value.caseProgress,
                     la: selected,
-                    ...(selected === "Others" ? {} : { laSpecification: "" }),
+                    ...(selected === "Others" || selected === "Not Settled" ? {} : { laSpecification: "" }),
                     ...(shouldResetNlrc ? { nlrc: "", nlrcSpecification: "" } : {}),
                   },
                   ...(shouldResetNlrc
@@ -432,6 +475,9 @@ const {
                         },
                       }
                     : {}),
+                  ...(shouldResetCategory
+                    ? { totalPaid: { ...value.totalPaid, category: "" } }
+                    : {}),
                 });
               }}
             >
@@ -444,8 +490,9 @@ const {
             </select>
           </Field>
         </div>
+        )}
 
-        {value.caseProgress.la === "Others" && (
+        {laVisible && (value.caseProgress.la === "Others" || value.caseProgress.la === "Not Settled") && (
           <fieldset disabled={restrictLaProgressEditing} className="contents">
           <div className="mt-3 grid gap-4 sm:grid-cols-3">
             <Field label="Specify LA Progress">
@@ -459,7 +506,6 @@ const {
           </div>
           </fieldset>
         )}
-        </fieldset>
       </div>
 
       <div>
@@ -484,7 +530,7 @@ const {
             NLRC details are saved and locked. Update NLRC Progress only, then save to continue the case workflow.
           </p>
         )}
-        <fieldset disabled={!nlrcEnabled || (restrictLaProgressOnly && !canProceedPastLa)} className={!nlrcEnabled || (restrictLaProgressOnly && !canProceedPastLa) ? "opacity-50" : ""}>
+        {nlrcVisible && (
         <fieldset disabled={restrictNlrcDetailsEditing} className="contents">
         <div className="grid gap-4 sm:grid-cols-4">
           <Field label="Date">
@@ -540,7 +586,9 @@ const {
           </div>
         )}
         </fieldset>
+        )}
 
+        {nlrcVisible && (
         <div className="mt-3">
           <Field label="NLRC Progress">
             <select
@@ -562,12 +610,16 @@ const {
                   !!value.caseProgress.caSpecification;
                 const shouldResetCa =
                   caHasData && selected !== "Not Settled" && selected !== "Others";
+                // Clear Category if NLRC Progress moves to "Not Settled" or
+                // "Others".
+                const shouldResetCategory =
+                  selected === "Not Settled" || selected === "Others";
                 onChange({
                   ...value,
                   caseProgress: {
                     ...value.caseProgress,
                     nlrc: selected,
-                    ...(selected === "Others" ? {} : { nlrcSpecification: "" }),
+                    ...(selected === "Others" || selected === "Not Settled" ? {} : { nlrcSpecification: "" }),
                     ...(shouldResetCa ? { ca: "", caSpecification: "" } : {}),
                   },
                   ...(shouldResetCa
@@ -582,6 +634,9 @@ const {
                         },
                       }
                     : {}),
+                  ...(shouldResetCategory
+                    ? { totalPaid: { ...value.totalPaid, category: "" } }
+                    : {}),
                 });
               }}
             >
@@ -594,8 +649,9 @@ const {
             </select>
           </Field>
         </div>
+        )}
 
-        {value.caseProgress.nlrc === "Others" && (
+        {nlrcVisible && (value.caseProgress.nlrc === "Others" || value.caseProgress.nlrc === "Not Settled") && (
           <fieldset disabled={restrictNlrcProgressEditing} className="contents">
           <div className="mt-3 grid gap-4 sm:grid-cols-3">
             <Field label="Specify NLRC Progress">
@@ -609,7 +665,6 @@ const {
           </div>
           </fieldset>
         )}
-        </fieldset>
       </div>
 
       <div>
@@ -634,7 +689,7 @@ const {
             CA details are saved and locked. Update CA Progress only, then save to continue the case workflow.
           </p>
         )}
-        <fieldset disabled={!caEnabled || (restrictLaProgressOnly && !canProceedPastLa) || (restrictNlrcProgressOnly && !canProceedPastNlrc)} className={!caEnabled || (restrictLaProgressOnly && !canProceedPastLa) || (restrictNlrcProgressOnly && !canProceedPastNlrc) ? "opacity-50" : ""}>
+        {caVisible && (
         <fieldset disabled={restrictCaDetailsEditing} className="contents">
         <div className="grid gap-4 sm:grid-cols-4">
           <Field label="Date">
@@ -690,7 +745,9 @@ const {
           </div>
         )}
         </fieldset>
+        )}
 
+        {caVisible && (
         <div className="mt-3">
           <Field label="CA Progress">
             <select
@@ -712,12 +769,16 @@ const {
                   !!value.caseProgress.scSpecification;
                 const shouldResetSc =
                   scHasData && selected !== "Not Settled" && selected !== "Others";
+                // Clear Category if CA Progress moves to "Not Settled" or
+                // "Others".
+                const shouldResetCategory =
+                  selected === "Not Settled" || selected === "Others";
                 onChange({
                   ...value,
                   caseProgress: {
                     ...value.caseProgress,
                     ca: selected,
-                    ...(selected === "Others" ? {} : { caSpecification: "" }),
+                    ...(selected === "Others" || selected === "Not Settled" ? {} : { caSpecification: "" }),
                     ...(shouldResetSc ? { sc: "", scSpecification: "" } : {}),
                   },
                   ...(shouldResetSc
@@ -732,6 +793,9 @@ const {
                         },
                       }
                     : {}),
+                  ...(shouldResetCategory
+                    ? { totalPaid: { ...value.totalPaid, category: "" } }
+                    : {}),
                 });
               }}
             >
@@ -744,8 +808,9 @@ const {
             </select>
           </Field>
         </div>
+        )}
 
-        {value.caseProgress.ca === "Others" && (
+        {caVisible && (value.caseProgress.ca === "Others" || value.caseProgress.ca === "Not Settled") && (
           <fieldset disabled={restrictCaProgressEditing} className="contents">
           <div className="mt-3 grid gap-4 sm:grid-cols-3">
             <Field label="Specify CA Progress">
@@ -759,7 +824,6 @@ const {
           </div>
           </fieldset>
         )}
-        </fieldset>
       </div>
 
       <div>
@@ -779,7 +843,8 @@ const {
             CA Progress must be "Not Settled" or "Others" to unlock SC. The case is considered resolved if settled at CA.
           </p>
         )}
-        <fieldset disabled={!scEnabled || (restrictLaProgressOnly && !canProceedPastLa) || (restrictNlrcProgressOnly && !canProceedPastNlrc) || (restrictCaProgressOnly && !canProceedPastCa)} className={!scEnabled || (restrictLaProgressOnly && !canProceedPastLa) || (restrictNlrcProgressOnly && !canProceedPastNlrc) || (restrictCaProgressOnly && !canProceedPastCa) ? "opacity-50" : ""}>
+        {scVisible && (
+        <>
         <div className="grid gap-4 sm:grid-cols-4">
           <Field label="Date">
             <input type="date" className={inputCls} value={value.sc.date} onChange={(e) => setSc("date", e.target.value)} />
@@ -839,7 +904,18 @@ const {
             <select
               className={inputCls}
               value={value.caseProgress.sc}
-              onChange={(e) => setProgress("sc", e.target.value as StageProgress)}
+              onChange={(e) => {
+                const selected = e.target.value as StageProgress;
+                // Clear Category if SC Progress moves to "Not Settled" or
+                // "Others" — SC is the final stage, so this is the last
+                // point at which a settled-based category can be cleared.
+                const shouldResetCategory =
+                  selected === "Not Settled" || selected === "Others";
+                setProgress("sc", selected);
+                if (shouldResetCategory) {
+                  setTotalPaidCategory("");
+                }
+              }}
             >
               <option value="">Select Progress</option>
               {PROGRESS_OPTIONS.filter((p): p is StageProgress => p !== "All").map((p) => (
@@ -851,7 +927,7 @@ const {
           </Field>
         </div>
 
-        {value.caseProgress.sc === "Others" && (
+        {(value.caseProgress.sc === "Others" || value.caseProgress.sc === "Not Settled") && (
           <div className="mt-3 grid gap-4 sm:grid-cols-3">
             <Field label="Specify SC Progress">
               <input
@@ -863,7 +939,8 @@ const {
             </Field>
           </div>
         )}
-        </fieldset>
+        </>
+        )}
       <div>
         <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-emerald-600">
           Total Judgement Reward
@@ -879,7 +956,7 @@ const {
             <select
               className={inputCls}
               value={value.totalPaid.category}
-              disabled={restrictLaDetailsEditing}
+              disabled={!anyStageSettled}
               onChange={(e) => setTotalPaidCategory(e.target.value as TotalPaidCategory | "")}
             >
               <option value="">Select Category</option>

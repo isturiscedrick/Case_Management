@@ -143,6 +143,7 @@ export default function CasesPage() {
   };
 
   const openEdit = (item: CaseItem) => {
+    if (item.totalPaid?.category) return;
     const gates = getStageGates(item);
     const laProgressIsPending = gates.laFilled && item.caseProgress.la === "";
     const nlrcProgressIsPending = gates.nlrcFilled && item.caseProgress.nlrc === "";
@@ -593,9 +594,15 @@ export default function CasesPage() {
                         <Eye size={13} />
                       </button>
                       <button
-                        aria-label="Update case"
+                        aria-label={item.totalPaid?.category ? "Case resolved — updates locked" : "Update case"}
                         onClick={() => openEdit(item)}
-                        className="rounded-md border border-slate-200 p-1.5 text-slate-500 transition hover:border-slate-300 hover:bg-white hover:text-slate-900"
+                        disabled={!!item.totalPaid?.category}
+                        title={item.totalPaid?.category ? "This case is resolved and can no longer be updated." : undefined}
+                        className={`rounded-md border p-1.5 transition ${
+                          item.totalPaid?.category
+                            ? "cursor-not-allowed border-slate-100 text-slate-300"
+                            : "border-slate-200 text-slate-500 hover:border-slate-300 hover:bg-white hover:text-slate-900"
+                        }`}
                       >
                         <RefreshCw size={13} />
                       </button>
