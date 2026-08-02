@@ -1,117 +1,115 @@
 # Case Management Database Diagram
 
-This diagram is based on your schema draft and keeps the system organized around cases, decisions, reference data, authentication, and audit logging.
+This is a solid base ERD for the system. It treats users, companies, and complainants as API-fed reference data coming from your supervisor's service, while keeping the local database focused on cases, stage decisions, joins, and audit history.
 
-```dbml
-Enum decision_level {
-  labor_arbiter
-  national_labor_relations_commission
-  court_of_appeals
-  supreme_court
-}
+```mermaid
+erDiagram
+  COMPANIES_REFERENCE ||--o{ EMPLOYEES_REFERENCE : contains
+  COMPANIES_REFERENCE ||--o{ CASES : linked_to
+  EMPLOYEES_REFERENCE ||--o{ CASES : assigned_to
+  CAUSE_OF_ACTIONS ||--o{ CASES : classifies
+  USERS ||--o{ CASES : creates
+  CASES ||--o{ CASE_COMPLAINANTS : has
+  COMPLAINANTS ||--o{ CASE_COMPLAINANTS : listed_in
+  CASES ||--o{ DECISIONS : has
+  USERS ||--o{ AUDIT_LOGS : performs
 
-Enum case_status {
-  FILED
-  PENDING
-  UNDER_REVIEW
-  DECIDED
-  APPEALED
-  CLOSED
-  DISMISSED
-}
-
-Table employees_reference {
-  employee_id bigint [pk, increment]
-  employee_name varchar(150)
-  company_id bigint
-  company_name varchar
-
-  indexes {
-    company_id
+  COMPANIES_REFERENCE {
+    bigint company_id PK
+    varchar company_name
+    timestamp created_at
+    varchar remarks
   }
-}
 
-Table cause_of_actions {
-  cause_of_action_id bigint [pk, increment]
-  cause_of_action varchar
-  created_at timestamp
-  remarks varchar
-}
-
-Table users {
-  user_id bigint [pk, increment]
-  username varchar(100) [unique]
-}
-
-Table cases {
-  case_id bigint [pk, increment]
-  employee_id bigint [not null]
-  employee_name varchar
-  company_id bigint
-  company_name varchar
-  current_status case_status
-  last_status_update date
-  case_title varchar(255)
-  case_number varchar(100) [unique]
-  complainants_name varchar [not null]
-  venue varchar(150)
-  cause_of_action_id bigint
-  created_by varchar
-  created_at timestamp
-  updated_at timestamp
-
-  indexes {
-    employee_id
-    company_id
-    cause_of_action_id
-    created_by
+  EMPLOYEES_REFERENCE {
+    bigint employee_id PK
+    varchar employee_name
+    bigint company_id FK
+    varchar company_name
   }
-}
 
-Table decisions {
-  decision_id bigint [pk, increment]
-  case_id bigint [not null]
-  level decision_level [not null]
-  decision_text varchar
-  judgement_award decimal(15,2)
-  category varchar
-  created_at timestamp
-  remarks varchar
-
-  indexes {
-    case_id
+  USERS {
+    bigint user_id PK
+    varchar username UK
   }
-}
 
-Table audit_logs {
-  log_id bigint [pk, increment]
-  user_id bigint
-  username varchar
-  action varchar(100)
-  target_table varchar(100)
-  target_id bigint
-  created_at timestamp
-
-  indexes {
-    user_id
-    (target_table, target_id)
+  COMPLAINANTS {
+    bigint complainant_id PK
+    varchar complainant_name
+    timestamp created_at
   }
-}
 
-Ref: cases.cause_of_action_id > cause_of_actions.cause_of_action_id
-Ref: cases.employee_id > employees_reference.employee_id
-Ref: cases.created_by > users.username
-Ref: decisions.case_id > cases.case_id
-Ref: audit_logs.user_id > users.user_id
+  CAUSE_OF_ACTIONS {
+    bigint cause_of_action_id PK
+    varchar cause_of_action
+    timestamp created_at
+    varchar remarks
+  }
+
+  CASES {
+    bigint case_id PK
+    bigint employee_id FK
+    varchar employee_name
+    bigint company_id FK
+    varchar company_name
+    case_status current_status
+    date last_status_update
+    varchar case_title
+    varchar case_number UK
+    varchar venue
+    bigint cause_of_action_id FK
+    bigint created_by_user_id FK
+    varchar created_by_username
+    timestamp created_at
+    timestamp updated_at
+  }
+
+  CASE_COMPLAINANTS {
+    bigint case_id FK
+    bigint complainant_id FK
+  }
+
+  DECISIONS {
+    bigint decision_id PK
+    bigint case_id FK
+    decision_level level
+    stage_progress progress
+    varchar progress_specification
+    case_status stage_status
+    varchar decision_text
+    decimal judgement_award
+    varchar category
+    varchar remarks
+    timestamp created_at
+  }
+
+  AUDIT_LOGS {
+    bigint log_id PK
+    bigint user_id FK
+    varchar username
+    varchar action
+    varchar target_table
+    bigint target_id
+    timestamp created_at
+  }
 ```
 
-## Relationship Notes
+## Enum Sets
 
-- `cases.employee_name`, `cases.company_name`, and `audit_logs.username` are historical snapshots.
-- `employees_reference.company_name` is also a snapshot and is not enforced as a foreign key.
-- `decisions.level` separates outcomes by tribunal level: LA, NLRC, CA, and SC.
-- `case_status` is the controlled workflow for the case lifecycle.
+- `decision_level`: `labor_arbiter`, `national_labor_relations_commission`, `court_of_appeals`, `supreme_court`
+- `case_status`: `FILED`, `PENDING`, `UNDER_REVIEW`, `DECIDED`, `APPEALED`, `CLOSED`, `DISMISSED`
+- `stage_progress`: `Settled`, `Not Settled`, `Others`
 
-## Suggested Next Step
+## Design Notes
 
-If you want, I can turn this into a rendered Mermaid ER diagram or a cleaner visual diagram page in the workspace.
+- `companies_reference`, `users`, and `complainants` are API-fed data, not local manual master tables.
+- `employee_name`, `company_name`, `created_by_username`, and `audit_logs.username` are intentional snapshots for history.
+- `case_complainants` supports one case with multiple complainants.
+- `decisions` stores one row per case per tribunal level, which keeps LA, NLRC, CA, and SC history in one place.
+- If you later want stronger normalization, `cases.employee_name` and `cases.company_name` can be treated strictly as reporting snapshots while the FK IDs remain the source of truth.
+
+## Recommended Interpretation
+
+- The API is the source of reference identity for users, companies, and complainants.
+- The database is the source of truth for case history, decisions, and audit activity.
+- The diagram is intentionally practical, so it matches your current app structure without pretending the backend already has a full production schema.
