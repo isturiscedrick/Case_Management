@@ -1,6 +1,6 @@
-"use client";
+﻿"use client";
 
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import {
   Plus,
   Search,
@@ -23,7 +23,6 @@ import { getCaseDraftErrors, getStageGates } from "@/lib/caseValidation";
 
 import { StatusBadge } from "@/components/cases/StatusBadge";
 import { SummaryCard } from "@/components/cases/SummaryCard";
-import { CaseProgressStepper } from "@/components/cases/CaseProgressStepper";
 import { CaseForm } from "@/components/cases/CaseForm";
 import { Modal } from "@/components/cases/Modal";
 import { ConfirmDialog } from "@/components/cases/ConfirmDialog";
@@ -56,13 +55,20 @@ function isSenaOnlyCase(item: CaseItem) {
   );
 }
 
+function formatProgress(value: string, specification?: string) {
+  if ((value === "Others" || value === "Not Settled") && specification) {
+    return `${value} (${specification})`;
+  }
+
+  return value || "-";
+}
+
 export default function CasesPage() {
   const [cases, setCases] = useState<CaseItem[]>(initialCases);
   const [companies] = useState<string[]>(initialCompanies);
 
   const [statusFilter, setStatusFilter] = useState<"All" | CaseStatus>("All");
   const [companyFilter, setCompanyFilter] = useState<string>("All");
-  const [venueFilter, setVenueFilter] = useState<string>("All");
   const [progressFilter, setProgressFilter] = useState<"All" | StageProgress>("All");
   const [search, setSearch] = useState("");
   const [showMoreFilters, setShowMoreFilters] = useState(false);
@@ -90,16 +96,11 @@ export default function CasesPage() {
   const [confirmArchiveItem, setConfirmArchiveItem] = useState<CaseItem | null>(null);
 
   const companyOptions = ["All", ...companies];
-  const venueOptions = useMemo(
-    () => ["All", ...Array.from(new Set(cases.map((c) => c.venue).filter(Boolean)))],
-    [cases]
-  );
 
   const filteredCases = cases.filter((item) => {
     const matchesArchived = showArchived ? item.archived : !item.archived;
     const matchesStatus = statusFilter === "All" || item.status === statusFilter;
     const matchesCompany = companyFilter === "All" || item.company === companyFilter;
-    const matchesVenue = venueFilter === "All" || item.venue === venueFilter;
     const matchesProgress =
       progressFilter === "All" || Object.values(item.caseProgress).some((stage) => stage === progressFilter);
 
@@ -110,13 +111,12 @@ export default function CasesPage() {
       item.complainants.some((name) => name.toLowerCase().includes(keyword)) ||
       item.cause.toLowerCase().includes(keyword);
 
-    return matchesArchived && matchesStatus && matchesCompany && matchesVenue && matchesProgress && matchesSearch;
+    return matchesArchived && matchesStatus && matchesCompany && matchesProgress && matchesSearch;
   });
 
   const resetFilters = () => {
     setStatusFilter("All");
     setCompanyFilter("All");
-    setVenueFilter("All");
     setProgressFilter("All");
     setSearch("");
   };
@@ -254,10 +254,11 @@ export default function CasesPage() {
   };
 
   const activeFilterCount =
-    [statusFilter, companyFilter, venueFilter, progressFilter].filter((f) => f !== "All").length + (search ? 1 : 0);
+    [statusFilter, companyFilter, progressFilter].filter((f) => f !== "All").length + (search ? 1 : 0);
 
   return (
-    <div className="h-full min-w-0 space-y-4 overflow-y-auto bg-[#F7F5F0] p-4">      {/* HEADER */}
+    <div className="flex h-full min-w-0 flex-col gap-4 overflow-hidden bg-[#F7F5F0] p-4">
+      {/* HEADER */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="font-serif text-lg font-medium tracking-tight text-[#0B1D3A] md:text-xl">Case Management</h1>
@@ -347,18 +348,6 @@ export default function CasesPage() {
         {showMoreFilters && (
           <div className="mt-2 flex flex-col gap-2 border-t border-slate-100 pt-2 sm:flex-row">
             <select
-              value={venueFilter}
-              onChange={(e) => setVenueFilter(e.target.value)}
-              className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs text-slate-700 outline-none transition focus:border-slate-400 focus:bg-white sm:w-48"
-            >
-              {venueOptions.map((venue) => (
-                <option key={venue} value={venue}>
-                  {venue === "All" ? "All Venue" : venue}
-                </option>
-              ))}
-            </select>
-
-            <select
               value={progressFilter}
               onChange={(e) => setProgressFilter(e.target.value as "All" | StageProgress)}
               className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs text-slate-700 outline-none transition focus:border-slate-400 focus:bg-white sm:w-48"
@@ -389,8 +378,8 @@ export default function CasesPage() {
       </div>
 
       {/* TABLE */}
-      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-        <div className="max-h-[70vh] overflow-auto">
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+        <div className="min-h-0 flex-1 overflow-auto">
           <table className="min-w-full border-separate border-spacing-0 text-[11px] table-fixed">
             <colgroup>
               <col className="w-32" />
@@ -454,16 +443,16 @@ export default function CasesPage() {
                 <th rowSpan={2} className="sticky top-0 z-20 border-b border-r border-slate-200 bg-slate-50 p-2 text-left">
                   Remarks
                 </th>
-                <th colSpan={4} className="sticky top-0 z-20 h-9 border-b border-slate-200 bg-sky-50/60 p-1.5 text-center text-sky-700">
+                <th colSpan={5} className="sticky top-0 z-20 h-9 border-b border-slate-200 bg-sky-50/60 p-1.5 text-center text-sky-700">
                   Labor Arbiter
                 </th>
-                <th colSpan={4} className="sticky top-0 z-20 h-9 border-b border-slate-200 bg-violet-50/60 p-1.5 text-center text-violet-700">
+                <th colSpan={5} className="sticky top-0 z-20 h-9 border-b border-slate-200 bg-violet-50/60 p-1.5 text-center text-violet-700">
                   National Labor Relations Commission
                 </th>
-                <th colSpan={4} className="sticky top-0 z-20 h-9 border-b border-slate-200 bg-fuchsia-50/60 p-1.5 text-center text-fuchsia-700">
+                <th colSpan={5} className="sticky top-0 z-20 h-9 border-b border-slate-200 bg-fuchsia-50/60 p-1.5 text-center text-fuchsia-700">
                   Court of Appeals
                 </th>
-                <th colSpan={4} className="sticky top-0 z-20 h-9 border-b border-r border-slate-200 bg-rose-50/60 p-1.5 text-center text-rose-700">
+                <th colSpan={5} className="sticky top-0 z-20 h-9 border-b border-r border-slate-200 bg-rose-50/60 p-1.5 text-center text-rose-700">
                   Supreme Court
                 </th>
                 <th
@@ -480,9 +469,6 @@ export default function CasesPage() {
   Category
 </th>
                 <th rowSpan={2} className="sticky top-0 z-20 border-b border-slate-200 bg-slate-50 p-2 text-left">
-                  Case Progress
-                </th>
-                <th rowSpan={2} className="sticky top-0 z-20 border-b border-slate-200 bg-slate-50 p-2 text-left">
                   Actions
                 </th>
               </tr>
@@ -491,21 +477,25 @@ export default function CasesPage() {
                 <th className="sticky top-9 z-20 border-b border-slate-200 bg-sky-50/60 p-1.5 text-center">Status</th>
                 <th className="sticky top-9 z-20 border-b border-slate-200 bg-sky-50/60 p-1.5 text-center">Judgement Reward</th>
                 <th className="sticky top-9 z-20 border-b border-slate-200 bg-sky-50/60 p-1.5 text-center">Remarks</th>
+                <th className="sticky top-9 z-20 border-b border-slate-200 bg-sky-50/60 p-1.5 text-center">Progress</th>
 
                 <th className="sticky top-9 z-20 border-b border-slate-200 bg-violet-50/60 p-1.5 text-center">Date</th>
                 <th className="sticky top-9 z-20 border-b border-slate-200 bg-violet-50/60 p-1.5 text-center">Status</th>
                 <th className="sticky top-9 z-20 border-b border-slate-200 bg-violet-50/60 p-1.5 text-center">Judgement Reward</th>
                 <th className="sticky top-9 z-20 border-b border-slate-200 bg-violet-50/60 p-1.5 text-center">Remarks</th>
+                <th className="sticky top-9 z-20 border-b border-slate-200 bg-violet-50/60 p-1.5 text-center">Progress</th>
 
                 <th className="sticky top-9 z-20 border-b border-slate-200 bg-fuchsia-50/60 p-1.5 text-center">Date</th>
                 <th className="sticky top-9 z-20 border-b border-slate-200 bg-fuchsia-50/60 p-1.5 text-center">Status</th>
                 <th className="sticky top-9 z-20 border-b border-slate-200 bg-fuchsia-50/60 p-1.5 text-center">Judgement Award</th>
                 <th className="sticky top-9 z-20 border-b border-slate-200 bg-fuchsia-50/60 p-1.5 text-center">Remarks</th>
+                <th className="sticky top-9 z-20 border-b border-slate-200 bg-fuchsia-50/60 p-1.5 text-center">Progress</th>
 
                 <th className="sticky top-9 z-20 border-b border-slate-200 bg-rose-50/60 p-1.5 text-center">Date</th>
                 <th className="sticky top-9 z-20 border-b border-slate-200 bg-rose-50/60 p-1.5 text-center">Status</th>
                 <th className="sticky top-9 z-20 border-b border-slate-200 bg-rose-50/60 p-1.5 text-center">Judgement Award</th>
-                <th className="sticky top-9 z-20 border-b border-r border-slate-200 bg-rose-50/60 p-1.5 text-center">Remarks</th>
+                <th className="sticky top-9 z-20 border-b border-slate-200 bg-rose-50/60 p-1.5 text-center">Remarks</th>
+                <th className="sticky top-9 z-20 border-b border-slate-200 bg-rose-50/60 p-1.5 text-center">Progress</th>
               </tr>
             </thead>
 
@@ -542,6 +532,9 @@ export default function CasesPage() {
                       <div className="text-[10px] text-slate-500">({item.la.remarksSpecification})</div>
                     )}
                   </td>
+                  <td className="truncate bg-sky-50/30 p-2 text-slate-600">
+                    {formatProgress(item.caseProgress.la, item.caseProgress.laSpecification)}
+                  </td>
 
                   <td className="bg-violet-50/30 p-2 text-slate-600">{formatDate(item.nlrc.date)}</td>
                   <td className="truncate bg-violet-50/30 p-2 text-slate-600">{item.nlrc.status}</td>
@@ -551,6 +544,9 @@ export default function CasesPage() {
                     {item.nlrc.remarks === "Other" && item.nlrc.remarksSpecification && (
                       <div className="text-[10px] text-slate-500">({item.nlrc.remarksSpecification})</div>
                     )}
+                  </td>
+                  <td className="truncate bg-violet-50/30 p-2 text-slate-600">
+                    {formatProgress(item.caseProgress.nlrc, item.caseProgress.nlrcSpecification)}
                   </td>
 
                   <td className="bg-fuchsia-50/30 p-2 text-slate-600">{formatDate(item.ca.date)}</td>
@@ -562,15 +558,21 @@ export default function CasesPage() {
                       <div className="text-[10px] text-slate-500">({item.ca.remarksSpecification})</div>
                     )}
                   </td>
+                  <td className="truncate bg-fuchsia-50/30 p-2 text-slate-600">
+                    {formatProgress(item.caseProgress.ca, item.caseProgress.caSpecification)}
+                  </td>
 
                   <td className="bg-rose-50/30 p-2 text-slate-600">{formatDate(item.sc.date)}</td>
                   <td className="truncate bg-rose-50/30 p-2 text-slate-600">{item.sc.status}</td>
                   <td className="truncate bg-rose-50/30 p-2 font-medium text-slate-700">{formatCurrency(item.sc.judgementReward)}</td>
-                  <td className="truncate border-r border-slate-100 bg-rose-50/30 p-2 text-slate-600">
+                  <td className="truncate bg-rose-50/30 p-2 text-slate-600">
                     {item.sc.remarks}
                     {item.sc.remarks === "Other" && item.sc.remarksSpecification && (
                       <div className="text-[10px] text-slate-500">({item.sc.remarksSpecification})</div>
                     )}
+                  </td>
+                  <td className="truncate bg-rose-50/30 p-2 text-slate-600">
+                    {formatProgress(item.caseProgress.sc, item.caseProgress.scSpecification)}
                   </td>
 
                   <td className="bg-emerald-50/30 p-2 font-medium text-slate-700">
@@ -581,9 +583,6 @@ export default function CasesPage() {
   {item.totalPaid?.category || "-"}
 </td>
 
-                  <td className="p-2">
-                    <CaseProgressStepper progress={item.caseProgress} />
-                  </td>
                   <td className="p-2">
                     <div className="flex gap-1">
                       <button

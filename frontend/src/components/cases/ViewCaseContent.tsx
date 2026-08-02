@@ -4,6 +4,14 @@ import { DetailRow } from "./DetailRow";
 import { StatusBadge } from "./StatusBadge";
 import { CaseProgressStepper } from "./CaseProgressStepper";
 
+function formatProgress(value: string, specification?: string) {
+  if ((value === "Others" || value === "Not Settled") && specification) {
+    return `${value} (${specification})`;
+  }
+
+  return value || "-";
+}
+
 export function ViewCaseContent({ item }: { item: CaseItem }) {
   const totalJudgementReward = getTotalJudgementReward(item);
 
@@ -39,10 +47,11 @@ export function ViewCaseContent({ item }: { item: CaseItem }) {
 
       <div>
         <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-sky-600">Labor Arbiter (LA)</h3>
-        <div className="grid gap-x-6 sm:grid-cols-4">
+        <div className="grid gap-x-6 sm:grid-cols-5">
           <DetailRow label="Date" value={formatDate(item.la.date)} />
           <DetailRow label="Status" value={item.la.status} />
           <DetailRow label="Judgement Reward" value={formatCurrency(item.la.judgementReward)} />
+          <DetailRow label="Progress" value={formatProgress(item.caseProgress.la, item.caseProgress.laSpecification)} />
           <DetailRow
             label="Remarks"
             value={
@@ -56,10 +65,11 @@ export function ViewCaseContent({ item }: { item: CaseItem }) {
 
       <div>
         <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-violet-600">NLRC</h3>
-        <div className="grid gap-x-6 sm:grid-cols-4">
+        <div className="grid gap-x-6 sm:grid-cols-5">
           <DetailRow label="Date" value={formatDate(item.nlrc.date)} />
           <DetailRow label="Status" value={item.nlrc.status} />
           <DetailRow label="Judgement Award" value={formatCurrency(item.nlrc.judgementReward)} />
+          <DetailRow label="Progress" value={formatProgress(item.caseProgress.nlrc, item.caseProgress.nlrcSpecification)} />
           <DetailRow
             label="Remarks"
             value={
@@ -73,10 +83,11 @@ export function ViewCaseContent({ item }: { item: CaseItem }) {
 
       <div>
         <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-fuchsia-600">Court of Appeals (CA)</h3>
-        <div className="grid gap-x-6 sm:grid-cols-4">
+        <div className="grid gap-x-6 sm:grid-cols-5">
           <DetailRow label="Date" value={formatDate(item.ca.date)} />
           <DetailRow label="Status" value={item.ca.status} />
           <DetailRow label="Judgement Award" value={formatCurrency(item.ca.judgementReward)} />
+          <DetailRow label="Progress" value={formatProgress(item.caseProgress.ca, item.caseProgress.caSpecification)} />
           <DetailRow
             label="Remarks"
             value={
@@ -90,10 +101,11 @@ export function ViewCaseContent({ item }: { item: CaseItem }) {
 
       <div>
         <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-rose-600">Supreme Court (SC)</h3>
-        <div className="grid gap-x-6 sm:grid-cols-4">
+        <div className="grid gap-x-6 sm:grid-cols-5">
           <DetailRow label="Date" value={formatDate(item.sc.date)} />
           <DetailRow label="Status" value={item.sc.status} />
           <DetailRow label="Judgement Award" value={formatCurrency(item.sc.judgementReward)} />
+          <DetailRow label="Progress" value={formatProgress(item.caseProgress.sc, item.caseProgress.scSpecification)} />
           <DetailRow
             label="Remarks"
             value={

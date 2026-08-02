@@ -65,7 +65,7 @@ export const STAGE_STATUS_OPTIONS = [
   "Affirmed",
 ] as const;
 
-export const TABLE_COLUMN_COUNT = 28;
+export const TABLE_COLUMN_COUNT = 33;
 
 // Placeholder for the logged-in user. Wire this to your auth store
 // (e.g. useAuthStore) once available so "Created By" reflects the real user.
@@ -73,7 +73,7 @@ export const CURRENT_USER = "Current User";
 
 export const EMPTY_CASE: CaseDraft = {
   company: "",
-  status: "Filed",
+  status: "Pending",
   date: "",
   caseTitle: "",
   caseNo: "",

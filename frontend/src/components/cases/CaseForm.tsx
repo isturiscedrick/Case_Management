@@ -845,7 +845,7 @@ const {
         )}
         {scVisible && (
         <>
-        <div className="grid gap-4 sm:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-5">
           <Field label="Date">
             <input type="date" className={inputCls} value={value.sc.date} onChange={(e) => setSc("date", e.target.value)} />
           </Field>
@@ -884,23 +884,7 @@ const {
               ))}
             </select>
           </Field>
-        </div>
-
-        {value.sc.remarks === "Other" && (
-          <div className="mt-3 grid gap-4 sm:grid-cols-3">
-            <Field label="Specify Remarks">
-              <input
-                className={inputCls}
-                placeholder="Enter remarks"
-                value={value.sc.remarksSpecification ?? ""}
-                onChange={(e) => setSc("remarksSpecification", e.target.value)}
-              />
-            </Field>
-          </div>
-        )}
-
-        <div className="mt-3">
-          <Field label="SC Progress">
+          <Field label="Progress">
             <select
               className={inputCls}
               value={value.caseProgress.sc}
@@ -926,6 +910,19 @@ const {
             </select>
           </Field>
         </div>
+
+        {value.sc.remarks === "Other" && (
+          <div className="mt-3 grid gap-4 sm:grid-cols-3">
+            <Field label="Specify Remarks">
+              <input
+                className={inputCls}
+                placeholder="Enter remarks"
+                value={value.sc.remarksSpecification ?? ""}
+                onChange={(e) => setSc("remarksSpecification", e.target.value)}
+              />
+            </Field>
+          </div>
+        )}
 
         {(value.caseProgress.sc === "Others" || value.caseProgress.sc === "Not Settled") && (
           <div className="mt-3 grid gap-4 sm:grid-cols-3">
