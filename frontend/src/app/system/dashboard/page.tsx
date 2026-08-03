@@ -119,7 +119,7 @@ export default function CasesPage() {
         item.company.toLowerCase().includes(keyword) ||
         item.caseNo.toLowerCase().includes(keyword) ||
         item.complainants.some((name) => name.toLowerCase().includes(keyword)) ||
-        item.cause.toLowerCase().includes(keyword);
+        item.cause.some((c) => c.toLowerCase().includes(keyword));
 
       return (
         matchesArchived &&
@@ -572,7 +572,7 @@ export default function CasesPage() {
                     )}
                   </td>
                   <td className="truncate p-2 text-slate-600">
-                    {item.cause}
+                    {item.cause.join(", ")}
                     {item.causeSpecification && <div className="text-[10px] text-slate-500">({item.causeSpecification})</div>}
                   </td>
                   <td className="p-2 text-slate-600">{formatDate(item.filingDate)}</td>

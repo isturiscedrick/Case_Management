@@ -111,7 +111,7 @@ export const EMPTY_CASE: CaseDraft = {
   venue: "",
   handlingPersonnel: "",
   handlingPersonnelSpecification: "",
-  cause: "",
+  cause: [],
   causeSpecification: "",
   filingDate: "",
   remarks: "",

@@ -261,6 +261,7 @@ const {
           {value.handlingPersonnel === "Others" && (
             <Field label="Specify Handling Personnel *">
               <input
+                required
                 className={inputCls}
                 placeholder="Enter handling personnel"
                 value={value.handlingPersonnelSpecification ?? ""}
@@ -269,30 +270,34 @@ const {
             </Field>
           )}
           <Field label="Cause of Action">
-            <select
-              className={inputCls}
-              value={value.cause}
-              onChange={(e) => {
-                const selected = e.target.value;
-                onChange({
-                  ...value,
-                  cause: selected,
-                  causeSpecification: selected === "Others" ? value.causeSpecification : "",
-                });
-              }}
-            >
-              <option value="">Select Cause of Action</option>
+            <div className="flex flex-wrap gap-x-4 gap-y-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
               {CAUSE_OPTIONS.map((cause) => (
-                <option key={cause} value={cause}>
+                <label key={cause} className="inline-flex items-center gap-1.5 text-xs text-slate-700">
+                  <input
+                    type="checkbox"
+                    checked={value.cause.includes(cause)}
+                    onChange={(e) => {
+                      const checked = e.target.checked;
+                      const nextCauses = checked
+                        ? [...value.cause, cause]
+                        : value.cause.filter((c) => c !== cause);
+                      onChange({
+                        ...value,
+                        cause: nextCauses,
+                        causeSpecification: nextCauses.includes("Others") ? value.causeSpecification : "",
+                      });
+                    }}
+                  />
                   {cause}
-                </option>
+                </label>
               ))}
-            </select>
+            </div>
           </Field>
 
-          {value.cause === "Others" && (
+          {value.cause.includes("Others") && (
             <Field label="Specify Cause of Action *">
               <input
+                required
                 className={inputCls}
                 placeholder="Enter cause of action"
                 value={value.causeSpecification ?? ""}
@@ -378,6 +383,7 @@ const {
           {(value.remarks === "Others" || value.remarks === "Not Settled") && (
             <Field label="Specify *">
               <input
+                required
                 className={inputCls}
                 placeholder="Enter remarks"
                 value={value.remarkSpecification ?? ""}

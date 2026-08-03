@@ -29,8 +29,8 @@ export function getStageGates(draft: CaseDraft) {
     draft.venue.trim() !== "" &&
     (draft.handlingPersonnel ?? "").trim() !== "" &&
     (draft.handlingPersonnel !== "Others" || (draft.handlingPersonnelSpecification ?? "").trim() !== "") &&
-    draft.cause.trim() !== "" &&
-    (draft.cause !== "Others" || (draft.causeSpecification ?? "").trim() !== "") &&
+    draft.cause.length > 0 &&
+    (!draft.cause.includes("Others") || (draft.causeSpecification ?? "").trim() !== "") &&
     draft.filingDate.trim() !== "";
 
   // LA is enabled ONLY when Remarks is explicitly "Not Settled" or

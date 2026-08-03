@@ -69,7 +69,8 @@ export interface CaseItem {
   handlingPersonnel?: string;
   handlingPersonnelSpecification?: string;
 
-  cause: string;
+  // CHANGED: cause is now an array to support multiple selections.
+  cause: string[];
   causeSpecification?: string;
   filingDate: string;
   remarks: string;

@@ -23,7 +23,7 @@ const sampleArchivedCases: CaseItem[] = [
     caseNo: "NCR-03-1234-25",
     complainants: ["Juan Dela Cruz", "Maria Santos"],
     venue: "NLRC NCR",
-    cause: "Illegal Dismissal",
+    cause: ["Illegal Dismissal"],
     causeSpecification: "",
     filingDate: "2024-11-02",
     remarks: "Case closed after final judgment.",
@@ -68,7 +68,7 @@ const sampleArchivedCases: CaseItem[] = [
     caseNo: "RAB-IV-08-0456-24",
     complainants: ["Ramon Reyes"],
     venue: "NLRC RAB IV",
-    cause: "Money Claims",
+    cause: ["Money Claims"],
     causeSpecification: "Unpaid overtime and 13th month pay",
     filingDate: "2024-02-14",
     remarks: "Settled amicably before LA decision.",
@@ -107,7 +107,7 @@ const sampleArchivedCases: CaseItem[] = [
     caseNo: "NCR-06-0987-25",
     complainants: ["Liza Fernandez"],
     venue: "NLRC NCR",
-    cause: "Illegal Dismissal",
+    cause: ["Illegal Dismissal"],
     causeSpecification: "",
     filingDate: "2025-03-11",
     remarks: "Archived pending re-filing decision by complainant.",
@@ -158,7 +158,8 @@ export default function ArchivePage() {
         item.company.toLowerCase().includes(keyword) ||
         item.caseNo.toLowerCase().includes(keyword) ||
         item.complainants.some((name) => name.toLowerCase().includes(keyword)) ||
-        item.cause.toLowerCase().includes(keyword);
+        item.cause.some((cause) =>
+        cause.toLowerCase().includes(keyword))
 
       return matchesProgress && matchesSearch;
     });
