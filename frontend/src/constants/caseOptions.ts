@@ -7,6 +7,12 @@ export const PROGRESS_OPTIONS: Array<"All" | StageProgress> = [
   "Others",
 ];
 
+// Status options for the SEnA stage's own Status field specifically.
+// SEnA never reaches "Execution" (that only applies once a judgement is
+// being enforced at a later stage), so it's excluded here while remaining
+// available in STATUS_OPTIONS for filtering/summary purposes.
+export const SENA_STATUS_OPTIONS: CaseStatus[] = ["Filed", "Pending", "Closed"];
+
 export const STATUS_STYLES: Record<CaseStatus, { badge: string; dot: string }> = {
   Filed: {
     badge: "bg-sky-50 text-sky-600 ring-sky-200",
@@ -55,6 +61,15 @@ export const CAUSE_OPTIONS = [
 
 export const REMARK_OPTIONS = ["Settled", "Not Settled", "Others"] as const;
 
+export const HANDLING_PERSONNEL_OPTIONS = [
+  "ATTY. ELFJ",
+  "ATTY. MBSA",
+  "ATTY. GMBL",
+  "PAR. MBE",
+  "SEC. JSJ",
+  "Others",
+] as const;
+
 export const STAGE_REMARKS_OPTIONS = [
   "Appealed by Respondent",
   "Appealed by Complainant",
@@ -75,9 +90,12 @@ export const STAGE_STATUS_OPTIONS = [
   "Acquitted",
   "Dismissed",
   "Affirmed",
+  "Pending",
+  "Closed",
+  "Execution",
 ] as const;
 
-export const TABLE_COLUMN_COUNT = 33;
+export const TABLE_COLUMN_COUNT = 34;
 
 // Placeholder for the logged-in user. Wire this to your auth store
 // (e.g. useAuthStore) once available so "Created By" reflects the real user.
@@ -91,6 +109,8 @@ export const EMPTY_CASE: CaseDraft = {
   caseNo: "",
   complainants: [""],
   venue: "",
+  handlingPersonnel: "",
+  handlingPersonnelSpecification: "",
   cause: "",
   causeSpecification: "",
   filingDate: "",

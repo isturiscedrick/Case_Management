@@ -42,7 +42,7 @@ export default function LoginPage() {
               <Scale className="h-5 w-5 text-[#0B1D3A]" />
             </div>
             <div>
-              <p className="font-serif text-sm font-semibold tracking-tight">Case Management</p>
+              <p className="font-serif text-sm font-semibold tracking-tight">CMI Case Management</p>
               <p className="text-xs text-white/50">Labor Case Monitoring</p>
             </div>
           </div>
@@ -92,7 +92,7 @@ export default function LoginPage() {
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#0B1D3A]">
               <Scale className="h-4 w-4 text-[#B08D57]" />
             </div>
-            <p className="font-serif text-sm font-semibold text-[#0B1D3A]">Case Management</p>
+            <p className="font-serif text-sm font-semibold text-[#0B1D3A]">CMI Case Management</p>
           </div>
 
           <p className="text-xs font-medium uppercase tracking-wide text-[#B08D57]">Welcome back</p>

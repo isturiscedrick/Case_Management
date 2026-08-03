@@ -75,6 +75,10 @@ export default function CasesPage() {
   const [showMoreFilters, setShowMoreFilters] = useState(false);
   const [showArchived] = useState(false);
 
+  // Filing date range filter (filters on item.filingDate, inclusive)
+  const [filingDateStart, setFilingDateStart] = useState<string>("");
+  const [filingDateEnd, setFilingDateEnd] = useState<string>("");
+
   const [modal, setModal] = useState<ModalType>(null);
   const [activeCase, setActiveCase] = useState<CaseItem | null>(null);
   const [draft, setDraft] = useState<CaseDraft>(EMPTY_CASE);
@@ -98,27 +102,43 @@ export default function CasesPage() {
 
   const companyOptions = ["All", ...companies];
 
-  const filteredCases = cases.filter((item) => {
-    const matchesArchived = showArchived ? item.archived : !item.archived;
-    const matchesStatus = statusFilter === "All" || item.status === statusFilter;
-    const matchesCompany = companyFilter === "All" || item.company === companyFilter;
-    const matchesProgress =
-      progressFilter === "All" || Object.values(item.caseProgress).some((stage) => stage === progressFilter);
+  const filteredCases = cases
+    .filter((item) => {
+      const matchesArchived = showArchived ? item.archived : !item.archived;
+      const matchesStatus = statusFilter === "All" || item.status === statusFilter;
+      const matchesCompany = companyFilter === "All" || item.company === companyFilter;
+      const matchesProgress =
+        progressFilter === "All" || Object.values(item.caseProgress).some((stage) => stage === progressFilter);
 
-    const keyword = search.toLowerCase();
-    const matchesSearch =
-      item.company.toLowerCase().includes(keyword) ||
-      item.caseNo.toLowerCase().includes(keyword) ||
-      item.complainants.some((name) => name.toLowerCase().includes(keyword)) ||
-      item.cause.toLowerCase().includes(keyword);
+      const matchesFilingDateRange =
+        (!filingDateStart || item.filingDate >= filingDateStart) &&
+        (!filingDateEnd || item.filingDate <= filingDateEnd);
 
-    return matchesArchived && matchesStatus && matchesCompany && matchesProgress && matchesSearch;
-  });
+      const keyword = search.toLowerCase();
+      const matchesSearch =
+        item.company.toLowerCase().includes(keyword) ||
+        item.caseNo.toLowerCase().includes(keyword) ||
+        item.complainants.some((name) => name.toLowerCase().includes(keyword)) ||
+        item.cause.toLowerCase().includes(keyword);
+
+      return (
+        matchesArchived &&
+        matchesStatus &&
+        matchesCompany &&
+        matchesProgress &&
+        matchesFilingDateRange &&
+        matchesSearch
+      );
+    })
+    // Default order: latest updated first
+    .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
 
   const resetFilters = () => {
     setStatusFilter("All");
     setCompanyFilter("All");
     setProgressFilter("All");
+    setFilingDateStart("");
+    setFilingDateEnd("");
     setSearch("");
   };
 
@@ -255,7 +275,9 @@ export default function CasesPage() {
   };
 
   const activeFilterCount =
-    [statusFilter, companyFilter, progressFilter].filter((f) => f !== "All").length + (search ? 1 : 0);
+    [statusFilter, companyFilter, progressFilter].filter((f) => f !== "All").length +
+    (search ? 1 : 0) +
+    (filingDateStart || filingDateEnd ? 1 : 0);
 
   return (
     <div className="flex h-full min-w-0 flex-col gap-4 overflow-hidden bg-[#F7F5F0] p-4">
@@ -353,7 +375,7 @@ export default function CasesPage() {
         </div>
 
         {showMoreFilters && (
-          <div className="mt-2 flex flex-col gap-2 border-t border-slate-100 pt-2 sm:flex-row">
+          <div className="mt-2 flex flex-col gap-2 border-t border-slate-100 pt-2 sm:flex-row sm:items-center">
             <select
               value={progressFilter}
               onChange={(e) => setProgressFilter(e.target.value as "All" | StageProgress)}
@@ -365,6 +387,25 @@ export default function CasesPage() {
                 </option>
               ))}
             </select>
+
+            <div className="flex items-center gap-1.5">
+              <label className="text-[11px] font-medium text-slate-500">Filing Date</label>
+              <input
+                type="date"
+                value={filingDateStart}
+                onChange={(e) => setFilingDateStart(e.target.value)}
+                max={filingDateEnd || undefined}
+                className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs text-slate-700 outline-none transition focus:border-slate-400 focus:bg-white"
+              />
+              <span className="text-[11px] text-slate-400">to</span>
+              <input
+                type="date"
+                value={filingDateEnd}
+                onChange={(e) => setFilingDateEnd(e.target.value)}
+                min={filingDateStart || undefined}
+                className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs text-slate-700 outline-none transition focus:border-slate-400 focus:bg-white"
+              />
+            </div>
           </div>
         )}
 
@@ -396,6 +437,7 @@ export default function CasesPage() {
               <col className="w-20" />
               <col className="w-24" />
               <col className="w-20" />
+              <col className="w-32" />
               <col className="w-28" />
               <col className="w-16" />
               <col className="w-24" />
@@ -440,6 +482,9 @@ export default function CasesPage() {
                 </th>
                 <th rowSpan={2} className="sticky top-0 z-20 border-b border-slate-200 bg-slate-50 p-2 text-left">
                   Venue
+                </th>
+                <th rowSpan={2} className="sticky top-0 z-20 border-b border-slate-200 bg-slate-50 p-2 text-left">
+                  Handling Personnel
                 </th>
                 <th rowSpan={2} className="sticky top-0 z-20 border-b border-slate-200 bg-slate-50 p-2 text-left">
                   Cause of Action
@@ -520,6 +565,12 @@ export default function CasesPage() {
                   <td className="truncate p-2 font-mono text-[11px] text-slate-500">{item.caseNo}</td>
                   <td className="p-2 text-slate-600">{item.complainants.join(", ")}</td>
                   <td className="truncate p-2 text-slate-600">{item.venue}</td>
+                  <td className="truncate p-2 text-slate-600">
+                    {item.handlingPersonnel}
+                    {item.handlingPersonnel === "Others" && item.handlingPersonnelSpecification && (
+                      <div className="text-[10px] text-slate-500">({item.handlingPersonnelSpecification})</div>
+                    )}
+                  </td>
                   <td className="truncate p-2 text-slate-600">
                     {item.cause}
                     {item.causeSpecification && <div className="text-[10px] text-slate-500">({item.causeSpecification})</div>}

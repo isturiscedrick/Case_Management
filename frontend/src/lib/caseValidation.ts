@@ -27,6 +27,8 @@ export function getStageGates(draft: CaseDraft) {
     draft.caseNo.trim() !== "" &&
     draft.complainants.every((c) => c.trim() !== "") &&
     draft.venue.trim() !== "" &&
+    (draft.handlingPersonnel ?? "").trim() !== "" &&
+    (draft.handlingPersonnel !== "Others" || (draft.handlingPersonnelSpecification ?? "").trim() !== "") &&
     draft.cause.trim() !== "" &&
     (draft.cause !== "Others" || (draft.causeSpecification ?? "").trim() !== "") &&
     draft.filingDate.trim() !== "";
@@ -81,7 +83,7 @@ export function getCaseDraftErrors(draft: CaseDraft): string[] {
 
   if (!gates.senaFilled) {
     errors.push(
-      "Complete all SEnA fields (Company, Status, Case Title, Case No., Complainants, Venue, Cause of Action, Filing Date). Remarks is optional."
+      "Complete all SEnA fields (Company, Status, Case Title, Case No., Complainants, Venue, Handling Personnel, Cause of Action, Filing Date). Remarks is optional."
     );
     // Nothing past SEnA can be required yet, so stop here.
     return errors;
@@ -91,6 +93,16 @@ export function getCaseDraftErrors(draft: CaseDraft): string[] {
     errors.push(
       'SEnA Remarks is "Not Settled" or "Others" — complete all Labor Arbiter (LA) fields (LA Progress is optional).'
     );
+  }
+
+  // Remarks itself stays optional, but once it's set to "Not Settled" or
+  // "Others" its Specify field is required — mirrors the Cause of Action
+  // "Others" requirement above.
+  if (
+    (draft.remarks === "Not Settled" || draft.remarks === "Others") &&
+    (draft.remarkSpecification ?? "").trim() === ""
+  ) {
+    errors.push('Specify Remarks is required when SEnA Remarks is "Not Settled" or "Others".');
   }
 
   if (gates.nlrcEnabled && !gates.nlrcFilled) {

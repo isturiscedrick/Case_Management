@@ -11,11 +11,13 @@ import type {
 } from "@/types/case";
 import {
   STATUS_OPTIONS,
+  SENA_STATUS_OPTIONS,
   PROGRESS_OPTIONS,
   CAUSE_OPTIONS,
   REMARK_OPTIONS,
   STAGE_REMARKS_OPTIONS,
   STAGE_STATUS_OPTIONS,
+  HANDLING_PERSONNEL_OPTIONS,
 } from "@/constants/caseOptions";
 import { Field } from "./Field";
 import { CurrencyField, inputCls } from "./CurrencyField";
@@ -180,7 +182,7 @@ const {
               value={value.status}
               onChange={(e) => setTop("status", e.target.value as CaseStatus)}
             >
-              {STATUS_OPTIONS.filter((s): s is CaseStatus => s !== "All").map((s) => (
+              {SENA_STATUS_OPTIONS.map((s) => (
                 <option key={s} value={s}>
                   {s}
                 </option>
@@ -233,6 +235,39 @@ const {
           <Field label="Venue">
             <input className={inputCls} value={value.venue} onChange={(e) => setTop("venue", e.target.value)} />
           </Field>
+          <Field label="Handling Personnel">
+            <select
+              className={inputCls}
+              value={value.handlingPersonnel ?? ""}
+              onChange={(e) => {
+                const selected = e.target.value;
+                onChange({
+                  ...value,
+                  handlingPersonnel: selected,
+                  handlingPersonnelSpecification:
+                    selected === "Others" ? value.handlingPersonnelSpecification ?? "" : "",
+                });
+              }}
+            >
+              <option value="">Select Handling Personnel</option>
+              {HANDLING_PERSONNEL_OPTIONS.map((person) => (
+                <option key={person} value={person}>
+                  {person}
+                </option>
+              ))}
+            </select>
+          </Field>
+
+          {value.handlingPersonnel === "Others" && (
+            <Field label="Specify Handling Personnel *">
+              <input
+                className={inputCls}
+                placeholder="Enter handling personnel"
+                value={value.handlingPersonnelSpecification ?? ""}
+                onChange={(e) => setTop("handlingPersonnelSpecification", e.target.value)}
+              />
+            </Field>
+          )}
           <Field label="Cause of Action">
             <select
               className={inputCls}
@@ -256,7 +291,7 @@ const {
           </Field>
 
           {value.cause === "Others" && (
-            <Field label="Specify Cause of Action">
+            <Field label="Specify Cause of Action *">
               <input
                 className={inputCls}
                 placeholder="Enter cause of action"
@@ -341,7 +376,7 @@ const {
           </Field>
 
           {(value.remarks === "Others" || value.remarks === "Not Settled") && (
-            <Field label="Specify">
+            <Field label="Specify *">
               <input
                 className={inputCls}
                 placeholder="Enter remarks"

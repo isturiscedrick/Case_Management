@@ -63,6 +63,12 @@ export interface CaseItem {
   caseNo: string;
   complainants: string[];
   venue: string;
+
+  // NEW FIELD — handling personnel selected in SEnA, next to Venue.
+  // Optional so existing data/mocks without this field still type-check.
+  handlingPersonnel?: string;
+  handlingPersonnelSpecification?: string;
+
   cause: string;
   causeSpecification?: string;
   filingDate: string;

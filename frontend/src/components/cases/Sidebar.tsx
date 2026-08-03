@@ -32,7 +32,7 @@ export default function Sidebar() {
         {!collapsed && (
           <div className="min-w-0">
             <h1 className="whitespace-nowrap font-serif text-sm font-semibold tracking-tight text-white">
-              Case Management
+              CMI Case Management
             </h1>
             <p className="whitespace-nowrap text-xs text-white/50">
               Labor Case Monitoring
