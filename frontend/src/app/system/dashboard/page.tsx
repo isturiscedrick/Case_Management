@@ -11,6 +11,7 @@ import {
   Briefcase,
   FileCheck2,
   Clock3,
+  Gavel,
   CheckCircle2,
   SlidersHorizontal,
 } from "lucide-react";
@@ -275,27 +276,33 @@ export default function CasesPage() {
       </div>
 
       {/* SUMMARY */}
-      <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
-        <SummaryCard label="Total Cases" value={cases.length} icon={Briefcase} accent="bg-slate-100 text-slate-700" />
-        <SummaryCard
-          label="Filed"
-          value={cases.filter((x) => x.status === "Filed").length}
-          icon={FileCheck2}
-          accent="bg-sky-50 text-sky-600"
-        />
-        <SummaryCard
-          label="Pending"
-          value={cases.filter((x) => x.status === "Pending").length}
-          icon={Clock3}
-          accent="bg-amber-50 text-amber-600"
-        />
-        <SummaryCard
-          label="Closed"
-          value={cases.filter((x) => x.status === "Closed").length}
-          icon={CheckCircle2}
-          accent="bg-emerald-50 text-emerald-600"
-        />
-      </div>
+<div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-5">
+  <SummaryCard label="Total Cases" value={cases.length} icon={Briefcase} accent="bg-slate-100 text-slate-700" />
+  <SummaryCard
+    label="Filed"
+    value={cases.filter((x) => x.status === "Filed").length}
+    icon={FileCheck2}
+    accent="bg-sky-50 text-sky-600"
+  />
+  <SummaryCard
+    label="Pending"
+    value={cases.filter((x) => x.status === "Pending").length}
+    icon={Clock3}
+    accent="bg-amber-50 text-amber-600"
+  />
+  <SummaryCard
+    label="Execution"
+    value={cases.filter((x) => x.status === "Execution").length}
+    icon={Gavel}
+    accent="bg-orange-50 text-orange-600"
+  />
+  <SummaryCard
+    label="Closed"
+    value={cases.filter((x) => x.status === "Closed").length}
+    icon={CheckCircle2}
+    accent="bg-emerald-50 text-emerald-600"
+  />
+</div>
 
       {/* SEARCH & FILTERS */}
       <div className="rounded-lg border border-slate-200 bg-white p-2.5 shadow-sm">

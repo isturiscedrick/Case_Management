@@ -1,4 +1,4 @@
-export type CaseStatus = "Filed" | "Pending" | "Closed";
+export type CaseStatus = "Filed" | "Pending" | "Execution" | "Closed";
 export type StageProgress = "" | "Settled" | "Not Settled" | "Others";
 
 export interface LaInfo {
