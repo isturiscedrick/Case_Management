@@ -9,6 +9,7 @@ function isStageFilled(stage: StageInfo): boolean {
     stage.date.trim() !== "" &&
     stage.status.trim() !== "" &&
     stage.judgementReward.trim() !== "" &&
+    (stage.judgementRewardSpecification ?? "").trim() !== "" &&
     stage.remarks.trim() !== "" &&
     (stage.remarks !== "Other" || (stage.remarksSpecification ?? "").trim() !== "")
   );

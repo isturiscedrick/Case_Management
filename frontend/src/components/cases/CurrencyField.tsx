@@ -48,10 +48,23 @@ export function JudgementRewardField({
   label,
   value,
   onChange,
+  specValue,
+  onSpecChange,
+  onModeChange,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
+  // Manual entry shown below the number input — required regardless of
+  // mode (Amount or To be computed).
+  specValue?: string;
+  onSpecChange?: (v: string) => void;
+  // Fires ONE atomic update carrying both the new reward value and the
+  // new spec value when the mode dropdown changes. Using onChange +
+  // onSpecChange separately here would fire two state updates built from
+  // the same stale snapshot, and the second would silently overwrite the
+  // first — this keeps the switch reliable.
+  onModeChange: (rewardValue: string, specValue: string) => void;
 }) {
   const isComputed = value === TO_BE_COMPUTED;
 
@@ -62,7 +75,8 @@ export function JudgementRewardField({
           className={inputCls}
           value={isComputed ? TO_BE_COMPUTED : "Amount"}
           onChange={(e) => {
-            onChange(e.target.value === TO_BE_COMPUTED ? TO_BE_COMPUTED : "");
+            const reward = e.target.value === TO_BE_COMPUTED ? TO_BE_COMPUTED : "";
+            onModeChange(reward, specValue ?? "");
           }}
         >
           <option value="Amount">Amount</option>
@@ -86,6 +100,15 @@ export function JudgementRewardField({
             />
           </div>
         )}
+
+        <input
+          required
+          type="text"
+          className={inputCls}
+          value={specValue ?? ""}
+          onChange={(e) => onSpecChange?.(e.target.value)}
+          placeholder={isComputed ? "Enter computation basis" : "Enter remarks/basis for this amount"}
+        />
       </div>
     </Field>
   );

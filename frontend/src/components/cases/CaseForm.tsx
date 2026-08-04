@@ -74,6 +74,24 @@ export function CaseForm({
   const setSc = <K extends keyof ScInfo>(key: K, v: ScInfo[K]) => {
   onChange({ ...value, sc: { ...value.sc, [key]: v } });
 };
+// Atomic setters for the Judgement Reward/Award "Amount" vs
+// "To be computed" mode switch — updates judgementReward and
+// judgementRewardSpecification together in a single state update, since
+// two separate setLa/setNlrc/setCa/setSc calls in the same handler would
+// each spread from the same stale `value` and the second would silently
+// overwrite the first.
+const setLaJudgementRewardMode = (reward: string, spec: string) => {
+  onChange({ ...value, la: { ...value.la, judgementReward: reward, judgementRewardSpecification: spec } });
+};
+const setNlrcJudgementRewardMode = (reward: string, spec: string) => {
+  onChange({ ...value, nlrc: { ...value.nlrc, judgementReward: reward, judgementRewardSpecification: spec } });
+};
+const setCaJudgementRewardMode = (reward: string, spec: string) => {
+  onChange({ ...value, ca: { ...value.ca, judgementReward: reward, judgementRewardSpecification: spec } });
+};
+const setScJudgementRewardMode = (reward: string, spec: string) => {
+  onChange({ ...value, sc: { ...value.sc, judgementReward: reward, judgementRewardSpecification: spec } });
+};
 const setTotalPaidCategory = (category: TotalPaidCategory | "") => {
   onChange({
     ...value,
@@ -429,7 +447,14 @@ const {
               ))}
             </select>
           </Field>
-          <JudgementRewardField label="Judgement Reward" value={value.la.judgementReward} onChange={(v) => setLa("judgementReward", v)} />
+          <JudgementRewardField
+            label="Judgement Reward"
+            value={value.la.judgementReward}
+            onChange={(v) => setLa("judgementReward", v)}
+            specValue={value.la.judgementRewardSpecification}
+            onSpecChange={(v) => setLa("judgementRewardSpecification", v)}
+            onModeChange={setLaJudgementRewardMode}
+          />
           <Field label="Remarks">
             <select
               className={inputCls}
@@ -588,7 +613,14 @@ const {
               ))}
             </select>
           </Field>
-          <JudgementRewardField label="Judgement Award" value={value.nlrc.judgementReward} onChange={(v) => setNlrc("judgementReward", v)} />
+          <JudgementRewardField
+            label="Judgement Award"
+            value={value.nlrc.judgementReward}
+            onChange={(v) => setNlrc("judgementReward", v)}
+            specValue={value.nlrc.judgementRewardSpecification}
+            onSpecChange={(v) => setNlrc("judgementRewardSpecification", v)}
+            onModeChange={setNlrcJudgementRewardMode}
+          />
           <Field label="Remarks">
             <select
               className={inputCls}
@@ -747,7 +779,14 @@ const {
               ))}
             </select>
           </Field>
-          <JudgementRewardField label="Judgement Award" value={value.ca.judgementReward} onChange={(v) => setCa("judgementReward", v)} />
+          <JudgementRewardField
+            label="Judgement Award"
+            value={value.ca.judgementReward}
+            onChange={(v) => setCa("judgementReward", v)}
+            specValue={value.ca.judgementRewardSpecification}
+            onSpecChange={(v) => setCa("judgementRewardSpecification", v)}
+            onModeChange={setCaJudgementRewardMode}
+          />
           <Field label="Remarks">
             <select
               className={inputCls}
@@ -901,7 +940,14 @@ const {
               ))}
             </select>
           </Field>
-          <JudgementRewardField label="Judgement Award" value={value.sc.judgementReward} onChange={(v) => setSc("judgementReward", v)} />
+          <JudgementRewardField
+            label="Judgement Award"
+            value={value.sc.judgementReward}
+            onChange={(v) => setSc("judgementReward", v)}
+            specValue={value.sc.judgementRewardSpecification}
+            onSpecChange={(v) => setSc("judgementRewardSpecification", v)}
+            onModeChange={setScJudgementRewardMode}
+          />
           <Field label="Remarks">
             <select
               className={inputCls}
@@ -988,7 +1034,7 @@ const {
           {formatCurrency(totalJudgementReward)}
         </div>
         <p className="mt-1 text-[11px] text-slate-400">
-          Calculated automatically from the Judgement Reward/Award values above.
+          Reflects the latest stage's Judgement Reward/Award (SC, then CA, NLRC, LA) — not a sum of all stages.
         </p>
         <div className="mt-3 max-w-sm">
           <Field label="Category">

@@ -5,6 +5,8 @@ export interface LaInfo {
   date: string;
   status: string;
   judgementReward: string;
+  // Manual entry required when judgementReward === "To be computed".
+  judgementRewardSpecification?: string;
   remarks: string;
   remarksSpecification?: string;
 }
@@ -13,6 +15,7 @@ export interface NlrcInfo {
   date: string;
   status: string;
   judgementReward: string;
+  judgementRewardSpecification?: string;
   remarks: string;
   remarksSpecification?: string;
 }
@@ -21,6 +24,7 @@ export interface CaInfo {
   date: string;
   status: string;
   judgementReward: string;
+  judgementRewardSpecification?: string;
   remarks: string;
   remarksSpecification?: string;
 }
@@ -29,6 +33,7 @@ export interface ScInfo {
   date: string;
   status: string;
   judgementReward: string;
+  judgementRewardSpecification?: string;
   remarks: string;
   remarksSpecification?: string;
 }

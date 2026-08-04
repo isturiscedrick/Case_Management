@@ -27,15 +27,15 @@ export function formatCurrency(value: string): string {
   return `₱${num.toLocaleString()}`;
 }
 
-// The amount shown while creating or editing a case is derived from every
-// stage's Judgement Reward/Award. It is not a separate user-entered payment.
-// Stages marked "To be computed" aren't numeric, so Number(...) on them is
-// NaN and they're naturally excluded from the sum below.
+// The amount shown while creating or editing a case reflects the LATEST
+// stage's Judgement Reward/Award — not a sum across stages. As a case
+// escalates (LA -> NLRC -> CA -> SC), each new stage's outcome supersedes
+// the earlier one rather than adding to it, so this picks the most
+// advanced stage that actually has a value (SC first, then CA, NLRC, LA).
+// If that stage is "To be computed", this returns that string as-is —
+// formatCurrency already knows how to display it.
 export function getTotalJudgementReward(draft: CaseDraft): string {
-  const total = [draft.la, draft.nlrc, draft.ca, draft.sc].reduce((sum, stage) => {
-    const amount = Number(stage.judgementReward);
-    return Number.isFinite(amount) && amount >= 0 ? sum + amount : sum;
-  }, 0);
-
-  return String(total);
+  const stagesLatestFirst = [draft.sc, draft.ca, draft.nlrc, draft.la];
+  const latestStage = stagesLatestFirst.find((stage) => stage.judgementReward.trim() !== "");
+  return latestStage ? latestStage.judgementReward : "";
 }
