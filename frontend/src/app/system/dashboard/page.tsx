@@ -11,7 +11,6 @@ import {
   Briefcase,
   FileCheck2,
   Clock3,
-  Gavel,
   CheckCircle2,
   SlidersHorizontal,
 } from "lucide-react";
@@ -298,7 +297,7 @@ export default function CasesPage() {
       </div>
 
       {/* SUMMARY */}
-<div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-5">
+<div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
   <SummaryCard label="Total Cases" value={cases.length} icon={Briefcase} accent="bg-slate-100 text-slate-700" />
   <SummaryCard
     label="Filed"
@@ -311,12 +310,6 @@ export default function CasesPage() {
     value={cases.filter((x) => x.status === "Pending").length}
     icon={Clock3}
     accent="bg-amber-50 text-amber-600"
-  />
-  <SummaryCard
-    label="Execution"
-    value={cases.filter((x) => x.status === "Execution").length}
-    icon={Gavel}
-    accent="bg-orange-50 text-orange-600"
   />
   <SummaryCard
     label="Closed"

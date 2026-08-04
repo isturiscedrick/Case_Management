@@ -34,10 +34,14 @@ export function getStageGates(draft: CaseDraft) {
     draft.filingDate.trim() !== "";
 
   // LA is enabled ONLY when Remarks is explicitly "Not Settled" or
-  // "Others" — for the default "Select Remarks" or "Settled", LA stays
+  // "Others" AND its Specify field is filled in — for the default
+  // "Select Remarks" or "Settled", or an unfilled Specify, LA stays
   // disabled (and, since it's disabled, it's not required either — the
   // case can still be created without touching LA in that scenario).
-  const laEnabled = senaFilled && (draft.remarks === "Not Settled" || draft.remarks === "Others");
+  const laEnabled =
+    senaFilled &&
+    (draft.remarks === "Not Settled" || draft.remarks === "Others") &&
+    (draft.remarkSpecification ?? "").trim() !== "";
   const laFilled = isStageFilled(draft.la);
 
   // LA is required to submit whenever it's enabled.

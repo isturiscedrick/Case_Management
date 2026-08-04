@@ -20,7 +20,7 @@ import {
   HANDLING_PERSONNEL_OPTIONS,
 } from "@/constants/caseOptions";
 import { Field } from "./Field";
-import { CurrencyField, inputCls } from "./CurrencyField";
+import { JudgementRewardField, inputCls } from "./CurrencyField";
 import type { CaseStatus } from "@/types/case";
 import { getStageGates } from "@/lib/caseValidation";
 import { formatCurrency, getTotalJudgementReward } from "@/lib/caseHelpers";
@@ -382,8 +382,9 @@ const {
 
           {(value.remarks === "Others" || value.remarks === "Not Settled") && (
             <Field label="Specify *">
-              <input
+              <textarea
                 required
+                rows={3}
                 className={inputCls}
                 placeholder="Enter remarks"
                 value={value.remarkSpecification ?? ""}
@@ -404,7 +405,7 @@ const {
         )}
         {senaFilled && !laRequired && (
           <p className="mb-2 text-[11px] text-slate-400">
-            Disabled while SEnA Remarks is "Select Remarks" or "Settled".
+            Disabled while SEnA Remarks is "Select Remarks" or "Settled", or while Specify Remarks is empty for "Not Settled"/"Others".
           </p>
         )}
         {restrictLaProgressOnly && (
@@ -428,7 +429,7 @@ const {
               ))}
             </select>
           </Field>
-          <CurrencyField label="Judgement Reward" value={value.la.judgementReward} onChange={(v) => setLa("judgementReward", v)} />
+          <JudgementRewardField label="Judgement Reward" value={value.la.judgementReward} onChange={(v) => setLa("judgementReward", v)} />
           <Field label="Remarks">
             <select
               className={inputCls}
@@ -587,7 +588,7 @@ const {
               ))}
             </select>
           </Field>
-          <CurrencyField label="Judgement Award" value={value.nlrc.judgementReward} onChange={(v) => setNlrc("judgementReward", v)} />
+          <JudgementRewardField label="Judgement Award" value={value.nlrc.judgementReward} onChange={(v) => setNlrc("judgementReward", v)} />
           <Field label="Remarks">
             <select
               className={inputCls}
@@ -746,7 +747,7 @@ const {
               ))}
             </select>
           </Field>
-          <CurrencyField label="Judgement Award" value={value.ca.judgementReward} onChange={(v) => setCa("judgementReward", v)} />
+          <JudgementRewardField label="Judgement Award" value={value.ca.judgementReward} onChange={(v) => setCa("judgementReward", v)} />
           <Field label="Remarks">
             <select
               className={inputCls}
@@ -900,7 +901,7 @@ const {
               ))}
             </select>
           </Field>
-          <CurrencyField label="Judgement Award" value={value.sc.judgementReward} onChange={(v) => setSc("judgementReward", v)} />
+          <JudgementRewardField label="Judgement Award" value={value.sc.judgementReward} onChange={(v) => setSc("judgementReward", v)} />
           <Field label="Remarks">
             <select
               className={inputCls}

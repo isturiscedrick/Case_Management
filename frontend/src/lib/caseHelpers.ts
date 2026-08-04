@@ -16,9 +16,12 @@ export function formatDate(iso: string): string {
 
 // Money fields are stored as plain numeric strings (e.g. "150000") so
 // <input type="number"> can bind to them directly. This formats them
-// with a peso sign and thousands separators for display.
+// with a peso sign and thousands separators for display. Judgement
+// Reward/Award fields can also hold the literal "To be computed" sentinel
+// (see JudgementRewardField) — that's displayed as-is rather than parsed.
 export function formatCurrency(value: string): string {
   if (!value) return "-";
+  if (value === "To be computed") return value;
   const num = Number(value);
   if (Number.isNaN(num)) return value; // fallback for legacy non-numeric values
   return `₱${num.toLocaleString()}`;
@@ -26,6 +29,8 @@ export function formatCurrency(value: string): string {
 
 // The amount shown while creating or editing a case is derived from every
 // stage's Judgement Reward/Award. It is not a separate user-entered payment.
+// Stages marked "To be computed" aren't numeric, so Number(...) on them is
+// NaN and they're naturally excluded from the sum below.
 export function getTotalJudgementReward(draft: CaseDraft): string {
   const total = [draft.la, draft.nlrc, draft.ca, draft.sc].reduce((sum, stage) => {
     const amount = Number(stage.judgementReward);
