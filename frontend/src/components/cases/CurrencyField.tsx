@@ -36,35 +36,26 @@ export function CurrencyField({
   );
 }
 
-// Judgement Reward/Award field for LA/NLRC/CA/SC stages. Adds an
-// "Amount" vs "To be computed" mode dropdown on top of the peso input.
-// When "To be computed" is selected, the stored value becomes the literal
-// string "To be computed" and the numeric input is hidden. Switching back
-// to "Amount" clears the value so a stale "To be computed" string can't
-// leak into a numeric field.
 const TO_BE_COMPUTED = "To be computed";
 
 export function JudgementRewardField({
   label,
   value,
   onChange,
-  specValue,
-  onSpecChange,
-  onModeChange,
+  amountSpecValue,
+  onAmountSpecChange,
+  computedSpecValue,
+  onComputedSpecChange,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
-  // Manual entry shown below the number input — required regardless of
-  // mode (Amount or To be computed).
-  specValue?: string;
-  onSpecChange?: (v: string) => void;
-  // Fires ONE atomic update carrying both the new reward value and the
-  // new spec value when the mode dropdown changes. Using onChange +
-  // onSpecChange separately here would fire two state updates built from
-  // the same stale snapshot, and the second would silently overwrite the
-  // first — this keeps the switch reliable.
-  onModeChange: (rewardValue: string, specValue: string) => void;
+  // Manual entry shown when mode is "Amount".
+  amountSpecValue?: string;
+  onAmountSpecChange?: (v: string) => void;
+  // Manual entry shown when mode is "To be computed".
+  computedSpecValue?: string;
+  onComputedSpecChange?: (v: string) => void;
 }) {
   const isComputed = value === TO_BE_COMPUTED;
 
@@ -75,8 +66,7 @@ export function JudgementRewardField({
           className={inputCls}
           value={isComputed ? TO_BE_COMPUTED : "Amount"}
           onChange={(e) => {
-            const reward = e.target.value === TO_BE_COMPUTED ? TO_BE_COMPUTED : "";
-            onModeChange(reward, specValue ?? "");
+            onChange(e.target.value === TO_BE_COMPUTED ? TO_BE_COMPUTED : "");
           }}
         >
           <option value="Amount">Amount</option>
@@ -101,14 +91,25 @@ export function JudgementRewardField({
           </div>
         )}
 
-        <input
-          required
-          type="text"
-          className={inputCls}
-          value={specValue ?? ""}
-          onChange={(e) => onSpecChange?.(e.target.value)}
-          placeholder={isComputed ? "Enter computation basis" : "Enter remarks/basis for this amount"}
-        />
+        {isComputed ? (
+          <input
+            required
+            type="text"
+            className={inputCls}
+            value={computedSpecValue ?? ""}
+            onChange={(e) => onComputedSpecChange?.(e.target.value)}
+            placeholder="Enter computation basis"
+          />
+        ) : (
+          <input
+            required
+            type="text"
+            className={inputCls}
+            value={amountSpecValue ?? ""}
+            onChange={(e) => onAmountSpecChange?.(e.target.value)}
+            placeholder="Enter remarks/basis for this amount"
+          />
+        )}
       </div>
     </Field>
   );

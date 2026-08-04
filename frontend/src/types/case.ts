@@ -5,8 +5,12 @@ export interface LaInfo {
   date: string;
   status: string;
   judgementReward: string;
-  // Manual entry required when judgementReward === "To be computed".
+  // Manual entry required when judgementReward is a numeric "Amount".
   judgementRewardSpecification?: string;
+  // Separate manual entry required when judgementReward === "To be
+  // computed". Kept independent from judgementRewardSpecification so
+  // switching modes doesn't carry text typed in one mode into the other.
+  judgementRewardComputedSpecification?: string;
   remarks: string;
   remarksSpecification?: string;
 }
@@ -16,6 +20,7 @@ export interface NlrcInfo {
   status: string;
   judgementReward: string;
   judgementRewardSpecification?: string;
+  judgementRewardComputedSpecification?: string;
   remarks: string;
   remarksSpecification?: string;
 }
@@ -25,6 +30,7 @@ export interface CaInfo {
   status: string;
   judgementReward: string;
   judgementRewardSpecification?: string;
+  judgementRewardComputedSpecification?: string;
   remarks: string;
   remarksSpecification?: string;
 }
@@ -34,6 +40,7 @@ export interface ScInfo {
   status: string;
   judgementReward: string;
   judgementRewardSpecification?: string;
+  judgementRewardComputedSpecification?: string;
   remarks: string;
   remarksSpecification?: string;
 }

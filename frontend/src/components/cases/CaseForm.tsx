@@ -44,9 +44,10 @@ export function CaseForm({
   value: CaseDraft;
   onChange: (next: CaseDraft) => void;
   companies: string[];
-  // When true, every SEnA field except Remarks (and its "Others" spec) is
-  // locked. Used for editing a case that hasn't escalated past SEnA yet, so
-  // the only thing that can change it is Remarks signaling escalation.
+  // When true, every SEnA field except Remarks (and its "Others" spec) and
+  // Handling Personnel is locked. Used for editing a case that hasn't
+  // escalated past SEnA yet, so the only things that can change it are
+  // Remarks signaling escalation and Handling Personnel reassignment.
   restrictSenaEditing?: boolean;
   restrictSenaRemarksEditing?: boolean;
   restrictLaDetailsEditing?: boolean;
@@ -73,24 +74,6 @@ export function CaseForm({
   };
   const setSc = <K extends keyof ScInfo>(key: K, v: ScInfo[K]) => {
   onChange({ ...value, sc: { ...value.sc, [key]: v } });
-};
-// Atomic setters for the Judgement Reward/Award "Amount" vs
-// "To be computed" mode switch — updates judgementReward and
-// judgementRewardSpecification together in a single state update, since
-// two separate setLa/setNlrc/setCa/setSc calls in the same handler would
-// each spread from the same stale `value` and the second would silently
-// overwrite the first.
-const setLaJudgementRewardMode = (reward: string, spec: string) => {
-  onChange({ ...value, la: { ...value.la, judgementReward: reward, judgementRewardSpecification: spec } });
-};
-const setNlrcJudgementRewardMode = (reward: string, spec: string) => {
-  onChange({ ...value, nlrc: { ...value.nlrc, judgementReward: reward, judgementRewardSpecification: spec } });
-};
-const setCaJudgementRewardMode = (reward: string, spec: string) => {
-  onChange({ ...value, ca: { ...value.ca, judgementReward: reward, judgementRewardSpecification: spec } });
-};
-const setScJudgementRewardMode = (reward: string, spec: string) => {
-  onChange({ ...value, sc: { ...value.sc, judgementReward: reward, judgementRewardSpecification: spec } });
 };
 const setTotalPaidCategory = (category: TotalPaidCategory | "") => {
   onChange({
@@ -175,7 +158,7 @@ const {
         </h3>
         {restrictSenaEditing && (
           <p className="mb-2 text-[11px] text-amber-600">
-            This case hasn't progressed beyond SEnA. Only Remarks can be edited here — set it to "Not Settled" or "Others" to unlock the Labor Arbiter section.
+            This case hasn't progressed beyond SEnA. Only Remarks and Handling Personnel can be edited here — set Remarks to "Not Settled" or "Others" to unlock the Labor Arbiter section.
           </p>
         )}
         <div className="grid gap-4 sm:grid-cols-3">
@@ -253,6 +236,11 @@ const {
           <Field label="Venue">
             <input className={inputCls} value={value.venue} onChange={(e) => setTop("venue", e.target.value)} />
           </Field>
+          </fieldset>
+
+          {/* Handling Personnel is intentionally OUTSIDE the
+              restrictSenaEditing fieldset — it must stay editable even when
+              the rest of SEnA is locked. */}
           <Field label="Handling Personnel">
             <select
               className={inputCls}
@@ -287,6 +275,8 @@ const {
               />
             </Field>
           )}
+
+          <fieldset disabled={restrictSenaEditing} className="contents">
           <Field label="Cause of Action">
             <div className="flex flex-wrap gap-x-4 gap-y-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
               {CAUSE_OPTIONS.map((cause) => (
@@ -347,6 +337,8 @@ const {
                   !!value.la.date ||
                   !!value.la.status ||
                   !!value.la.judgementReward ||
+                  !!value.la.judgementRewardSpecification ||
+                  !!value.la.judgementRewardComputedSpecification ||
                   !!value.la.remarks ||
                   !!value.la.remarksSpecification ||
                   !!value.caseProgress.la ||
@@ -373,6 +365,8 @@ const {
                           date: "",
                           status: "",
                           judgementReward: "",
+                          judgementRewardSpecification: "",
+                          judgementRewardComputedSpecification: "",
                           remarks: "",
                           remarksSpecification: "",
                         },
@@ -432,8 +426,9 @@ const {
           </p>
         )}
         {laVisible && (
-        <fieldset disabled={restrictLaDetailsEditing} className="contents">
+        <>
         <div className="grid gap-4 sm:grid-cols-4">
+          <fieldset disabled={restrictLaDetailsEditing} className="contents">
           <Field label="Date">
             <input type="date" className={inputCls} value={value.la.date} onChange={(e) => setLa("date", e.target.value)} />
           </Field>
@@ -447,14 +442,21 @@ const {
               ))}
             </select>
           </Field>
+          </fieldset>
+
+          {/* Judgement Reward is intentionally OUTSIDE restrictLaDetailsEditing
+              — it must stay fully editable regardless of any lock. */}
           <JudgementRewardField
             label="Judgement Reward"
             value={value.la.judgementReward}
             onChange={(v) => setLa("judgementReward", v)}
-            specValue={value.la.judgementRewardSpecification}
-            onSpecChange={(v) => setLa("judgementRewardSpecification", v)}
-            onModeChange={setLaJudgementRewardMode}
+            amountSpecValue={value.la.judgementRewardSpecification}
+            onAmountSpecChange={(v) => setLa("judgementRewardSpecification", v)}
+            computedSpecValue={value.la.judgementRewardComputedSpecification}
+            onComputedSpecChange={(v) => setLa("judgementRewardComputedSpecification", v)}
           />
+
+          <fieldset disabled={restrictLaDetailsEditing} className="contents">
           <Field label="Remarks">
             <select
               className={inputCls}
@@ -479,9 +481,11 @@ const {
               ))}
             </select>
           </Field>
+          </fieldset>
         </div>
 
         {value.la.remarks === "Other" && (
+          <fieldset disabled={restrictLaDetailsEditing} className="contents">
           <div className="mt-3 grid gap-4 sm:grid-cols-3">
             <Field label="Specify Remarks">
               <input
@@ -492,8 +496,9 @@ const {
               />
             </Field>
           </div>
+          </fieldset>
         )}
-        </fieldset>
+        </>
         )}
 
         {laVisible && (
@@ -512,6 +517,8 @@ const {
                   !!value.nlrc.date ||
                   !!value.nlrc.status ||
                   !!value.nlrc.judgementReward ||
+                  !!value.nlrc.judgementRewardSpecification ||
+                  !!value.nlrc.judgementRewardComputedSpecification ||
                   !!value.nlrc.remarks ||
                   !!value.nlrc.remarksSpecification ||
                   !!value.caseProgress.nlrc ||
@@ -537,6 +544,8 @@ const {
                           date: "",
                           status: "",
                           judgementReward: "",
+                          judgementRewardSpecification: "",
+                          judgementRewardComputedSpecification: "",
                           remarks: "",
                           remarksSpecification: "",
                         },
@@ -598,8 +607,9 @@ const {
           </p>
         )}
         {nlrcVisible && (
-        <fieldset disabled={restrictNlrcDetailsEditing} className="contents">
+        <>
         <div className="grid gap-4 sm:grid-cols-4">
+          <fieldset disabled={restrictNlrcDetailsEditing} className="contents">
           <Field label="Date">
             <input type="date" className={inputCls} value={value.nlrc.date} onChange={(e) => setNlrc("date", e.target.value)} />
           </Field>
@@ -613,14 +623,21 @@ const {
               ))}
             </select>
           </Field>
+          </fieldset>
+
+          {/* Judgement Award is intentionally OUTSIDE restrictNlrcDetailsEditing
+              — it must stay fully editable regardless of any lock. */}
           <JudgementRewardField
             label="Judgement Award"
             value={value.nlrc.judgementReward}
             onChange={(v) => setNlrc("judgementReward", v)}
-            specValue={value.nlrc.judgementRewardSpecification}
-            onSpecChange={(v) => setNlrc("judgementRewardSpecification", v)}
-            onModeChange={setNlrcJudgementRewardMode}
+            amountSpecValue={value.nlrc.judgementRewardSpecification}
+            onAmountSpecChange={(v) => setNlrc("judgementRewardSpecification", v)}
+            computedSpecValue={value.nlrc.judgementRewardComputedSpecification}
+            onComputedSpecChange={(v) => setNlrc("judgementRewardComputedSpecification", v)}
           />
+
+          <fieldset disabled={restrictNlrcDetailsEditing} className="contents">
           <Field label="Remarks">
             <select
               className={inputCls}
@@ -645,9 +662,11 @@ const {
               ))}
             </select>
           </Field>
+          </fieldset>
         </div>
 
         {value.nlrc.remarks === "Other" && (
+          <fieldset disabled={restrictNlrcDetailsEditing} className="contents">
           <div className="mt-3 grid gap-4 sm:grid-cols-3">
             <Field label="Specify Remarks">
               <input
@@ -658,8 +677,9 @@ const {
               />
             </Field>
           </div>
+          </fieldset>
         )}
-        </fieldset>
+        </>
         )}
 
         {nlrcVisible && (
@@ -678,6 +698,8 @@ const {
                   !!value.ca.date ||
                   !!value.ca.status ||
                   !!value.ca.judgementReward ||
+                  !!value.ca.judgementRewardSpecification ||
+                  !!value.ca.judgementRewardComputedSpecification ||
                   !!value.ca.remarks ||
                   !!value.ca.remarksSpecification ||
                   !!value.caseProgress.ca ||
@@ -703,6 +725,8 @@ const {
                           date: "",
                           status: "",
                           judgementReward: "",
+                          judgementRewardSpecification: "",
+                          judgementRewardComputedSpecification: "",
                           remarks: "",
                           remarksSpecification: "",
                         },
@@ -764,8 +788,9 @@ const {
           </p>
         )}
         {caVisible && (
-        <fieldset disabled={restrictCaDetailsEditing} className="contents">
+        <>
         <div className="grid gap-4 sm:grid-cols-4">
+          <fieldset disabled={restrictCaDetailsEditing} className="contents">
           <Field label="Date">
             <input type="date" className={inputCls} value={value.ca.date} onChange={(e) => setCa("date", e.target.value)} />
           </Field>
@@ -779,14 +804,21 @@ const {
               ))}
             </select>
           </Field>
+          </fieldset>
+
+          {/* Judgement Award is intentionally OUTSIDE restrictCaDetailsEditing
+              — it must stay fully editable regardless of any lock. */}
           <JudgementRewardField
             label="Judgement Award"
             value={value.ca.judgementReward}
             onChange={(v) => setCa("judgementReward", v)}
-            specValue={value.ca.judgementRewardSpecification}
-            onSpecChange={(v) => setCa("judgementRewardSpecification", v)}
-            onModeChange={setCaJudgementRewardMode}
+            amountSpecValue={value.ca.judgementRewardSpecification}
+            onAmountSpecChange={(v) => setCa("judgementRewardSpecification", v)}
+            computedSpecValue={value.ca.judgementRewardComputedSpecification}
+            onComputedSpecChange={(v) => setCa("judgementRewardComputedSpecification", v)}
           />
+
+          <fieldset disabled={restrictCaDetailsEditing} className="contents">
           <Field label="Remarks">
             <select
               className={inputCls}
@@ -811,9 +843,11 @@ const {
               ))}
             </select>
           </Field>
+          </fieldset>
         </div>
 
         {value.ca.remarks === "Other" && (
+          <fieldset disabled={restrictCaDetailsEditing} className="contents">
           <div className="mt-3 grid gap-4 sm:grid-cols-3">
             <Field label="Specify Remarks">
               <input
@@ -824,8 +858,9 @@ const {
               />
             </Field>
           </div>
+          </fieldset>
         )}
-        </fieldset>
+        </>
         )}
 
         {caVisible && (
@@ -844,6 +879,8 @@ const {
                   !!value.sc.date ||
                   !!value.sc.status ||
                   !!value.sc.judgementReward ||
+                  !!value.sc.judgementRewardSpecification ||
+                  !!value.sc.judgementRewardComputedSpecification ||
                   !!value.sc.remarks ||
                   !!value.sc.remarksSpecification ||
                   !!value.caseProgress.sc ||
@@ -869,6 +906,8 @@ const {
                           date: "",
                           status: "",
                           judgementReward: "",
+                          judgementRewardSpecification: "",
+                          judgementRewardComputedSpecification: "",
                           remarks: "",
                           remarksSpecification: "",
                         },
@@ -944,9 +983,10 @@ const {
             label="Judgement Award"
             value={value.sc.judgementReward}
             onChange={(v) => setSc("judgementReward", v)}
-            specValue={value.sc.judgementRewardSpecification}
-            onSpecChange={(v) => setSc("judgementRewardSpecification", v)}
-            onModeChange={setScJudgementRewardMode}
+            amountSpecValue={value.sc.judgementRewardSpecification}
+            onAmountSpecChange={(v) => setSc("judgementRewardSpecification", v)}
+            computedSpecValue={value.sc.judgementRewardComputedSpecification}
+            onComputedSpecChange={(v) => setSc("judgementRewardComputedSpecification", v)}
           />
           <Field label="Remarks">
             <select
