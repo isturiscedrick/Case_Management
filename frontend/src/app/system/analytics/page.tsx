@@ -122,7 +122,7 @@ export default function AnalyticsPage() {
       {/* HEADER */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="font-serif text-lg font-medium tracking-tight text-[#0B1D3A] md:text-xl">Analytics</h1>
+          <h1 className="font-serif text-lg font-medium tracking-tight text-[#12331F] md:text-xl">Analytics</h1>
           <p className="mt-0.5 text-xs text-slate-500">Case status and judgement award breakdown by stage.</p>
         </div>
 
@@ -145,7 +145,7 @@ export default function AnalyticsPage() {
           </div>
           <div>
             <p className="text-[11px] uppercase tracking-wide text-slate-400">Cases Analyzed</p>
-            <p className="text-lg font-semibold text-[#0B1D3A]">{cases.length}</p>
+            <p className="text-lg font-semibold text-[#12331F]">{cases.length}</p>
           </div>
         </div>
 
@@ -155,7 +155,7 @@ export default function AnalyticsPage() {
           </div>
           <div>
             <p className="text-[11px] uppercase tracking-wide text-slate-400">Total Judgement Awards Paid</p>
-            <p className="text-lg font-semibold text-[#0B1D3A]">{formatCurrency(String(grandTotal))}</p>
+            <p className="text-lg font-semibold text-[#12331F]">{formatCurrency(String(grandTotal))}</p>
           </div>
         </div>
 
@@ -165,7 +165,7 @@ export default function AnalyticsPage() {
           </div>
           <div>
             <p className="text-[11px] uppercase tracking-wide text-slate-400">Cases Still at SEnA</p>
-            <p className="text-lg font-semibold text-[#0B1D3A]">
+            <p className="text-lg font-semibold text-[#12331F]">
               {stageBreakdown.sena.Pending + stageBreakdown.sena.Settled + stageBreakdown.sena["Not Settled"]}
             </p>
           </div>
@@ -174,7 +174,7 @@ export default function AnalyticsPage() {
 
       {/* STATUS BREAKDOWN PER STAGE */}
       <div>
-        <h2 className="mb-2 text-sm font-semibold text-[#0B1D3A]">Case Status by Stage</h2>
+        <h2 className="mb-2 text-sm font-semibold text-[#12331F]">Case Status by Stage</h2>
         <div className="grid gap-3 lg:grid-cols-2 xl:grid-cols-3">
           {STAGE_KEYS.map((stage) => {
             const meta = STAGE_META[stage];
@@ -232,7 +232,7 @@ export default function AnalyticsPage() {
 
       {/* TOTAL JUDGEMENT AWARD PER STAGE */}
       <div>
-        <h2 className="mb-2 text-sm font-semibold text-[#0B1D3A]">Total Judgement Award by Stage</h2>
+        <h2 className="mb-2 text-sm font-semibold text-[#12331F]">Total Judgement Award by Stage</h2>
         <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
           <div className="space-y-3">
             {/* SEnA — not tracked numerically */}

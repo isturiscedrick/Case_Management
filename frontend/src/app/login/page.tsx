@@ -23,9 +23,9 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen bg-[#F7F5F0]">
+    <div className="flex min-h-screen bg-[#F5F1E3]">
       {/* LEFT — brand / case journey panel */}
-      <div className="relative hidden w-[42%] flex-col justify-between overflow-hidden bg-[#0B1D3A] px-12 py-12 text-white lg:flex">
+      <div className="relative hidden w-[42%] flex-col justify-between overflow-hidden bg-[#12331F] px-12 py-12 text-white lg:flex">
         {/* subtle texture */}
         <div
           className="pointer-events-none absolute inset-0 opacity-[0.04]"
@@ -39,7 +39,7 @@ export default function LoginPage() {
         <div className="relative">
           <div className="flex items-center gap-2.5">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#B08D57]">
-              <Scale className="h-5 w-5 text-[#0B1D3A]" />
+              <Scale className="h-5 w-5 text-[#12331F]" />
             </div>
             <div>
               <p className="font-serif text-sm font-semibold tracking-tight">CMI Case Management</p>
@@ -89,14 +89,14 @@ export default function LoginPage() {
         <div className="w-full max-w-sm">
           {/* mobile-only brand mark */}
           <div className="mb-8 flex items-center gap-2.5 lg:hidden">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#0B1D3A]">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#12331F]">
               <Scale className="h-4 w-4 text-[#B08D57]" />
             </div>
-            <p className="font-serif text-sm font-semibold text-[#0B1D3A]">CMI Case Management</p>
+            <p className="font-serif text-sm font-semibold text-[#12331F]">CMI Case Management</p>
           </div>
 
           <p className="text-xs font-medium uppercase tracking-wide text-[#B08D57]">Welcome back</p>
-          <h2 className="mt-1.5 font-serif text-2xl font-medium text-[#0B1D3A]">Sign in to your account</h2>
+          <h2 className="mt-1.5 font-serif text-2xl font-medium text-[#12331F]">Sign in to your account</h2>
           <p className="mt-2 text-sm text-slate-500">
             Enter your credentials to access the case dashboard.
           </p>
@@ -113,7 +113,7 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@company.com"
-                className="w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#0B1D3A] focus:ring-2 focus:ring-[#0B1D3A]/10"
+                className="w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-800 ou#12331Ftline-none transition placeholder:text-slate-400 focus:border-[] focus:ring-2 focus:ring-[#12331F]/10"
               />
             </div>
 
@@ -134,7 +134,7 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2.5 pr-10 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#0B1D3A] focus:ring-2 focus:ring-[#0B1D3A]/10"
+                  className="w-full rounded-lg border bor#12331Fder-slate-200 bg-white px-3.5 py-2.5 pr-10 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#12331F] focus:ring-2 focus:ring-[#12331F]/10"
                 />
                 <button
                   type="button"
@@ -149,7 +149,7 @@ export default function LoginPage() {
 
             <button
               type="submit"
-              className="w-full rounded-lg bg-[#0B1D3A] px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-[#132a4d] active:bg-[#0B1D3A]"
+              className="w-full rounded-lg bg-[#12331F] px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-[#1B4A2C] active:bg-[#12331F]"
             >
               Sign in
             </button>

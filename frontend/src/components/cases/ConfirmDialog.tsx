@@ -18,7 +18,7 @@ export function ConfirmDialog({
     <div className="fixed inset-0 z-60 flex items-center justify-center bg-slate-900/40 p-4" onClick={onCancel}>
       <div className="w-full max-w-sm overflow-hidden rounded-xl bg-white shadow-xl" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
-          <h2 className="text-sm font-semibold text-blue-950">{title}</h2>
+          <h2 className="text-sm font-semibold text-[#12331F]">{title}</h2>
           <button onClick={onCancel} className="rounded-md p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700">
             <X size={16} />
           </button>
@@ -35,7 +35,7 @@ export function ConfirmDialog({
           </button>
           <button
             onClick={onConfirm}
-            className="rounded-lg bg-[#0B1D3A] px-3.5 py-1.5 text-xs font-medium text-white transition hover:bg-[#132a4d]"
+            className="rounded-lg bg-[#0B1D3A] px-3.5 py-1.5 text-xs font-medium text-white transition hover:bg-[#1B4A2C]"
           >
             {confirmLabel}
           </button>

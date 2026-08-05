@@ -16,7 +16,7 @@ export default function Sidebar() {
 
   return (
     <aside
-      className={`fixed inset-y-0 left-0 z-30 flex h-screen flex-col border-r border-white/10 bg-[#0B1D3A] shadow-sm transition-all duration-200 ${
+      className={`fixed inset-y-0 left-0 z-30 flex h-screen flex-col border-r border-white/10 bg-[#12331F] shadow-sm transition-all duration-200 ${
         collapsed ? "w-20" : "w-60"
       }`}
     >
@@ -27,7 +27,7 @@ export default function Sidebar() {
         }`}
       >
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#B08D57] shadow-sm">
-          <Scale className="h-5 w-5 text-[#0B1D3A]" />
+          <Scale className="h-5 w-5 text-[#12331F]" />
         </div>
         {!collapsed && (
           <div className="min-w-0">

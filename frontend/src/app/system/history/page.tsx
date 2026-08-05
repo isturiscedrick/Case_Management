@@ -120,10 +120,10 @@ export default function HistoryPage() {
   }, [history, search, actionFilter]);
 
   return (
-    <div className="flex h-full min-w-0 flex-col gap-4 overflow-hidden bg-[#F7F5F0] p-4">
+    <div className="flex h-full min-w-0 flex-col gap-4 overflow-hidden bg-[#F5F1E3] p-4">
       {/* HEADER */}
       <div>
-        <h1 className="font-serif text-lg font-medium tracking-tight text-[#0B1D3A] md:text-xl">History</h1>
+        <h1 className="font-serif text-lg font-medium tracking-tight text-[#12331F] md:text-xl">History</h1>
         <p className="mt-0.5 text-xs text-slate-500">A record of changes made across all cases.</p>
       </div>
 
@@ -136,7 +136,7 @@ export default function HistoryPage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search company, case no., or user"
-              className="w-full rounded-lg border border-slate-200 bg-slate-50 py-1.5 pl-7 pr-3 text-xs text-slate-700 placeholder:text-slate-400 outline-none transition focus:border-blue-900 focus:bg-white focus:ring-2 focus:ring-blue-950/10"
+              className="w-full rounded-lg border border-slate-200 bg-slate-50 py-1.5 pl-7 pr-3 text-xs text-slate-700 placeholder:text-slate-400 outline-none transition focus:border-[#12331F] focus:bg-white focus:ring-2 focus:ring-[#12331F]/10"
             />
           </div>
 
@@ -161,8 +161,8 @@ export default function HistoryPage() {
       {/* EMPTY STATE */}
       {history.length === 0 && (
         <div className="flex flex-col items-center justify-center rounded-xl border border-slate-200 bg-white p-16 text-center shadow-sm">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#0B1D3A]/5">
-            <History className="h-5 w-5 text-[#0B1D3A]/40" />
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#12331F]/5">
+            <History className="h-5 w-5 text-[#12331F]/40" />
           </div>
           <p className="mt-4 text-sm font-medium text-slate-700">No activity yet</p>
           <p className="mt-1 max-w-xs text-xs text-slate-400">

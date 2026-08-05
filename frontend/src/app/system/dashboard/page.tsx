@@ -279,17 +279,17 @@ export default function CasesPage() {
     (filingDateStart || filingDateEnd ? 1 : 0);
 
   return (
-    <div className="flex h-full min-w-0 flex-col gap-4 overflow-hidden bg-[#F7F5F0] p-4">
+    <div className="flex h-full min-w-0 flex-col gap-4 overflow-hidden bg-[#F5F1E3] p-4">
       {/* HEADER */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="font-serif text-lg font-medium tracking-tight text-[#0B1D3A] md:text-xl">Case Management</h1>
+          <h1 className="font-serif text-lg font-medium tracking-tight text-[#12331F] md:text-xl">Case Management</h1>
           <p className="mt-0.5 text-xs text-slate-500">Track cases from Labor Arbiter through the Supreme Court.</p>
         </div>
 
         <button
           onClick={openCreate}
-          className="rounded-lg bg-[#0B1D3A] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#132a4d]"
+          className="rounded-lg bg-[#12331F] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#1B4A2C]"
         >
           <Plus size={15} />
           Create Case
@@ -359,7 +359,7 @@ export default function CasesPage() {
           <button
             onClick={() => setShowMoreFilters((s) => !s)}
             className={`inline-flex items-center justify-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition ${
-              showMoreFilters ? "border-[#0B1D3A] bg-[#0B1D3A] text-white" : "border-slate-200 bg-slate-50 text-slate-700 hover:bg-white"
+              showMoreFilters ? "border-[#12331F] bg-[#12331F] text-white" : "border-slate-200 bg-slate-50 text-slate-700 hover:bg-white"
             }`}
           >
             <SlidersHorizontal size={13} />
@@ -691,7 +691,7 @@ export default function CasesPage() {
               <button onClick={closeModal} className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50">
                 Cancel
               </button>
-              <button onClick={requestSaveCreate} className="rounded-lg bg-blue-950 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-900">
+              <button onClick={requestSaveCreate} className="rounded-lg bg-[#12331F] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#1B4A2C]">
                 Create Case
               </button>
             </>
@@ -719,7 +719,7 @@ export default function CasesPage() {
               <button onClick={closeModal} className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50">
                 Cancel
               </button>
-              <button onClick={requestSaveEdit} className="rounded-lg bg-blue-950 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-900">
+              <button onClick={requestSaveEdit} className="rounded-lg bg-[#12331F] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#1B4A2C]">
                 Save Changes
               </button>
             </>
