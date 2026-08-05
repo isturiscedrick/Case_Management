@@ -118,7 +118,7 @@ export default function AnalyticsPage() {
   const maxAward = Math.max(stageAwards.la, stageAwards.nlrc, stageAwards.ca, stageAwards.sc, 1);
 
   return (
-    <div className="h-full min-w-0 space-y-4 overflow-y-auto bg-[#F7F5F0] p-4">
+    <div className="h-full min-w-0 space-y-4 overflow-y-auto bg-[#F5F1E3`] p-4">
       {/* HEADER */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
