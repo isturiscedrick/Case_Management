@@ -1,5 +1,6 @@
 /* eslint-disable react/no-unescaped-entities */
-import { Plus } from "lucide-react";
+import type { ReactNode } from "react";
+import { Plus, Handshake, Gavel, Building2, Landmark, Scale, Lock, CheckCircle2, Circle, Info, AlertTriangle } from "lucide-react";
 import type {
   CaseDraft,
   LaInfo,
@@ -24,6 +25,63 @@ import { JudgementRewardField, inputCls } from "./CurrencyField";
 import type { CaseStatus } from "@/types/case";
 import { getStageGates } from "@/lib/caseValidation";
 import { formatCurrency, getTotalJudgementReward } from "@/lib/caseHelpers";
+
+// Visual identity per stage — kept aligned with the color coding used on the
+// Analytics page (STAGE_META there) so the same stage always reads as the
+// same color across the app. Presentational only, no bearing on the stage
+// gating logic below.
+const STAGE_STYLES = {
+  sena: { icon: Handshake, ring: "border-teal-200", chip: "bg-teal-50 text-teal-700", text: "text-teal-700", dot: "bg-teal-500" },
+  la: { icon: Gavel, ring: "border-sky-200", chip: "bg-sky-50 text-sky-700", text: "text-sky-700", dot: "bg-sky-500" },
+  nlrc: { icon: Building2, ring: "border-violet-200", chip: "bg-violet-50 text-violet-700", text: "text-violet-700", dot: "bg-violet-500" },
+  ca: { icon: Landmark, ring: "border-fuchsia-200", chip: "bg-fuchsia-50 text-fuchsia-700", text: "text-fuchsia-700", dot: "bg-fuchsia-500" },
+  sc: { icon: Scale, ring: "border-rose-200", chip: "bg-rose-50 text-rose-700", text: "text-rose-700", dot: "bg-rose-500" },
+} as const;
+
+// Small presentational status pill for a section header (Locked / In
+// progress / Complete). Purely derived from booleans already computed by
+// getStageGates — no new business logic.
+function StatusPill({ state }: { state: "locked" | "progress" | "done" }) {
+  if (state === "locked") {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-400">
+        <Lock size={11} /> Locked
+      </span>
+    );
+  }
+  if (state === "done") {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-medium text-emerald-600">
+        <CheckCircle2 size={11} /> Complete
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full bg-sky-50 px-2 py-0.5 text-[10px] font-medium text-sky-600">
+      <Circle size={11} /> In progress
+    </span>
+  );
+}
+
+// Banner replacement for the plain helper/warning <p> tags — same copy,
+// clearer visual weight so required vs. informational vs. locked states are
+// easy to scan.
+function InfoBanner({ tone, children }: { tone: "warning" | "info"; children: ReactNode }) {
+  if (tone === "warning") {
+    return (
+      <div className="mb-3 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] font-medium text-amber-700">
+        <AlertTriangle size={13} className="mt-0.5 shrink-0" />
+        <p>{children}</p>
+      </div>
+    );
+  }
+  return (
+    <div className="mb-3 flex items-start gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[11px] text-slate-500">
+      <Info size={13} className="mt-0.5 shrink-0 text-slate-400" />
+      <p>{children}</p>
+    </div>
+  );
+}
 
 export function CaseForm({
   value,
@@ -150,16 +208,68 @@ const {
     !(restrictNlrcProgressOnly && !canProceedPastNlrc) &&
     !(restrictCaProgressOnly && !canProceedPastCa);
 
+  // Presentational-only stepper summary — derived entirely from the gating
+  // booleans above, doesn't feed back into any state or logic.
+  const stageSteps: { key: keyof typeof STAGE_STYLES; label: string; status: "done" | "current" | "locked" }[] = [
+    { key: "sena", label: "SEnA", status: senaFilled ? "done" : "current" },
+    { key: "la", label: "LA", status: !laVisible ? "locked" : laFilled ? "done" : "current" },
+    { key: "nlrc", label: "NLRC", status: !nlrcVisible ? "locked" : nlrcFilled ? "done" : "current" },
+    { key: "ca", label: "CA", status: !caVisible ? "locked" : caFilled ? "done" : "current" },
+    { key: "sc", label: "SC", status: !scVisible ? "locked" : "current" },
+  ];
+
   return (
     <div className="space-y-6">
-      <div>
-        <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400">
-          Single Entry Approach (SEnA)
-        </h3>
+      {/* STAGE PROGRESS STEPPER */}
+      <div className="flex items-center gap-1 overflow-x-auto rounded-xl border border-slate-200 bg-white px-3 py-3 shadow-sm">
+        {stageSteps.map((step, i) => {
+          const meta = STAGE_STYLES[step.key];
+          const Icon = meta.icon;
+          return (
+            <div key={step.key} className="flex shrink-0 items-center">
+              <div className="flex flex-col items-center gap-1">
+                <div
+                  className={`flex h-8 w-8 items-center justify-center rounded-full border-2 transition-colors ${
+                    step.status === "done"
+                      ? `${meta.dot} border-transparent text-white`
+                      : step.status === "current"
+                      ? `bg-white ${meta.ring} ${meta.text}`
+                      : "border-slate-200 bg-slate-50 text-slate-300"
+                  }`}
+                >
+                  {step.status === "done" ? (
+                    <CheckCircle2 size={16} />
+                  ) : step.status === "locked" ? (
+                    <Lock size={13} />
+                  ) : (
+                    <Icon size={15} />
+                  )}
+                </div>
+                <span className={`text-[10px] font-medium ${step.status === "locked" ? "text-slate-300" : meta.text}`}>
+                  {step.label}
+                </span>
+              </div>
+              {i < stageSteps.length - 1 && (
+                <div className={`mx-1.5 h-0.5 w-8 sm:w-14 ${step.status === "done" ? meta.dot : "bg-slate-200"}`} />
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      <div className={`rounded-xl border ${STAGE_STYLES.sena.ring} bg-white p-4 shadow-sm sm:p-5`}>
+        <div className="mb-3 flex items-center gap-2">
+          <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${STAGE_STYLES.sena.chip}`}>
+            <Handshake size={16} />
+          </div>
+          <h3 className={`text-xs font-semibold uppercase tracking-wide ${STAGE_STYLES.sena.text}`}>
+            Single Entry Approach (SEnA)
+          </h3>
+        </div>
         {restrictSenaEditing && (
-          <p className="mb-2 text-[11px] text-amber-600">
+          <InfoBanner tone="warning">
             This case hasn't progressed beyond SEnA. Only Remarks and Handling Personnel can be edited here — set Remarks to "Not Settled" or "Others" to unlock the Labor Arbiter section.
-          </p>
+          </InfoBanner>
         )}
         <div className="grid gap-4 sm:grid-cols-3">
           <fieldset disabled={restrictSenaEditing} className="contents">
@@ -217,7 +327,7 @@ const {
                       const next = value.complainants.filter((_, i) => i !== index);
                       setTop("complainants", next);
                     }}
-                    className="rounded-lg border border-red-200 px-3 text-red-600 hover:bg-red-50"
+                    className="rounded-lg border border-red-200 px-3 text-red-600 transition-colors hover:bg-red-50"
                   >
                     −
                   </button>
@@ -226,7 +336,7 @@ const {
               <button
                 type="button"
                 onClick={() => setTop("complainants", [...value.complainants, ""])}
-                className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium hover:bg-slate-50"
+                className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium transition-colors hover:border-slate-300 hover:bg-slate-50"
               >
                 <Plus size={16} />
                 Add Complainant
@@ -408,22 +518,32 @@ const {
         </div>
       </div>
 
-      <div>
-        <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-sky-600">Labor Arbiter (LA)</h3>
+      <div className={`rounded-xl border ${STAGE_STYLES.la.ring} bg-white p-4 shadow-sm sm:p-5`}>
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${STAGE_STYLES.la.chip}`}>
+              <Gavel size={16} />
+            </div>
+            <h3 className={`text-xs font-semibold uppercase tracking-wide ${STAGE_STYLES.la.text}`}>
+              Labor Arbiter (LA)
+            </h3>
+          </div>
+          <StatusPill state={!laVisible ? "locked" : laFilled ? "done" : "progress"} />
+        </div>
         {senaFilled && laRequired && !laFilled && (
-          <p className="mb-2 text-[11px] font-medium text-amber-600">
+          <InfoBanner tone="warning">
             SEnA Remarks is "Not Settled" or "Others" — LA fields (Date, Status, Judgement Reward, Remarks) are now required to create the case. LA Progress is optional.
-          </p>
+          </InfoBanner>
         )}
         {senaFilled && !laRequired && (
-          <p className="mb-2 text-[11px] text-slate-400">
+          <InfoBanner tone="info">
             Disabled while SEnA Remarks is "Select Remarks" or "Settled", or while Specify Remarks is empty for "Not Settled"/"Others".
-          </p>
+          </InfoBanner>
         )}
         {restrictLaProgressOnly && (
-          <p className="mb-2 text-[11px] font-medium text-amber-600">
+          <InfoBanner tone="warning">
             LA details are saved and locked. Update LA Progress only, then save to continue the case workflow.
-          </p>
+          </InfoBanner>
         )}
         {laVisible && (
         <>
@@ -584,27 +704,37 @@ const {
         )}
       </div>
 
-      <div>
-        <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-violet-600">National Labor Relations Commission (NLRC)</h3>
+      <div className={`rounded-xl border ${STAGE_STYLES.nlrc.ring} bg-white p-4 shadow-sm sm:p-5`}>
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${STAGE_STYLES.nlrc.chip}`}>
+              <Building2 size={16} />
+            </div>
+            <h3 className={`text-xs font-semibold uppercase tracking-wide ${STAGE_STYLES.nlrc.text}`}>
+              National Labor Relations Commission (NLRC)
+            </h3>
+          </div>
+          <StatusPill state={!nlrcVisible ? "locked" : nlrcFilled ? "done" : "progress"} />
+        </div>
         {senaFilled && !laRequired && (
-          <p className="mb-2 text-[11px] text-slate-400">
+          <InfoBanner tone="info">
             Disabled while LA Progress is "Select Progress" or "Settled".
-          </p>
+          </InfoBanner>
         )}
         {senaFilled && laRequired && !laFilled && (
-          <p className="mb-2 text-[11px] text-slate-400">
+          <InfoBanner tone="info">
             Complete all Labor Arbiter (LA) fields above (Date, Status, Judgement Reward, Remarks) to unlock this section.
-          </p>
+          </InfoBanner>
         )}
         {senaFilled && laRequired && laFilled && !nlrcEnabled && (
-          <p className="mb-2 text-[11px] text-slate-400">
+          <InfoBanner tone="info">
             LA Progress must be "Not Settled" or "Others" to unlock NLRC. The case is considered resolved if settled at LA.
-          </p>
+          </InfoBanner>
         )}
         {restrictNlrcProgressOnly && (
-          <p className="mb-2 text-[11px] font-medium text-amber-600">
+          <InfoBanner tone="warning">
             NLRC details are saved and locked. Update NLRC Progress only, then save to continue the case workflow.
-          </p>
+          </InfoBanner>
         )}
         {nlrcVisible && (
         <>
@@ -765,27 +895,37 @@ const {
         )}
       </div>
 
-      <div>
-        <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-fuchsia-600">Court of Appeals (CA)</h3>
+      <div className={`rounded-xl border ${STAGE_STYLES.ca.ring} bg-white p-4 shadow-sm sm:p-5`}>
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${STAGE_STYLES.ca.chip}`}>
+              <Landmark size={16} />
+            </div>
+            <h3 className={`text-xs font-semibold uppercase tracking-wide ${STAGE_STYLES.ca.text}`}>
+              Court of Appeals (CA)
+            </h3>
+          </div>
+          <StatusPill state={!caVisible ? "locked" : caFilled ? "done" : "progress"} />
+        </div>
         {senaFilled && !nlrcEnabled && (
-          <p className="mb-2 text-[11px] text-slate-400">
+          <InfoBanner tone="info">
             Disabled while NLRC Progress is "Select Progress" or "Settled".
-          </p>
+          </InfoBanner>
         )}
         {senaFilled && nlrcEnabled && !nlrcFilled && (
-          <p className="mb-2 text-[11px] text-slate-400">
+          <InfoBanner tone="info">
             Complete all NLRC fields above (Date, Status, Judgement Award, Remarks) to unlock this section.
-          </p>
+          </InfoBanner>
         )}
         {senaFilled && nlrcEnabled && nlrcFilled && !caEnabled && (
-          <p className="mb-2 text-[11px] text-slate-400">
+          <InfoBanner tone="info">
             NLRC Progress must be "Not Settled" or "Others" to unlock CA. The case is considered resolved if settled at NLRC.
-          </p>
+          </InfoBanner>
         )}
         {restrictCaProgressOnly && (
-          <p className="mb-2 text-[11px] font-medium text-amber-600">
+          <InfoBanner tone="warning">
             CA details are saved and locked. Update CA Progress only, then save to continue the case workflow.
-          </p>
+          </InfoBanner>
         )}
         {caVisible && (
         <>
@@ -946,22 +1086,32 @@ const {
         )}
       </div>
 
-      <div>
-        <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-rose-600">Supreme Court (SC)</h3>
+      <div className={`rounded-xl border ${STAGE_STYLES.sc.ring} bg-white p-4 shadow-sm sm:p-5`}>
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${STAGE_STYLES.sc.chip}`}>
+              <Scale size={16} />
+            </div>
+            <h3 className={`text-xs font-semibold uppercase tracking-wide ${STAGE_STYLES.sc.text}`}>
+              Supreme Court (SC)
+            </h3>
+          </div>
+          <StatusPill state={!scVisible ? "locked" : "progress"} />
+        </div>
         {senaFilled && !caEnabled && (
-          <p className="mb-2 text-[11px] text-slate-400">
+          <InfoBanner tone="info">
             Disabled while CA Progress is "Select Progress" or "Settled".
-          </p>
+          </InfoBanner>
         )}
         {senaFilled && caEnabled && !caFilled && (
-          <p className="mb-2 text-[11px] text-slate-400">
+          <InfoBanner tone="info">
             Complete all CA fields above (Date, Status, Judgement Award, Remarks) to unlock this section.
-          </p>
+          </InfoBanner>
         )}
         {senaFilled && caEnabled && caFilled && !scEnabled && (
-          <p className="mb-2 text-[11px] text-slate-400">
+          <InfoBanner tone="info">
             CA Progress must be "Not Settled" or "Others" to unlock SC. The case is considered resolved if settled at CA.
-          </p>
+          </InfoBanner>
         )}
         {scVisible && (
         <>
@@ -1066,14 +1216,17 @@ const {
         )}
         </>
         )}
-      <div>
-        <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-emerald-600">
+      </div>
+
+      <div className="rounded-xl border border-emerald-200 bg-emerald-50/40 p-4 shadow-sm sm:p-5">
+        <h3 className="mb-3 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-emerald-700">
+          <Landmark size={13} />
           Total Judgement Reward
         </h3>
-        <div className="rounded-lg border border-emerald-100 bg-emerald-50/50 px-3 py-2 text-sm font-medium text-emerald-800">
+        <div className="rounded-lg border border-emerald-200 bg-white px-3 py-2.5 text-lg font-semibold text-emerald-800 shadow-sm">
           {formatCurrency(totalJudgementReward)}
         </div>
-        <p className="mt-1 text-[11px] text-slate-400">
+        <p className="mt-1.5 text-[11px] text-emerald-700/70">
           Reflects the latest stage's Judgement Reward/Award (SC, then CA, NLRC, LA) — not a sum of all stages.
         </p>
         <div className="mt-3 max-w-sm">
@@ -1090,8 +1243,13 @@ const {
               <option value="Settlement">Settlement</option>
             </select>
           </Field>
+          {!anyStageSettled && (
+            <p className="mt-1 flex items-center gap-1 text-[10px] text-emerald-700/60">
+              <Lock size={10} />
+              Enabled once a stage's Remarks/Progress is marked "Settled".
+            </p>
+          )}
         </div>
-      </div>
       </div>
     </div>
   );

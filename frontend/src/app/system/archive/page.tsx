@@ -5,133 +5,13 @@ import { Archive, ArchiveRestore, Eye, Search } from "lucide-react";
 
 import type { CaseItem, StageProgress } from "@/types/case";
 import { formatDate, formatCurrency } from "@/lib/caseHelpers";
+import { TABLE_COLUMN_COUNT } from "@/constants/caseOptions";
+import { initialCases } from "@/data/initialCases";
 
 import { StatusBadge } from "@/components/cases/StatusBadge";
 import { Modal } from "@/components/cases/Modal";
 import { ConfirmDialog } from "@/components/cases/ConfirmDialog";
 import { ViewCaseContent } from "@/components/cases/ViewCaseContent";
-
-// ---- Sample archived data -------------------------------------------------
-// Replace with real archived cases from your store/API once wired up.
-const sampleArchivedCases: CaseItem[] = [
-  {
-    id: 1001,
-    company: "Golden Harvest Manufacturing Corp.",
-    status: "Closed",
-    date: "2025-03-18",
-    caseTitle: "Dela Cruz, et al. v. Golden Harvest Manufacturing Corp.",
-    caseNo: "NCR-03-1234-25",
-    complainants: ["Juan Dela Cruz", "Maria Santos"],
-    venue: "NLRC NCR",
-    cause: ["Illegal Dismissal"],
-    causeSpecification: "",
-    filingDate: "2024-11-02",
-    remarks: "Case closed after final judgment.",
-    remarkSpecification: "",
-    createdBy: "admin",
-    createdAt: "2024-11-02",
-    archived: true,
-    la: {
-      date: "2024-12-10",
-      status: "Illegal Dismissal",
-      judgementReward: "185000",
-      remarks: "Others",
-      remarksSpecification: "Decision in favor of complainants",
-    },
-    nlrc: {
-      date: "2025-01-20",
-      status: "Affirmed",
-      judgementReward: "185000",
-      remarks: "",
-      remarksSpecification: "",
-    },
-    ca: { date: "", status: "", judgementReward: "", remarks: "", remarksSpecification: "" },
-    sc: { date: "", status: "", judgementReward: "", remarks: "", remarksSpecification: "" },
-    caseProgress: {
-      la: "Not Settled",
-      laSpecification: "Appealed to NLRC",
-      nlrc: "Settled",
-      nlrcSpecification: "",
-      ca: "",
-      caSpecification: "",
-      sc: "",
-      scSpecification: "",
-    },
-    totalPaid: { amount: "185000", category: "Judgement-Award-W" },
-  },
-  {
-    id: 1002,
-    company: "Silverline Logistics Inc.",
-    status: "Closed",
-    date: "2024-08-05",
-    caseTitle: "Reyes v. Silverline Logistics Inc.",
-    caseNo: "RAB-IV-08-0456-24",
-    complainants: ["Ramon Reyes"],
-    venue: "NLRC RAB IV",
-    cause: ["Money Claims"],
-    causeSpecification: "Unpaid overtime and 13th month pay",
-    filingDate: "2024-02-14",
-    remarks: "Settled amicably before LA decision.",
-    remarkSpecification: "",
-    createdBy: "admin",
-    createdAt: "2024-02-14",
-    archived: true,
-    la: {
-      date: "2024-04-22",
-      status: "Illegal Dismissal",
-      judgementReward: "42000",
-      remarks: "",
-      remarksSpecification: "",
-    },
-    nlrc: { date: "", status: "", judgementReward: "", remarks: "", remarksSpecification: "" },
-    ca: { date: "", status: "", judgementReward: "", remarks: "", remarksSpecification: "" },
-    sc: { date: "", status: "", judgementReward: "", remarks: "", remarksSpecification: "" },
-    caseProgress: {
-      la: "Settled",
-      laSpecification: "",
-      nlrc: "",
-      nlrcSpecification: "",
-      ca: "",
-      caSpecification: "",
-      sc: "",
-      scSpecification: "",
-    },
-    totalPaid: { amount: "42000", category: "Settlement" },
-  },
-  {
-    id: 1003,
-    company: "Pinnacle Retail Group",
-    status: "Execution",
-    date: "2025-06-30",
-    caseTitle: "Fernandez v. Pinnacle Retail Group",
-    caseNo: "NCR-06-0987-25",
-    complainants: ["Liza Fernandez"],
-    venue: "NLRC NCR",
-    cause: ["Illegal Dismissal"],
-    causeSpecification: "",
-    filingDate: "2025-03-11",
-    remarks: "Archived pending re-filing decision by complainant.",
-    remarkSpecification: "",
-    createdBy: "admin",
-    createdAt: "2025-03-11",
-    archived: true,
-    la: { date: "", status: "", judgementReward: "", remarks: "", remarksSpecification: "" },
-    nlrc: { date: "", status: "", judgementReward: "", remarks: "", remarksSpecification: "" },
-    ca: { date: "", status: "", judgementReward: "", remarks: "", remarksSpecification: "" },
-    sc: { date: "", status: "", judgementReward: "", remarks: "", remarksSpecification: "" },
-    caseProgress: {
-      la: "",
-      laSpecification: "",
-      nlrc: "",
-      nlrcSpecification: "",
-      ca: "",
-      caSpecification: "",
-      sc: "",
-      scSpecification: "",
-    },
-    totalPaid: { amount: "", category: "" },
-  },
-];
 
 function formatProgress(value: string, specification?: string) {
   if ((value === "Others" || value === "Not Settled") && specification) {
@@ -141,16 +21,22 @@ function formatProgress(value: string, specification?: string) {
 }
 
 export default function ArchivePage() {
-  const [cases, setCases] = useState<CaseItem[]>(sampleArchivedCases);
+  // Same source of truth as the dashboard — this page just filters down to
+  // archived === true. Restoring a case flips the flag back rather than
+  // deleting it from this list, so it stays consistent if this ever moves
+  // to a shared store/API instead of local state.
+  const [cases, setCases] = useState<CaseItem[]>(initialCases);
   const [search, setSearch] = useState("");
   const [progressFilter, setProgressFilter] = useState<"All" | StageProgress>("All");
 
   const [viewItem, setViewItem] = useState<CaseItem | null>(null);
   const [restoreItem, setRestoreItem] = useState<CaseItem | null>(null);
 
+  const archivedCases = useMemo(() => cases.filter((item) => item.archived), [cases]);
+
   const filteredCases = useMemo(() => {
     const keyword = search.toLowerCase();
-    return cases.filter((item) => {
+    return archivedCases.filter((item) => {
       const matchesProgress =
         progressFilter === "All" || Object.values(item.caseProgress).some((stage) => stage === progressFilter);
 
@@ -158,20 +44,19 @@ export default function ArchivePage() {
         item.company.toLowerCase().includes(keyword) ||
         item.caseNo.toLowerCase().includes(keyword) ||
         item.complainants.some((name) => name.toLowerCase().includes(keyword)) ||
-        item.cause.some((cause) =>
-        cause.toLowerCase().includes(keyword))
+        item.cause.some((cause) => cause.toLowerCase().includes(keyword));
 
       return matchesProgress && matchesSearch;
     });
-  }, [cases, search, progressFilter]);
+  }, [archivedCases, search, progressFilter]);
 
   const requestRestore = (item: CaseItem) => setRestoreItem(item);
 
   const confirmRestore = () => {
     if (!restoreItem) return;
-    // In a real app this calls your store/API to flip `archived` back to false
-    // so the case reappears on the dashboard's active list.
-    setCases((prev) => prev.filter((c) => c.id !== restoreItem.id));
+    // Flip the archived flag back to false so the case reappears on the
+    // dashboard's active list, instead of deleting it from this array.
+    setCases((prev) => prev.map((c) => (c.id === restoreItem.id ? { ...c, archived: false } : c)));
     setRestoreItem(null);
   };
 
@@ -209,12 +94,12 @@ export default function ArchivePage() {
         </div>
 
         <p className="mt-2 text-[11px] text-slate-400">
-          Showing {filteredCases.length} of {cases.length} archived cases
+          Showing {filteredCases.length} of {archivedCases.length} archived cases
         </p>
       </div>
 
       {/* EMPTY STATE */}
-      {cases.length === 0 && (
+      {archivedCases.length === 0 && (
         <div className="flex flex-col items-center justify-center rounded-xl border border-slate-200 bg-white p-16 text-center shadow-sm">
           <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#12331F]/5">
             <Archive className="h-5 w-5 text-[#12331F]/40" />
@@ -227,7 +112,7 @@ export default function ArchivePage() {
       )}
 
       {/* TABLE */}
-      {cases.length > 0 && (
+      {archivedCases.length > 0 && (
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
           <div className="min-h-0 flex-1 overflow-auto">
             <table className="min-w-full border-separate border-spacing-0 text-[11px] table-fixed">
@@ -239,6 +124,7 @@ export default function ArchivePage() {
                 <col className="w-20" />
                 <col className="w-24" />
                 <col className="w-20" />
+                <col className="w-32" />
                 <col className="w-28" />
                 <col className="w-16" />
                 <col className="w-24" />
@@ -283,6 +169,9 @@ export default function ArchivePage() {
                   </th>
                   <th rowSpan={2} className="sticky top-0 z-20 border-b border-slate-200 bg-slate-50 p-2 text-left">
                     Venue
+                  </th>
+                  <th rowSpan={2} className="sticky top-0 z-20 border-b border-slate-200 bg-slate-50 p-2 text-left">
+                    Handling Personnel
                   </th>
                   <th rowSpan={2} className="sticky top-0 z-20 border-b border-slate-200 bg-slate-50 p-2 text-left">
                     Cause of Action
@@ -357,7 +246,13 @@ export default function ArchivePage() {
                     <td className="p-2 text-slate-600">{item.complainants.join(", ")}</td>
                     <td className="truncate p-2 text-slate-600">{item.venue}</td>
                     <td className="truncate p-2 text-slate-600">
-                      {item.cause}
+                      {item.handlingPersonnel}
+                      {item.handlingPersonnel === "Others" && item.handlingPersonnelSpecification && (
+                        <div className="text-[10px] text-slate-500">({item.handlingPersonnelSpecification})</div>
+                      )}
+                    </td>
+                    <td className="truncate p-2 text-slate-600">
+                      {item.cause.join(", ")}
                       {item.causeSpecification && <div className="text-[10px] text-slate-500">({item.causeSpecification})</div>}
                     </td>
                     <td className="p-2 text-slate-600">{formatDate(item.filingDate)}</td>
@@ -371,7 +266,7 @@ export default function ArchivePage() {
                     <td className="truncate bg-sky-50/30 p-2 font-medium text-slate-700">{formatCurrency(item.la.judgementReward)}</td>
                     <td className="truncate bg-sky-50/30 p-2 text-slate-600">
                       {item.la.remarks}
-                      {item.la.remarks === "Others" && item.la.remarksSpecification && (
+                      {item.la.remarks === "Other" && item.la.remarksSpecification && (
                         <div className="text-[10px] text-slate-500">({item.la.remarksSpecification})</div>
                       )}
                     </td>
@@ -384,7 +279,7 @@ export default function ArchivePage() {
                     <td className="truncate bg-violet-50/30 p-2 font-medium text-slate-700">{formatCurrency(item.nlrc.judgementReward)}</td>
                     <td className="truncate bg-violet-50/30 p-2 text-slate-600">
                       {item.nlrc.remarks}
-                      {item.nlrc.remarks === "Others" && item.nlrc.remarksSpecification && (
+                      {item.nlrc.remarks === "Other" && item.nlrc.remarksSpecification && (
                         <div className="text-[10px] text-slate-500">({item.nlrc.remarksSpecification})</div>
                       )}
                     </td>
@@ -397,7 +292,7 @@ export default function ArchivePage() {
                     <td className="truncate bg-fuchsia-50/30 p-2 font-medium text-slate-700">{formatCurrency(item.ca.judgementReward)}</td>
                     <td className="truncate bg-fuchsia-50/30 p-2 text-slate-600">
                       {item.ca.remarks}
-                      {item.ca.remarks === "Others" && item.ca.remarksSpecification && (
+                      {item.ca.remarks === "Other" && item.ca.remarksSpecification && (
                         <div className="text-[10px] text-slate-500">({item.ca.remarksSpecification})</div>
                       )}
                     </td>
@@ -410,7 +305,7 @@ export default function ArchivePage() {
                     <td className="truncate bg-rose-50/30 p-2 font-medium text-slate-700">{formatCurrency(item.sc.judgementReward)}</td>
                     <td className="truncate bg-rose-50/30 p-2 text-slate-600">
                       {item.sc.remarks}
-                      {item.sc.remarks === "Others" && item.sc.remarksSpecification && (
+                      {item.sc.remarks === "Other" && item.sc.remarksSpecification && (
                         <div className="text-[10px] text-slate-500">({item.sc.remarksSpecification})</div>
                       )}
                     </td>
@@ -448,7 +343,7 @@ export default function ArchivePage() {
 
                 {filteredCases.length === 0 && (
                   <tr>
-                    <td colSpan={28} className="p-8 text-center text-sm text-slate-400">
+                    <td colSpan={TABLE_COLUMN_COUNT} className="p-8 text-center text-sm text-slate-400">
                       No archived cases match your filters.
                     </td>
                   </tr>
