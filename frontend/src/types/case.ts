@@ -100,6 +100,15 @@ export interface CaseItem {
 
   createdBy: string;
   createdAt: string;
+
+  // NEW FIELDS — who last modified the case and when. Optional so existing
+  // data/mocks that predate this change still type-check; a case that has
+  // never been edited since creation simply won't have these set. The
+  // actual save/submit handler is responsible for populating these on
+  // every update (not covered by this file).
+  updatedBy?: string;
+  updatedAt?: string;
+
   archived: boolean;
 }
 
