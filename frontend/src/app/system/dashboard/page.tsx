@@ -23,7 +23,7 @@ import { getCaseDraftErrors, getStageGates } from "@/lib/caseValidation";
 
 import { StatusBadge } from "@/components/cases/StatusBadge";
 import { SummaryCard } from "@/components/cases/SummaryCard";
-import { CaseForm } from "@/components/cases/CaseForm";
+import { CaseForm } from "@/components/cases/form/CaseForm";
 import { Modal } from "@/components/cases/Modal";
 import { ConfirmDialog } from "@/components/cases/ConfirmDialog";
 import { ViewCaseContent } from "@/components/cases/ViewCaseContent";
