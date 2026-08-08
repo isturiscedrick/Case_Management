@@ -32,8 +32,8 @@ import {
   STAGE_STATUS_OPTIONS,
   HANDLING_PERSONNEL_OPTIONS,
 } from "@/constants/caseOptions";
-import { Field } from "./Field";
-import { JudgementRewardField, inputCls } from "./CurrencyField";
+import { Field } from "../Field";
+import { JudgementRewardField, inputCls } from "../CurrencyField";
 import type { CaseStatus } from "@/types/case";
 import { getStageGates } from "@/lib/caseValidation";
 import { formatCurrency, getTotalJudgementReward } from "@/lib/caseHelpers";
