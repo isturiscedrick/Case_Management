@@ -59,7 +59,7 @@ import { StatusBadge } from "@/components/cases/StatusBadge";
 import { SummaryCard } from "@/components/cases/SummaryCard";
 import { ViewCaseContent } from "@/components/cases/ViewCaseContent";
 
-import { CaseForm } from "@/features/cases/components/form/CaseForm";
+import { CaseForm } from "@/components/form/CaseForm";
 
 /* =========================================================
    HELPERS

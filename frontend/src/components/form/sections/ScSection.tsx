@@ -18,12 +18,12 @@ import {
   inputCls,
 } from "@/components/cases/CurrencyField";
 
-import { InfoBanner } from "@/features/cases/components/form/shared/InfoBanner";
+import { InfoBanner } from "@/components/form/shared/InfoBanner";
 
 import {
   SectionHeader,
   STAGE_STYLES,
-} from "@/features/cases/components/form/shared/SectionHeader";
+} from "@/components/form/shared/SectionHeader";
 
 export function ScSection({
   value,
