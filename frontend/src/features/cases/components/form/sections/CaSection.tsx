@@ -1,0 +1,565 @@
+import {
+  Landmark,
+  Lock,
+  CheckCircle2,
+  Circle,
+  Info,
+  AlertTriangle,
+} from "lucide-react";
+
+import type {
+  CaseDraft,
+  CaInfo,
+  StageProgress,
+} from "@/types/case";
+
+import {
+  PROGRESS_OPTIONS,
+  STAGE_REMARKS_OPTIONS,
+  STAGE_STATUS_OPTIONS,
+} from "@/constants/caseOptions";
+
+import { Field } from "@/components/cases/Field";
+import {
+  JudgementRewardField,
+  inputCls,
+} from "@/components/cases/CurrencyField";
+
+const STAGE_STYLES = {
+  ca: {
+    icon: Landmark,
+    ring: "border-fuchsia-200",
+    chip: "bg-fuchsia-50 text-fuchsia-700",
+    text: "text-fuchsia-700",
+    dot: "bg-fuchsia-500",
+  },
+} as const;
+
+type StatusPillState = "locked" | "progress" | "done";
+
+function StatusPill({
+  state,
+}: {
+  state: StatusPillState;
+}) {
+  if (state === "locked") {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-400">
+        <Lock size={11} />
+        Locked
+      </span>
+    );
+  }
+
+  if (state === "done") {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-medium text-emerald-600">
+        <CheckCircle2 size={11} />
+        Complete
+      </span>
+    );
+  }
+
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full bg-sky-50 px-2 py-0.5 text-[10px] font-medium text-sky-600">
+      <Circle size={11} />
+      In progress
+    </span>
+  );
+}
+
+function InfoBanner({
+  tone,
+  children,
+}: {
+  tone: "warning" | "info";
+  children: React.ReactNode;
+}) {
+  if (tone === "warning") {
+    return (
+      <div className="mb-3 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] font-medium text-amber-700">
+        <AlertTriangle
+          size={13}
+          className="mt-0.5 shrink-0"
+        />
+        <p>{children}</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mb-3 flex items-start gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[11px] text-slate-500">
+      <Info
+        size={13}
+        className="mt-0.5 shrink-0 text-slate-400"
+      />
+      <p>{children}</p>
+    </div>
+  );
+}
+
+function SectionHeader({
+  title,
+  status,
+}: {
+  title: string;
+  status?: StatusPillState;
+}) {
+  const meta = STAGE_STYLES.ca;
+  const Icon = meta.icon;
+
+  return (
+    <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+      <div className="flex items-center gap-2">
+        <div
+          className={`flex h-8 w-8 items-center justify-center rounded-lg ${meta.chip}`}
+        >
+          <Icon size={16} />
+        </div>
+
+        <h3
+          className={`text-xs font-semibold uppercase tracking-wide ${meta.text}`}
+        >
+          {title}
+        </h3>
+      </div>
+
+      {status && <StatusPill state={status} />}
+    </div>
+  );
+}
+
+export function CaSection({
+  value,
+  onChange,
+  setCa,
+  setProgressSpecification,
+  senaFilled,
+  nlrcEnabled,
+  nlrcFilled,
+  caEnabled,
+  caFilled,
+  caVisible,
+  restrictCaDetailsEditing,
+  restrictCaProgressOnly,
+  restrictCaProgressEditing,
+}: {
+  value: CaseDraft;
+  onChange: (next: CaseDraft) => void;
+  setCa: <K extends keyof CaInfo>(
+    key: K,
+    v: CaInfo[K],
+  ) => void;
+  setProgressSpecification: (
+    key: "la" | "nlrc" | "ca" | "sc",
+    v: string,
+  ) => void;
+  senaFilled: boolean;
+  nlrcEnabled: boolean;
+  nlrcFilled: boolean;
+  caEnabled: boolean;
+  caFilled: boolean;
+  caVisible: boolean;
+  restrictCaDetailsEditing: boolean;
+  restrictCaProgressOnly: boolean;
+  restrictCaProgressEditing: boolean;
+}) {
+  return (
+    <div
+      className={`rounded-xl border ${STAGE_STYLES.ca.ring} bg-white p-4 shadow-sm sm:p-5`}
+    >
+      <SectionHeader
+        title="Court of Appeals (CA)"
+        status={
+          !caVisible
+            ? "locked"
+            : caFilled
+            ? "done"
+            : "progress"
+        }
+      />
+
+      {/* -----------------------------------------------------------
+          INFORMATION BANNERS
+         ----------------------------------------------------------- */}
+
+      {senaFilled && !nlrcEnabled && (
+        <InfoBanner tone="info">
+          Disabled while NLRC Progress is "Select Progress"
+          or "Settled".
+        </InfoBanner>
+      )}
+
+      {senaFilled &&
+        nlrcEnabled &&
+        !nlrcFilled && (
+          <InfoBanner tone="info">
+            Complete all NLRC fields above (Date, Status,
+            Judgement Award, Remarks) to unlock this
+            section.
+          </InfoBanner>
+        )}
+
+      {senaFilled &&
+        nlrcEnabled &&
+        nlrcFilled &&
+        !caEnabled && (
+          <InfoBanner tone="info">
+            NLRC Progress must be "Not Settled" or "Others"
+            to unlock CA. The case is considered resolved if
+            settled at NLRC.
+          </InfoBanner>
+        )}
+
+      {restrictCaProgressOnly && (
+        <InfoBanner tone="warning">
+          CA details are saved and locked. Update CA Progress
+          only, then save to continue the case workflow.
+        </InfoBanner>
+      )}
+
+      {/* -----------------------------------------------------------
+          CA DETAILS
+         ----------------------------------------------------------- */}
+
+      {caVisible && (
+        <>
+          <div className="grid gap-4 sm:grid-cols-4">
+            {/* Date + Status */}
+
+            <fieldset
+              disabled={restrictCaDetailsEditing}
+              className="contents"
+            >
+              <Field label="Date">
+                <input
+                  type="date"
+                  className={inputCls}
+                  value={value.ca.date}
+                  onChange={(e) =>
+                    setCa(
+                      "date",
+                      e.target.value,
+                    )
+                  }
+                />
+              </Field>
+
+              <Field label="Status">
+                <select
+                  className={inputCls}
+                  value={value.ca.status}
+                  onChange={(e) =>
+                    setCa(
+                      "status",
+                      e.target.value,
+                    )
+                  }
+                >
+                  <option value="">
+                    Select Status
+                  </option>
+
+                  {STAGE_STATUS_OPTIONS.map(
+                    (status) => (
+                      <option
+                        key={status}
+                        value={status}
+                      >
+                        {status}
+                      </option>
+                    ),
+                  )}
+                </select>
+              </Field>
+            </fieldset>
+
+            {/* -----------------------------------------------------
+                JUDGEMENT AWARD
+
+                Intentionally outside restrictCaDetailsEditing.
+               ----------------------------------------------------- */}
+
+            <JudgementRewardField
+              label="Judgement Award"
+              value={
+                value.ca.judgementReward
+              }
+              onChange={(v) =>
+                setCa(
+                  "judgementReward",
+                  v,
+                )
+              }
+              amountSpecValue={
+                value.ca
+                  .judgementRewardSpecification
+              }
+              onAmountSpecChange={(v) =>
+                setCa(
+                  "judgementRewardSpecification",
+                  v,
+                )
+              }
+              computedSpecValue={
+                value.ca
+                  .judgementRewardComputedSpecification
+              }
+              onComputedSpecChange={(v) =>
+                setCa(
+                  "judgementRewardComputedSpecification",
+                  v,
+                )
+              }
+            />
+
+            {/* Remarks */}
+
+            <fieldset
+              disabled={restrictCaDetailsEditing}
+              className="contents"
+            >
+              <Field label="Remarks">
+                <select
+                  className={inputCls}
+                  value={value.ca.remarks}
+                  onChange={(e) => {
+                    const selected =
+                      e.target.value;
+
+                    onChange({
+                      ...value,
+
+                      ca: {
+                        ...value.ca,
+                        remarks: selected,
+                        remarksSpecification:
+                          selected === "Other"
+                            ? value.ca
+                                .remarksSpecification ??
+                              ""
+                            : "",
+                      },
+                    });
+                  }}
+                >
+                  <option value="">
+                    Select Remarks
+                  </option>
+
+                  {STAGE_REMARKS_OPTIONS.map(
+                    (option) => (
+                      <option
+                        key={option}
+                        value={option}
+                      >
+                        {option}
+                      </option>
+                    ),
+                  )}
+                </select>
+              </Field>
+            </fieldset>
+          </div>
+
+          {/* -------------------------------------------------------
+              CA REMARK SPECIFICATION
+             ------------------------------------------------------- */}
+
+          {value.ca.remarks === "Other" && (
+            <fieldset
+              disabled={restrictCaDetailsEditing}
+              className="contents"
+            >
+              <div className="mt-3 grid gap-4 sm:grid-cols-3">
+                <Field label="Specify Remarks">
+                  <input
+                    className={inputCls}
+                    placeholder="Enter remarks"
+                    value={
+                      value.ca
+                        .remarksSpecification ??
+                      ""
+                    }
+                    onChange={(e) =>
+                      setCa(
+                        "remarksSpecification",
+                        e.target.value,
+                      )
+                    }
+                  />
+                </Field>
+              </div>
+            </fieldset>
+          )}
+        </>
+      )}
+
+      {/* -----------------------------------------------------------
+          CA PROGRESS
+         ----------------------------------------------------------- */}
+
+      {caVisible && (
+        <div className="mt-3">
+          <Field label="CA Progress">
+            <select
+              className={inputCls}
+              value={value.caseProgress.ca}
+              disabled={
+                restrictCaProgressEditing
+              }
+              onChange={(e) => {
+                const selected =
+                  e.target.value as StageProgress;
+
+                /*
+                 * Check whether SC already contains ANY data.
+                 */
+
+                const scHasData =
+                  !!value.sc.date ||
+                  !!value.sc.status ||
+                  !!value.sc.judgementReward ||
+                  !!value.sc
+                    .judgementRewardSpecification ||
+                  !!value.sc
+                    .judgementRewardComputedSpecification ||
+                  !!value.sc.remarks ||
+                  !!value.sc
+                    .remarksSpecification ||
+                  !!value.caseProgress.sc ||
+                  !!value.caseProgress
+                    .scSpecification;
+
+                /*
+                 * If CA Progress changes away from
+                 * Not Settled / Others, reset SC.
+                 */
+
+                const shouldResetSc =
+                  scHasData &&
+                  selected !== "Not Settled" &&
+                  selected !== "Others";
+
+                /*
+                 * Clear Category when CA Progress becomes
+                 * Not Settled or Others.
+                 */
+
+                const shouldResetCategory =
+                  selected === "Not Settled" ||
+                  selected === "Others";
+
+                onChange({
+                  ...value,
+
+                  caseProgress: {
+                    ...value.caseProgress,
+
+                    ca: selected,
+
+                    ...(selected === "Others" ||
+                    selected === "Not Settled"
+                      ? {}
+                      : {
+                          caSpecification: "",
+                        }),
+
+                    ...(shouldResetSc
+                      ? {
+                          sc: "",
+                          scSpecification: "",
+                        }
+                      : {}),
+                  },
+
+                  ...(shouldResetSc
+                    ? {
+                        sc: {
+                          ...value.sc,
+                          date: "",
+                          status: "",
+                          judgementReward: "",
+                          judgementRewardSpecification:
+                            "",
+                          judgementRewardComputedSpecification:
+                            "",
+                          remarks: "",
+                          remarksSpecification:
+                            "",
+                        },
+                      }
+                    : {}),
+
+                  ...(shouldResetCategory
+                    ? {
+                        totalPaid: {
+                          ...value.totalPaid,
+                          category: "",
+                        },
+                      }
+                    : {}),
+                });
+              }}
+            >
+              <option value="">
+                Select Progress
+              </option>
+
+              {PROGRESS_OPTIONS.filter(
+                (
+                  p,
+                ): p is StageProgress =>
+                  p !== "All",
+              ).map((p) => (
+                <option
+                  key={p}
+                  value={p}
+                >
+                  {p}
+                </option>
+              ))}
+            </select>
+          </Field>
+        </div>
+      )}
+
+      {/* -----------------------------------------------------------
+          CA PROGRESS SPECIFICATION
+         ----------------------------------------------------------- */}
+
+      {caVisible &&
+        (value.caseProgress.ca ===
+          "Others" ||
+          value.caseProgress.ca ===
+            "Not Settled") && (
+          <fieldset
+            disabled={
+              restrictCaProgressEditing
+            }
+            className="contents"
+          >
+            <div className="mt-3 grid gap-4 sm:grid-cols-3">
+              <Field label="Specify CA Progress">
+                <input
+                  className={inputCls}
+                  placeholder="Enter progress"
+                  value={
+                    value.caseProgress
+                      .caSpecification ??
+                    ""
+                  }
+                  onChange={(e) =>
+                    setProgressSpecification(
+                      "ca",
+                      e.target.value,
+                    )
+                  }
+                />
+              </Field>
+            </div>
+          </fieldset>
+        )}
+    </div>
+  );
+}
