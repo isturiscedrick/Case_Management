@@ -1,5 +1,3 @@
-import type { ReactNode } from "react";
-import { Plus, Handshake, Gavel, Building2, Landmark, Scale, Lock, CheckCircle2, Circle, Info, AlertTriangle } from "lucide-react";
 import type {
   CaseDraft,
   LaInfo,
@@ -9,16 +7,6 @@ import type {
   TotalPaidCategory,
   StageProgress,
 } from "@/types/case";
-import {
-  STATUS_OPTIONS,
-  SENA_STATUS_OPTIONS,
-  PROGRESS_OPTIONS,
-  CAUSE_OPTIONS,
-  REMARK_OPTIONS,
-  STAGE_REMARKS_OPTIONS,
-  STAGE_STATUS_OPTIONS,
-  HANDLING_PERSONNEL_OPTIONS,
-} from "@/constants/caseOptions";
 
 import { SenaSection } from "./sections/SenaSection";
 import { LaSection } from "./sections/LaSection";
@@ -31,11 +19,8 @@ import {
   StageStepper,
   type StageStep,
 } from "./shared/StageStepper";
-import { Field } from "@/components/cases/Field";
-import { JudgementRewardField, inputCls } from "@/components/cases/CurrencyField";
-import type { CaseStatus } from "@/types/case";
 import { getStageGates } from "@/lib/caseValidation";
-import { formatCurrency, getTotalJudgementReward } from "@/lib/caseHelpers";
+import { getTotalJudgementReward } from "@/lib/caseHelpers";
 
 export function CaseForm({
   value,
@@ -56,10 +41,6 @@ export function CaseForm({
   value: CaseDraft;
   onChange: (next: CaseDraft) => void;
   companies: string[];
-  // When true, every SEnA field except Remarks (and its "Others" spec) and
-  // Handling Personnel is locked. Used for editing a case that hasn't
-  // escalated past SEnA yet, so the only things that can change it are
-  // Remarks signaling escalation and Handling Personnel reassignment.
   restrictSenaEditing?: boolean;
   restrictSenaRemarksEditing?: boolean;
   restrictLaDetailsEditing?: boolean;
@@ -117,9 +98,6 @@ export function CaseForm({
     });
   };
 
-  // All stage-gating rules (SEnA complete, LA/NLRC/CA/SC filled+enabled)
-  // live in lib/caseValidation.ts so the exact same logic can be reused
-  // by the parent's Create Case submit handler.
   const {
     senaFilled,
     laEnabled,
@@ -135,9 +113,7 @@ export function CaseForm({
   const canProceedPastLa = value.caseProgress.la === "Not Settled" || value.caseProgress.la === "Others";
   const canProceedPastNlrc = value.caseProgress.nlrc === "Not Settled" || value.caseProgress.nlrc === "Others";
   const canProceedPastCa = value.caseProgress.ca === "Not Settled" || value.caseProgress.ca === "Others";
-  // Category only makes sense once the case has actually settled at some
-  // stage — enable it when SEnA Remarks or any of LA/NLRC/CA/SC Progress
-  // is "Settled".
+  
   const anyStageSettled =
     value.remarks === "Settled" ||
     value.caseProgress.la === "Settled" ||
@@ -145,10 +121,6 @@ export function CaseForm({
     value.caseProgress.ca === "Settled" ||
     value.caseProgress.sc === "Settled";
 
-  // Whether each stage's fields should be shown at all. A stage is hidden
-  // (instead of just grayed out) whenever it's not enabled yet, or when an
-  // earlier "progress only" lock hasn't been resolved (Progress hasn't been
-  // set to "Not Settled" / "Others" to permit moving forward).
   const laVisible = laEnabled;
   const nlrcVisible = nlrcEnabled && !(restrictLaProgressOnly && !canProceedPastLa);
   const caVisible =

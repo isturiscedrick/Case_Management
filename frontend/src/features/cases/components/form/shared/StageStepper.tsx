@@ -1,6 +1,5 @@
 import {
   CheckCircle2,
-  Circle,
   Lock,
 } from "lucide-react";
 
