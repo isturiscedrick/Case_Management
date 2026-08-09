@@ -1,16 +1,3 @@
-/* eslint-disable react/no-unescaped-entities */
-//
-// ─── FILE MAP ────────────────────────────────────────────────────────────
-// 1. Shared visual constants (STAGE_STYLES) + small presentational helpers
-//    (StatusPill, InfoBanner, SectionHeader, StageStepper)
-// 2. One component per case stage (SenaSection, LaSection, NlrcSection,
-//    CaSection, ScSection) plus TotalJudgementRewardSection. Each owns
-//    exactly the JSX + onChange logic that used to live inline for that
-//    stage — nothing was merged or generalized, so the cascading reset
-//    rules for each stage are still separate, explicit code.
-// 3. CaseForm — builds the setters and stage-gating booleans (unchanged
-//    from before) and renders the sections above in order.
-// ────────────────────────────────────────────────────────────────────────
 import type { ReactNode } from "react";
 import { Plus, Handshake, Gavel, Building2, Landmark, Scale, Lock, CheckCircle2, Circle, Info, AlertTriangle } from "lucide-react";
 import type {
@@ -32,18 +19,12 @@ import {
   STAGE_STATUS_OPTIONS,
   HANDLING_PERSONNEL_OPTIONS,
 } from "@/constants/caseOptions";
-import { Field } from "../Field";
-import { JudgementRewardField, inputCls } from "../CurrencyField";
+import { Field } from "@/components/cases/Field";
+import { JudgementRewardField, inputCls } from "@/components/cases/CurrencyField";
 import type { CaseStatus } from "@/types/case";
 import { getStageGates } from "@/lib/caseValidation";
 import { formatCurrency, getTotalJudgementReward } from "@/lib/caseHelpers";
 
-// ─── 1. SHARED VISUAL CONSTANTS + PRESENTATIONAL HELPERS ──────────────────
-
-// Visual identity per stage — kept aligned with the color coding used on the
-// Analytics page (STAGE_META there) so the same stage always reads as the
-// same color across the app. Presentational only, no bearing on the stage
-// gating logic below.
 const STAGE_STYLES = {
   sena: { icon: Handshake, ring: "border-teal-200", chip: "bg-teal-50 text-teal-700", text: "text-teal-700", dot: "bg-teal-500" },
   la: { icon: Gavel, ring: "border-sky-200", chip: "bg-sky-50 text-sky-700", text: "text-sky-700", dot: "bg-sky-500" },
@@ -52,9 +33,6 @@ const STAGE_STYLES = {
   sc: { icon: Scale, ring: "border-rose-200", chip: "bg-rose-50 text-rose-700", text: "text-rose-700", dot: "bg-rose-500" },
 } as const;
 
-// Small presentational status pill for a section header (Locked / In
-// progress / Complete). Purely derived from booleans already computed by
-// getStageGates — no new business logic.
 function StatusPill({ state }: { state: "locked" | "progress" | "done" }) {
   if (state === "locked") {
     return (
@@ -77,9 +55,6 @@ function StatusPill({ state }: { state: "locked" | "progress" | "done" }) {
   );
 }
 
-// Banner replacement for the plain helper/warning <p> tags — same copy,
-// clearer visual weight so required vs. informational vs. locked states are
-// easy to scan.
 function InfoBanner({ tone, children }: { tone: "warning" | "info"; children: ReactNode }) {
   if (tone === "warning") {
     return (
