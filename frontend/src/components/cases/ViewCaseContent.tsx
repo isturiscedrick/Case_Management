@@ -2,7 +2,7 @@ import { Handshake, Gavel, Building2, Landmark, Scale, User } from "lucide-react
 import type { CaseItem } from "@/types/case";
 import { formatDate, formatCurrency, getTotalJudgementReward } from "@/lib/caseHelpers";
 import { getStageGates } from "@/lib/caseValidation";
-import { DetailRow } from "./DetailRow";
+import { DetailRow } from "@/features/cases/components/table/DetailRow";
 import { StatusBadge } from "./StatusBadge";
 
 const TO_BE_COMPUTED = "To be computed";
