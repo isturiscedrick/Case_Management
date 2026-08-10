@@ -2,7 +2,7 @@ import { Archive, ArchiveRestore, Eye, RefreshCw } from "lucide-react";
 
 import type { CaseItem } from "@/types/case";
 import { formatCurrency, formatDate } from "@/lib/caseHelpers";
-import { formatProgress } from "@/components/dashboard/Dashboardhelpers";
+import { formatProgress } from "@/components/dashboard/DashboardHelpers";
 import { StatusBadge } from "@/components/cases/StatusBadge";
 
 export function CaseTableRow({

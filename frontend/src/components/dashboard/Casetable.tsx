@@ -1,6 +1,6 @@
 import type { CaseItem } from "@/types/case";
 import { TABLE_COLUMN_COUNT } from "@/constants/caseOptions";
-import { CaseTableRow } from "@/components/dashboard/Casetablerow"
+import { CaseTableRow } from "@/components/dashboard/CaseTableRow"
 export function CaseTable({
   cases,
   onView,

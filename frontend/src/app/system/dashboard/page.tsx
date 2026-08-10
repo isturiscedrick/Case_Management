@@ -14,18 +14,16 @@ import { initialCases, initialCompanies } from "@/data/initialCases";
 // Helpers
 import { cloneDraft, getTotalJudgementReward } from "@/lib/caseHelpers";
 import { getCaseDraftErrors, getStageGates } from "@/lib/caseValidation";
-import { isSenaOnlyCase } from "@/components/dashboard/Dashboardhelpers";
 
-// Dashboard components
-import { DashboardHeader } from "@/components/dashboard/Dashboardheader";
-import { SummaryCards } from "@/components/dashboard/Summarycards ";
-import { CaseFilters } from "@/components/dashboard/Casefilters ";
-import { CaseTable } from "@/components/dashboard/Casetable";
-import { CaseFormModal } from "@/components/dashboard/Caseformmodal";
-import { ViewCaseModal } from "@/components/dashboard/Viewcasemodal";
-import { SaveConfirmDialog } from "@/components/dashboard/Saveconfirmdialog";
-import { ArchiveConfirmDialog } from "@/components/dashboard/Archiveconfirmdialog";
-
+import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
+import { SummaryCards } from "@/components/dashboard/SummaryCards ";
+import { CaseFilters } from "@/components/dashboard/CaseFilters";
+import { CaseTable } from "@/components/dashboard/CaseTable";
+import { CaseFormModal } from "@/components/dashboard/CaseFormModal";
+import { ViewCaseModal } from "@/components/dashboard/ViewCaseModal";
+import { SaveConfirmDialog } from "@/components/dashboard/SaveConfirmDialog";
+import { ArchiveConfirmDialog } from "@/components/dashboard/ArchiveConfirmDialog";
+import { isSenaOnlyCase } from "@/components/dashboard/DashboardHelpers";
 /* =========================================================
    PAGE
 ========================================================= */
