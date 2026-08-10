@@ -14,6 +14,7 @@ export const STAGE_STYLES = {
     icon: Handshake,
     ring: "border-teal-200",
     chip: "bg-teal-50 text-teal-700",
+    bar: "bg-teal-50/60",
     text: "text-teal-700",
     dot: "bg-teal-500",
   },
@@ -21,6 +22,7 @@ export const STAGE_STYLES = {
     icon: Gavel,
     ring: "border-sky-200",
     chip: "bg-sky-50 text-sky-700",
+    bar: "bg-sky-50/60",
     text: "text-sky-700",
     dot: "bg-sky-500",
   },
@@ -28,6 +30,7 @@ export const STAGE_STYLES = {
     icon: Building2,
     ring: "border-violet-200",
     chip: "bg-violet-50 text-violet-700",
+    bar: "bg-violet-50/60",
     text: "text-violet-700",
     dot: "bg-violet-500",
   },
@@ -35,6 +38,7 @@ export const STAGE_STYLES = {
     icon: Landmark,
     ring: "border-fuchsia-200",
     chip: "bg-fuchsia-50 text-fuchsia-700",
+    bar: "bg-fuchsia-50/60",
     text: "text-fuchsia-700",
     dot: "bg-fuchsia-500",
   },
@@ -42,6 +46,7 @@ export const STAGE_STYLES = {
     icon: Scale,
     ring: "border-rose-200",
     chip: "bg-rose-50 text-rose-700",
+    bar: "bg-rose-50/60",
     text: "text-rose-700",
     dot: "bg-rose-500",
   },
@@ -82,21 +87,25 @@ export function SectionHeader({
   stage,
   title,
   status,
+  size = 8,
 }: {
   stage: StageKey;
   title: string;
   status?: StageStatus;
+  size?: 7 | 8;
 }) {
   const meta = STAGE_STYLES[stage];
   const Icon = meta.icon;
+  const boxCls = size === 7 ? "h-7 w-7" : "h-8 w-8";
+  const iconSize = size === 7 ? 14 : 16;
 
   return (
     <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
       <div className="flex items-center gap-2">
         <div
-          className={`flex h-8 w-8 items-center justify-center rounded-lg ${meta.chip}`}
+          className={`flex ${boxCls} items-center justify-center rounded-lg ${meta.chip}`}
         >
-          <Icon size={16} />
+          <Icon size={iconSize} />
         </div>
 
         <h3

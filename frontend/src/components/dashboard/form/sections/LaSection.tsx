@@ -1,6 +1,3 @@
-import { Gavel, Lock } from "lucide-react";
-import type { ReactNode } from "react";
-
 import type {
   CaseDraft,
   LaInfo,
@@ -18,6 +15,8 @@ import {
   inputCls,
   JudgementRewardField,
 } from "@/components/cases/CurrencyField";
+import { InfoBanner } from "@/components/dashboard/form/shared/InfoBanner";
+import { SectionHeader, STAGE_STYLES } from "@/components/dashboard/form/shared/SectionHeader";
 
 type LaSectionProps = {
   value: CaseDraft;
@@ -43,93 +42,6 @@ type LaSectionProps = {
   restrictLaProgressEditing: boolean;
 };
 
-const STAGE_STYLE = {
-  ring: "border-sky-200",
-  chip: "bg-sky-50 text-sky-700",
-  text: "text-sky-700",
-};
-
-type StatusState = "locked" | "progress" | "done";
-
-function StatusPill({
-  state,
-}: {
-  state: StatusState;
-}) {
-  if (state === "locked") {
-    return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-400">
-        <Lock size={11} />
-        Locked
-      </span>
-    );
-  }
-
-  if (state === "done") {
-    return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-medium text-emerald-600">
-        ✓ Complete
-      </span>
-    );
-  }
-
-  return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-sky-50 px-2 py-0.5 text-[10px] font-medium text-sky-600">
-      ○ In progress
-    </span>
-  );
-}
-
-function InfoBanner({
-  tone,
-  children,
-}: {
-  tone: "warning" | "info";
-  children: ReactNode;
-}) {
-  if (tone === "warning") {
-    return (
-      <div className="mb-3 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] font-medium text-amber-700">
-        <span className="mt-0.5 shrink-0">⚠</span>
-        <p>{children}</p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="mb-3 flex items-start gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[11px] text-slate-500">
-      <span className="mt-0.5 shrink-0">ⓘ</span>
-      <p>{children}</p>
-    </div>
-  );
-}
-
-function SectionHeader({
-  status,
-}: {
-  status: StatusState;
-}) {
-  return (
-    <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-      <div className="flex items-center gap-2">
-        <div
-          className={`flex h-8 w-8 items-center justify-center rounded-lg ${STAGE_STYLE.chip}`}
-        >
-          <Gavel size={16} />
-        </div>
-
-        <h3
-          className={`text-xs font-semibold uppercase tracking-wide ${STAGE_STYLE.text}`}
-        >
-          Labor Arbiter (LA)
-        </h3>
-      </div>
-
-      <StatusPill state={status} />
-    </div>
-  );
-}
-
 export function LaSection({
   value,
   onChange,
@@ -145,9 +57,11 @@ export function LaSection({
 }: LaSectionProps) {
   return (
     <div
-      className={`rounded-xl border ${STAGE_STYLE.ring} bg-white p-4 shadow-sm sm:p-5`}
+      className={`rounded-xl border ${STAGE_STYLES.la.ring} bg-white p-4 shadow-sm sm:p-5`}
     >
       <SectionHeader
+        stage="la"
+        title="Labor Arbiter (LA)"
         status={
           !laVisible
             ? "locked"
