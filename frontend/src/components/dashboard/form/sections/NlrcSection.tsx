@@ -1,12 +1,3 @@
-import {
-  Building2,
-  Lock,
-  CheckCircle2,
-  Circle,
-  Info,
-  AlertTriangle,
-} from "lucide-react";
-
 import type {
   CaseDraft,
   NlrcInfo,
@@ -24,110 +15,8 @@ import {
   JudgementRewardField,
   inputCls,
 } from "@/components/cases/CurrencyField";
-
-const STAGE_STYLES = {
-  nlrc: {
-    icon: Building2,
-    ring: "border-violet-200",
-    chip: "bg-violet-50 text-violet-700",
-    text: "text-violet-700",
-    dot: "bg-violet-500",
-  },
-} as const;
-
-type StatusPillState = "locked" | "progress" | "done";
-
-function StatusPill({
-  state,
-}: {
-  state: StatusPillState;
-}) {
-  if (state === "locked") {
-    return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-400">
-        <Lock size={11} />
-        Locked
-      </span>
-    );
-  }
-
-  if (state === "done") {
-    return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-medium text-emerald-600">
-        <CheckCircle2 size={11} />
-        Complete
-      </span>
-    );
-  }
-
-  return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-sky-50 px-2 py-0.5 text-[10px] font-medium text-sky-600">
-      <Circle size={11} />
-      In progress
-    </span>
-  );
-}
-
-function InfoBanner({
-  tone,
-  children,
-}: {
-  tone: "warning" | "info";
-  children: React.ReactNode;
-}) {
-  if (tone === "warning") {
-    return (
-      <div className="mb-3 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] font-medium text-amber-700">
-        <AlertTriangle
-          size={13}
-          className="mt-0.5 shrink-0"
-        />
-        <p>{children}</p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="mb-3 flex items-start gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[11px] text-slate-500">
-      <Info
-        size={13}
-        className="mt-0.5 shrink-0 text-slate-400"
-      />
-      <p>{children}</p>
-    </div>
-  );
-}
-
-function SectionHeader({
-  title,
-  status,
-}: {
-  title: string;
-  status?: StatusPillState;
-}) {
-  const meta = STAGE_STYLES.nlrc;
-  const Icon = meta.icon;
-
-  return (
-    <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-      <div className="flex items-center gap-2">
-        <div
-          className={`flex h-8 w-8 items-center justify-center rounded-lg ${meta.chip}`}
-        >
-          <Icon size={16} />
-        </div>
-
-        <h3
-          className={`text-xs font-semibold uppercase tracking-wide ${meta.text}`}
-        >
-          {title}
-        </h3>
-      </div>
-
-      {status && <StatusPill state={status} />}
-    </div>
-  );
-}
+import { InfoBanner } from "@/components/dashboard/form/shared/InfoBanner";
+import { SectionHeader, STAGE_STYLES } from "@/components/dashboard/form/shared/SectionHeader";
 
 export function NlrcSection({
   value,
@@ -169,6 +58,7 @@ export function NlrcSection({
       className={`rounded-xl border ${STAGE_STYLES.nlrc.ring} bg-white p-4 shadow-sm sm:p-5`}
     >
       <SectionHeader
+        stage="nlrc"
         title="National Labor Relations Commission (NLRC)"
         status={
           !nlrcVisible

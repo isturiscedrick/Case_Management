@@ -4,10 +4,6 @@ import { useMemo, useState } from "react";
 import {
   BarChart3,
   Handshake,
-  Gavel,
-  Building2,
-  Landmark,
-  Scale,
   Briefcase,
   Users,
   PieChart as PieChartIcon,
@@ -17,19 +13,19 @@ import {
 import type { CaseItem, TotalPaidCategory } from "@/types/case";
 import { initialCases } from "@/data/initialCases";
 import { formatCurrency } from "@/lib/caseHelpers";
+import { STAGE_STYLES, type StageKey } from "@/components/dashboard/form/shared/SectionHeader";
 
-type StageKey = "sena" | "la" | "nlrc" | "ca" | "sc";
 type StatusBucket = "Pending" | "Settled" | "Not Settled" | "Closed";
 
 const STAGE_KEYS: StageKey[] = ["sena", "la", "nlrc", "ca", "sc"];
 const BUCKETS: StatusBucket[] = ["Pending", "Settled", "Not Settled", "Closed"];
 
-const STAGE_META: Record<StageKey, { label: string; icon: typeof Handshake; ring: string; bar: string; text: string }> = {
-  sena: { label: "SEnA", icon: Handshake, ring: "border-teal-200", bar: "bg-teal-50/60", text: "text-teal-700" },
-  la: { label: "Labor Arbiter", icon: Gavel, ring: "border-sky-200", bar: "bg-sky-50/60", text: "text-sky-700" },
-  nlrc: { label: "NLRC", icon: Building2, ring: "border-violet-200", bar: "bg-violet-50/60", text: "text-violet-700" },
-  ca: { label: "Court of Appeals", icon: Landmark, ring: "border-fuchsia-200", bar: "bg-fuchsia-50/60", text: "text-fuchsia-700" },
-  sc: { label: "Supreme Court", icon: Scale, ring: "border-rose-200", bar: "bg-rose-50/60", text: "text-rose-700" },
+const STAGE_LABELS: Record<StageKey, string> = {
+  sena: "SEnA",
+  la: "Labor Arbiter",
+  nlrc: "NLRC",
+  ca: "Court of Appeals",
+  sc: "Supreme Court",
 };
 
 const BUCKET_STYLES: Record<StatusBucket, { dot: string; bar: string; text: string }> = {
@@ -283,7 +279,7 @@ export default function AnalyticsPage() {
         <h2 className="mb-2 text-sm font-semibold text-[#12331F]">Case Status by Stage</h2>
         <div className="grid gap-3 lg:grid-cols-2 xl:grid-cols-3">
           {STAGE_KEYS.map((stage) => {
-            const meta = STAGE_META[stage];
+            const meta = STAGE_STYLES[stage];
             const Icon = meta.icon;
             const counts = stageBreakdown[stage];
             const total = BUCKETS.reduce((sum, b) => sum + counts[b], 0);
@@ -296,7 +292,7 @@ export default function AnalyticsPage() {
                       <Icon size={15} />
                     </div>
                     <div>
-                      <p className={`text-xs font-semibold ${meta.text}`}>{meta.label}</p>
+                      <p className={`text-xs font-semibold ${meta.text}`}>{STAGE_LABELS[stage]}</p>
                       <p className="text-[10px] text-slate-400">{total} case{total === 1 ? "" : "s"}</p>
                     </div>
                   </div>

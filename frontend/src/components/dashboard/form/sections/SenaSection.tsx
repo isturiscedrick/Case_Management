@@ -1,5 +1,4 @@
-import { Plus, Handshake } from "lucide-react";
-import type { ReactNode } from "react";
+import { Plus } from "lucide-react";
 
 import type { CaseDraft, CaseStatus } from "@/types/case";
 import {
@@ -11,6 +10,8 @@ import {
 
 import { Field } from "@/components/cases/Field";
 import { inputCls } from "@/components/cases/CurrencyField";
+import { InfoBanner } from "@/components/dashboard/form/shared/InfoBanner";
+import { SectionHeader, STAGE_STYLES } from "@/components/dashboard/form/shared/SectionHeader";
 
 type SenaSectionProps = {
   value: CaseDraft;
@@ -24,56 +25,6 @@ type SenaSectionProps = {
   ) => void;
 };
 
-const STAGE_STYLE = {
-  ring: "border-teal-200",
-  chip: "bg-teal-50 text-teal-700",
-  text: "text-teal-700",
-};
-
-function SectionHeader() {
-  return (
-    <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-      <div className="flex items-center gap-2">
-        <div
-          className={`flex h-8 w-8 items-center justify-center rounded-lg ${STAGE_STYLE.chip}`}
-        >
-          <Handshake size={16} />
-        </div>
-
-        <h3
-          className={`text-xs font-semibold uppercase tracking-wide ${STAGE_STYLE.text}`}
-        >
-          Single Entry Approach (SEnA)
-        </h3>
-      </div>
-    </div>
-  );
-}
-
-function InfoBanner({
-  tone,
-  children,
-}: {
-  tone: "warning" | "info";
-  children: ReactNode;
-}) {
-  if (tone === "warning") {
-    return (
-      <div className="mb-3 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] font-medium text-amber-700">
-        <span className="mt-0.5 shrink-0">⚠</span>
-        <p>{children}</p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="mb-3 flex items-start gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[11px] text-slate-500">
-      <span className="mt-0.5 shrink-0">ⓘ</span>
-      <p>{children}</p>
-    </div>
-  );
-}
-
 export function SenaSection({
   value,
   onChange,
@@ -84,9 +35,9 @@ export function SenaSection({
 }: SenaSectionProps) {
   return (
     <div
-      className={`rounded-xl border ${STAGE_STYLE.ring} bg-white p-4 shadow-sm sm:p-5`}
+      className={`rounded-xl border ${STAGE_STYLES.sena.ring} bg-white p-4 shadow-sm sm:p-5`}
     >
-      <SectionHeader />
+      <SectionHeader stage="sena" title="Single Entry Approach (SEnA)" />
 
       {restrictSenaEditing && (
         <InfoBanner tone="warning">

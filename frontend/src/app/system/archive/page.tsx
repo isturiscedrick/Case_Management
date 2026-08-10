@@ -12,19 +12,10 @@ import { StatusBadge } from "@/components/cases/StatusBadge";
 import { Modal } from "@/components/cases/Modal";
 import { ConfirmDialog } from "@/components/cases/ConfirmDialog";
 import { ViewCaseContent } from "@/components/cases/ViewCaseContent";
-
-function formatProgress(value: string, specification?: string) {
-  if ((value === "Others" || value === "Not Settled") && specification) {
-    return `${value} (${specification})`;
-  }
-  return value || "-";
-}
+import { formatProgress } from "@/components/dashboard/DashboardHelpers";
 
 export default function ArchivePage() {
-  // Same source of truth as the dashboard — this page just filters down to
-  // archived === true. Restoring a case flips the flag back rather than
-  // deleting it from this list, so it stays consistent if this ever moves
-  // to a shared store/API instead of local state.
+
   const [cases, setCases] = useState<CaseItem[]>(initialCases);
   const [search, setSearch] = useState("");
   const [progressFilter, setProgressFilter] = useState<"All" | StageProgress>("All");

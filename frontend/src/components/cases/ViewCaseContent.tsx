@@ -1,35 +1,12 @@
-import { Handshake, Gavel, Building2, Landmark, Scale, User } from "lucide-react";
+import { Landmark, User } from "lucide-react";
 import type { CaseItem } from "@/types/case";
 import { formatDate, formatCurrency, getTotalJudgementReward } from "@/lib/caseHelpers";
 import { getStageGates } from "@/lib/caseValidation";
 import { DetailRow } from "@/components/table/DetailRow";
 import { StatusBadge } from "./StatusBadge";
+import { SectionHeader, STAGE_STYLES } from "@/components/dashboard/form/shared/SectionHeader";
 
 const TO_BE_COMPUTED = "To be computed";
-
-// Same color coding used on the Analytics page (STAGE_META) and CaseForm
-// (STAGE_STYLES) so a stage reads as the same color everywhere in the app.
-// Presentational only.
-const STAGE_STYLES = {
-  sena: { icon: Handshake, ring: "border-teal-200", chip: "bg-teal-50 text-teal-700", text: "text-teal-700" },
-  la: { icon: Gavel, ring: "border-sky-200", chip: "bg-sky-50 text-sky-700", text: "text-sky-700" },
-  nlrc: { icon: Building2, ring: "border-violet-200", chip: "bg-violet-50 text-violet-700", text: "text-violet-700" },
-  ca: { icon: Landmark, ring: "border-fuchsia-200", chip: "bg-fuchsia-50 text-fuchsia-700", text: "text-fuchsia-700" },
-  sc: { icon: Scale, ring: "border-rose-200", chip: "bg-rose-50 text-rose-700", text: "text-rose-700" },
-} as const;
-
-function SectionHeader({ stage, title }: { stage: keyof typeof STAGE_STYLES; title: string }) {
-  const meta = STAGE_STYLES[stage];
-  const Icon = meta.icon;
-  return (
-    <div className="mb-3 flex items-center gap-2">
-      <div className={`flex h-7 w-7 items-center justify-center rounded-lg ${meta.chip}`}>
-        <Icon size={14} />
-      </div>
-      <h3 className={`text-xs font-semibold uppercase tracking-wide ${meta.text}`}>{title}</h3>
-    </div>
-  );
-}
 
 function formatProgress(value: string, specification?: string) {
   if ((value === "Others" || value === "Not Settled") && specification) {
@@ -71,7 +48,7 @@ export function ViewCaseContent({ item }: { item: CaseItem }) {
   return (
     <div className="space-y-4">
       <div className={`rounded-xl border ${STAGE_STYLES.sena.ring} bg-white p-4 shadow-sm sm:p-5`}>
-        <SectionHeader stage="sena" title="Single Entry Approach (SEnA)" />
+        <SectionHeader stage="sena" title="Single Entry Approach (SEnA)" size={7} />
         <div className="grid gap-x-6 sm:grid-cols-2">
           <DetailRow label="Company" value={item.company} />
           <DetailRow label="Status" value={<StatusBadge status={item.status} />} />
@@ -117,7 +94,7 @@ export function ViewCaseContent({ item }: { item: CaseItem }) {
 
       {laEnabled && (
       <div className={`rounded-xl border ${STAGE_STYLES.la.ring} bg-white p-4 shadow-sm sm:p-5`}>
-        <SectionHeader stage="la" title="Labor Arbiter (LA)" />
+        <SectionHeader stage="la" title="Labor Arbiter (LA)" size={7} />
         <div className="grid gap-x-6 sm:grid-cols-5">
           <DetailRow label="Date" value={formatDate(item.la.date)} />
           <DetailRow label="Status" value={item.la.status} />
@@ -137,7 +114,7 @@ export function ViewCaseContent({ item }: { item: CaseItem }) {
 
       {nlrcEnabled && (
       <div className={`rounded-xl border ${STAGE_STYLES.nlrc.ring} bg-white p-4 shadow-sm sm:p-5`}>
-        <SectionHeader stage="nlrc" title="NLRC" />
+        <SectionHeader stage="nlrc" title="NLRC" size={7} />
         <div className="grid gap-x-6 sm:grid-cols-5">
           <DetailRow label="Date" value={formatDate(item.nlrc.date)} />
           <DetailRow label="Status" value={item.nlrc.status} />
@@ -157,7 +134,7 @@ export function ViewCaseContent({ item }: { item: CaseItem }) {
 
       {caEnabled && (
       <div className={`rounded-xl border ${STAGE_STYLES.ca.ring} bg-white p-4 shadow-sm sm:p-5`}>
-        <SectionHeader stage="ca" title="Court of Appeals (CA)" />
+        <SectionHeader stage="ca" title="Court of Appeals (CA)" size={7} />
         <div className="grid gap-x-6 sm:grid-cols-5">
           <DetailRow label="Date" value={formatDate(item.ca.date)} />
           <DetailRow label="Status" value={item.ca.status} />
@@ -177,7 +154,7 @@ export function ViewCaseContent({ item }: { item: CaseItem }) {
 
       {scEnabled && (
       <div className={`rounded-xl border ${STAGE_STYLES.sc.ring} bg-white p-4 shadow-sm sm:p-5`}>
-        <SectionHeader stage="sc" title="Supreme Court (SC)" />
+        <SectionHeader stage="sc" title="Supreme Court (SC)" size={7} />
         <div className="grid gap-x-6 sm:grid-cols-5">
           <DetailRow label="Date" value={formatDate(item.sc.date)} />
           <DetailRow label="Status" value={item.sc.status} />
