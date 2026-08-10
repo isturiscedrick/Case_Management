@@ -183,40 +183,29 @@ export function ScSection({
               </select>
             </Field>
 
-            <Field label="Progress">
-              <select
-                className={inputCls}
-                value={value.caseProgress.sc}
-                onChange={(e) => {
-                  const selected =
-                    e.target.value as StageProgress;
+            <Field label="SC Progress">
+  <select
+    className={inputCls}
+    value={value.caseProgress.sc}
+    onChange={(e) => {
+      const selected = e.target.value as StageProgress;
 
-                  const shouldResetCategory =
-                    selected === "Not Settled" ||
-                    selected === "Others";
+      setProgress("sc", selected);
+    }}
+  >
+    <option value="">
+      Select Progress
+    </option>
 
-                  setProgress("sc", selected);
-
-                  if (shouldResetCategory) {
-                    setTotalPaidCategory("");
-                  }
-                }}
-              >
-                <option value="">
-                  Select Progress
-                </option>
-
-                {PROGRESS_OPTIONS.filter(
-                  (
-                    p
-                  ): p is StageProgress => p !== "All"
-                ).map((p) => (
-                  <option key={p} value={p}>
-                    {p}
-                  </option>
-                ))}
-              </select>
-            </Field>
+    {PROGRESS_OPTIONS.filter(
+      (p): p is StageProgress => p !== "All",
+    ).map((p) => (
+      <option key={p} value={p}>
+        {p}
+      </option>
+    ))}
+  </select>
+</Field>
           </div>
 
           {value.sc.remarks === "Other" && (
