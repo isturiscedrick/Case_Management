@@ -11,8 +11,7 @@ export const PROGRESS_OPTIONS: Array<"All" | StageProgress> = [
 // SEnA never reaches "Execution" (that only applies once a judgement is
 // being enforced at a later stage), so it's excluded here while remaining
 // available in STATUS_OPTIONS for filtering/summary purposes.
-export const SENA_STATUS_OPTIONS: CaseStatus[] = ["Filed", "Pending", "Closed"];
-
+export const SENA_STATUS_OPTIONS: CaseStatus[] = ["Filed", "Pending", "Execution", "Closed"];
 export const STATUS_STYLES: Record<CaseStatus, { badge: string; dot: string }> = {
   Filed: {
     badge: "bg-sky-50 text-sky-600 ring-sky-200",

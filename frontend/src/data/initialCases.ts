@@ -75,7 +75,7 @@ export const initialCases: CaseItem[] = [
     caseNo: "NLRC-2026-002",
     complainants: ["Pedro Santos"],
     venue: "NLRC Quezon",
-    cause: ["Unpaid Benefits"],
+    cause: ["Money Claims"],
     filingDate: "2026-07-18",
     remarks: "Resolved",
 
@@ -140,7 +140,7 @@ export const initialCases: CaseItem[] = [
     caseNo: "NLRC-2026-003",
     complainants: ["Maria Reyes"],
     venue: "DOLE Region IV",
-    cause: ["Non-payment of Wages"],
+    cause: ["Money Claims"],
     filingDate: "2026-07-12",
     remarks: "Under Investigation",
 
