@@ -3,9 +3,6 @@ import { Field } from "./Field";
 export const inputCls =
   "w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-[#12331F] focus:bg-white focus:ring-2 focus:ring-[#12331F]/10";
 
-// Peso-prefixed, number-only input for money fields (Money Reward, Money
-// Award). Stores a plain numeric string (e.g. "150000"); the peso sign is
-// a visual prefix, not part of the stored value.
 export function CurrencyField({
   label,
   value,
@@ -38,7 +35,7 @@ export function CurrencyField({
 
 const TO_BE_COMPUTED = "To be computed";
 
-export function JudgementRewardField({
+export function JudgmentAwardField({
   label,
   value,
   onChange,

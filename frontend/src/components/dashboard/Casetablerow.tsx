@@ -74,7 +74,7 @@ export function CaseTableRow({
       {/* LABOR ARBITER */}
       <td className="bg-sky-50/30 p-2 text-slate-600">{formatDate(item.la.date)}</td>
       <td className="truncate bg-sky-50/30 p-2 text-slate-600">{item.la.status}</td>
-      <td className="truncate bg-sky-50/30 p-2 font-medium text-slate-700">{formatCurrency(item.la.judgementReward)}</td>
+      <td className="truncate bg-sky-50/30 p-2 font-medium text-slate-700">{formatCurrency(item.la.judgmentAward)}</td>
       <td className="truncate bg-sky-50/30 p-2 text-slate-600">
         {item.la.remarks}
         {item.la.remarks === "Other" && item.la.remarksSpecification && (
@@ -88,7 +88,7 @@ export function CaseTableRow({
       {/* NLRC */}
       <td className="bg-violet-50/30 p-2 text-slate-600">{formatDate(item.nlrc.date)}</td>
       <td className="truncate bg-violet-50/30 p-2 text-slate-600">{item.nlrc.status}</td>
-      <td className="truncate bg-violet-50/30 p-2 font-medium text-slate-700">{formatCurrency(item.nlrc.judgementReward)}</td>
+      <td className="truncate bg-violet-50/30 p-2 font-medium text-slate-700">{formatCurrency(item.nlrc.judgmentAward)}</td>
       <td className="truncate bg-violet-50/30 p-2 text-slate-600">
         {item.nlrc.remarks}
         {item.nlrc.remarks === "Other" && item.nlrc.remarksSpecification && (
@@ -102,7 +102,7 @@ export function CaseTableRow({
       {/* COURT OF APPEALS */}
       <td className="bg-fuchsia-50/30 p-2 text-slate-600">{formatDate(item.ca.date)}</td>
       <td className="truncate bg-fuchsia-50/30 p-2 text-slate-600">{item.ca.status}</td>
-      <td className="truncate bg-fuchsia-50/30 p-2 font-medium text-slate-700">{formatCurrency(item.ca.judgementReward)}</td>
+      <td className="truncate bg-fuchsia-50/30 p-2 font-medium text-slate-700">{formatCurrency(item.ca.judgmentAward)}</td>
       <td className="truncate bg-fuchsia-50/30 p-2 text-slate-600">
         {item.ca.remarks}
         {item.ca.remarks === "Other" && item.ca.remarksSpecification && (
@@ -116,7 +116,7 @@ export function CaseTableRow({
       {/* SUPREME COURT */}
       <td className="bg-rose-50/30 p-2 text-slate-600">{formatDate(item.sc.date)}</td>
       <td className="truncate bg-rose-50/30 p-2 text-slate-600">{item.sc.status}</td>
-      <td className="truncate bg-rose-50/30 p-2 font-medium text-slate-700">{formatCurrency(item.sc.judgementReward)}</td>
+      <td className="truncate bg-rose-50/30 p-2 font-medium text-slate-700">{formatCurrency(item.sc.judgmentAward)}</td>
       <td className="truncate bg-rose-50/30 p-2 text-slate-600">
         {item.sc.remarks}
         {item.sc.remarks === "Other" && item.sc.remarksSpecification && (

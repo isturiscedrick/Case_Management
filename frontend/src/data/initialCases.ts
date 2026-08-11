@@ -21,7 +21,7 @@ export const initialCases: CaseItem[] = [
     la: {
       date: "2026-08-01",
       status: "Illegal Dismissal",
-      judgementReward: "150000",
+      judgmentAward: "150000",
       remarks: "Other",
       remarksSpecification: "Award Granted",
     },
@@ -29,7 +29,7 @@ export const initialCases: CaseItem[] = [
     nlrc: {
       date: "2026-08-15",
       status: "Affirmed",
-      judgementReward: "150000",
+      judgmentAward: "150000",
       remarks: "Other",
       remarksSpecification: "For Decision",
     },
@@ -37,21 +37,21 @@ export const initialCases: CaseItem[] = [
     ca: {
       date: "",
       status: "",
-      judgementReward: "",
+      judgmentAward: "",
       remarks: "Not Appealed",
     },
 
     sc: {
       date: "",
       status: "Affirmed",
-      judgementReward: "200000",
+      judgmentAward: "200000",
       remarks: "Other",
       remarksSpecification: "Closed",
     },
 
     totalPaid: {
       amount: "200000",
-      category: "Judgement-Award-L",
+      category: "Judgment-Award-L",
     },
 
     caseProgress: {
@@ -85,7 +85,7 @@ export const initialCases: CaseItem[] = [
     la: {
       date: "2026-07-25",
       status: "Affirmed",
-      judgementReward: "75000",
+      judgmentAward: "75000",
       remarks: "Other",
       remarksSpecification: "Settlement",
     },
@@ -93,7 +93,7 @@ export const initialCases: CaseItem[] = [
     nlrc: {
       date: "2026-08-10",
       status: "Affirmed",
-      judgementReward: "75000",
+      judgmentAward: "75000",
       remarks: "Other",
       remarksSpecification: "Decision Released",
     },
@@ -101,7 +101,7 @@ export const initialCases: CaseItem[] = [
     ca: {
       date: "2026-08-20",
       status: "Dismissed",
-      judgementReward: "75000",
+      judgmentAward: "75000",
       remarks: "Other",
       remarksSpecification: "Dismissed",
     },
@@ -109,7 +109,7 @@ export const initialCases: CaseItem[] = [
     sc: {
       date: "2026-09-01",
       status: "Affirmed",
-      judgementReward: "75000",
+      judgmentAward: "75000",
       remarks: "Other",
       remarksSpecification: "Completed",
     },
@@ -150,14 +150,14 @@ export const initialCases: CaseItem[] = [
     la: {
       date: "",
       status: "",
-      judgementReward: "-",
+      judgmentAward: "-",
       remarks: "Not Appealed",
     },
 
     nlrc: {
       date: "",
       status: "",
-      judgementReward: "",
+      judgmentAward: "",
       remarks: "Other",
       remarksSpecification: "Not Filed",
     },
@@ -165,7 +165,7 @@ export const initialCases: CaseItem[] = [
     ca: {
       date: "",
       status: "",
-      judgementReward: "",
+      judgmentAward: "",
       remarks: "Other",
       remarksSpecification: "Not Started",
     },
@@ -173,7 +173,7 @@ export const initialCases: CaseItem[] = [
     sc: {
       date: "",
       status: "",
-      judgementReward: "",
+      judgmentAward: "",
       remarks: "Other",
       remarksSpecification: "-",
     },
@@ -218,8 +218,8 @@ export const initialCases: CaseItem[] = [
     la: {
       date: "2026-02-22",
       status: "Illegal Dismissal",
-      judgementReward: "185000",
-      judgementRewardSpecification: "Backwages and separation pay",
+      judgmentAward: "185000",
+      judgmentAwardSpecification: "Backwages and separation pay",
       remarks: "Other",
       remarksSpecification: "Decision in favor of complainants",
     },
@@ -227,8 +227,8 @@ export const initialCases: CaseItem[] = [
     nlrc: {
       date: "2026-03-18",
       status: "Affirmed",
-      judgementReward: "185000",
-      judgementRewardSpecification: "Affirmed in toto",
+      judgmentAward: "185000",
+      judgmentAwardSpecification: "Affirmed in toto",
       remarks: "Other",
       remarksSpecification: "Appeal denied",
     },
@@ -236,8 +236,8 @@ export const initialCases: CaseItem[] = [
     ca: {
       date: "2026-04-10",
       status: "Affirmed",
-      judgementReward: "185000",
-      judgementRewardSpecification: "Petition dismissed",
+      judgmentAward: "185000",
+      judgmentAwardSpecification: "Petition dismissed",
       remarks: "Other",
       remarksSpecification: "CA sustained NLRC ruling",
     },
@@ -245,15 +245,15 @@ export const initialCases: CaseItem[] = [
     sc: {
       date: "2026-05-28",
       status: "Affirmed",
-      judgementReward: "185000",
-      judgementRewardSpecification: "Final and executory",
+      judgmentAward: "185000",
+      judgmentAwardSpecification: "Final and executory",
       remarks: "Other",
       remarksSpecification: "Petition denied with finality",
     },
 
     totalPaid: {
       amount: "185000",
-      category: "Judgement-Award-W",
+      category: "Judgment-Award-W",
     },
 
     caseProgress: {
@@ -293,8 +293,8 @@ export const initialCases: CaseItem[] = [
     la: {
       date: "2026-03-30",
       status: "Settled",
-      judgementReward: "42000",
-      judgementRewardSpecification: "Compromise agreement",
+      judgmentAward: "42000",
+      judgmentAwardSpecification: "Compromise agreement",
       remarks: "Other",
       remarksSpecification: "Parties reached amicable settlement",
     },
@@ -302,7 +302,7 @@ export const initialCases: CaseItem[] = [
     nlrc: {
       date: "",
       status: "",
-      judgementReward: "",
+      judgmentAward: "",
       remarks: "",
       remarksSpecification: "",
     },
@@ -310,7 +310,7 @@ export const initialCases: CaseItem[] = [
     ca: {
       date: "",
       status: "",
-      judgementReward: "",
+      judgmentAward: "",
       remarks: "",
       remarksSpecification: "",
     },
@@ -318,7 +318,7 @@ export const initialCases: CaseItem[] = [
     sc: {
       date: "",
       status: "",
-      judgementReward: "",
+      judgmentAward: "",
       remarks: "",
       remarksSpecification: "",
     },
@@ -367,8 +367,8 @@ export const initialCases: CaseItem[] = [
     la: {
       date: "2026-05-20",
       status: "Illegal Dismissal",
-      judgementReward: "60000",
-      judgementRewardSpecification: "Reinstatement with backwages, later settled",
+      judgmentAward: "60000",
+      judgmentAwardSpecification: "Reinstatement with backwages, later settled",
       remarks: "Other",
       remarksSpecification: "Settled via compromise agreement",
     },
@@ -376,7 +376,7 @@ export const initialCases: CaseItem[] = [
     nlrc: {
       date: "",
       status: "",
-      judgementReward: "",
+      judgmentAward: "",
       remarks: "",
       remarksSpecification: "",
     },
@@ -384,7 +384,7 @@ export const initialCases: CaseItem[] = [
     ca: {
       date: "",
       status: "",
-      judgementReward: "",
+      judgmentAward: "",
       remarks: "",
       remarksSpecification: "",
     },
@@ -392,7 +392,7 @@ export const initialCases: CaseItem[] = [
     sc: {
       date: "",
       status: "",
-      judgementReward: "",
+      judgmentAward: "",
       remarks: "",
       remarksSpecification: "",
     },

@@ -14,11 +14,6 @@ export function formatDate(iso: string): string {
   return `${m}/${d}/${y}`;
 }
 
-// Money fields are stored as plain numeric strings (e.g. "150000") so
-// <input type="number"> can bind to them directly. This formats them
-// with a peso sign and thousands separators for display. Judgement
-// Reward/Award fields can also hold the literal "To be computed" sentinel
-// (see JudgementRewardField) — that's displayed as-is rather than parsed.
 export function formatCurrency(value: string): string {
   if (!value) return "-";
   if (value === "To be computed") return value;
@@ -27,15 +22,8 @@ export function formatCurrency(value: string): string {
   return `₱${num.toLocaleString()}`;
 }
 
-// The amount shown while creating or editing a case reflects the LATEST
-// stage's Judgement Reward/Award — not a sum across stages. As a case
-// escalates (LA -> NLRC -> CA -> SC), each new stage's outcome supersedes
-// the earlier one rather than adding to it, so this picks the most
-// advanced stage that actually has a value (SC first, then CA, NLRC, LA).
-// If that stage is "To be computed", this returns that string as-is —
-// formatCurrency already knows how to display it.
-export function getTotalJudgementReward(draft: CaseDraft): string {
+export function getTotalJudgmentAward(draft: CaseDraft): string {
   const stagesLatestFirst = [draft.sc, draft.ca, draft.nlrc, draft.la];
-  const latestStage = stagesLatestFirst.find((stage) => stage.judgementReward.trim() !== "");
-  return latestStage ? latestStage.judgementReward : "";
+  const latestStage = stagesLatestFirst.find((stage) => stage.judgmentAward.trim() !== "");
+  return latestStage ? latestStage.judgmentAward : "";
 }

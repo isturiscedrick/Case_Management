@@ -4,7 +4,7 @@ import { createContext, useContext, useState, type ReactNode } from "react";
 
 import type { CaseDraft, CaseItem } from "@/types/case";
 import { CURRENT_USER } from "@/constants/caseOptions";
-import { getTotalJudgementReward } from "@/lib/caseHelpers";
+import { getTotalJudgmentAward } from "@/lib/caseHelpers";
 import { initialCases, initialCompanies } from "@/data/initialCases";
 
 type CasesContextValue = {
@@ -42,7 +42,7 @@ export function CasesProvider({ children }: { children: ReactNode }) {
       createdAt: today,
       totalPaid: {
         ...draft.totalPaid,
-        amount: getTotalJudgementReward(draft),
+        amount: getTotalJudgmentAward(draft),
       },
     };
 
@@ -58,7 +58,7 @@ export function CasesProvider({ children }: { children: ReactNode }) {
       date: today,
       totalPaid: {
         ...draft.totalPaid,
-        amount: getTotalJudgementReward(draft),
+        amount: getTotalJudgmentAward(draft),
       },
     };
 

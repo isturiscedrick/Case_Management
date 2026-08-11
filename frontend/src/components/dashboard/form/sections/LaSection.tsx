@@ -13,7 +13,7 @@ import {
 import { Field } from "@/components/cases/Field";
 import {
   inputCls,
-  JudgementRewardField,
+  JudgmentAwardField,
 } from "@/components/cases/CurrencyField";
 import { InfoBanner } from "@/components/dashboard/form/shared/InfoBanner";
 import { SectionHeader, STAGE_STYLES } from "@/components/dashboard/form/shared/SectionHeader";
@@ -75,7 +75,7 @@ export function LaSection({
       {senaFilled && laRequired && !laFilled && (
         <InfoBanner tone="warning">
           SEnA Remarks is "Not Settled" or "Others" — LA fields
-          (Date, Status, Judgement Reward, Remarks) are now required
+          (Date, Status, Judgment Award, Remarks) are now required
           to create the case. LA Progress is optional.
         </InfoBanner>
       )}
@@ -140,31 +140,27 @@ export function LaSection({
               </Field>
             </fieldset>
 
-            {/* ================================================= */}
-            {/* JUDGEMENT REWARD */}
-            {/* ================================================= */}
-
-            <JudgementRewardField
-              label="Judgement Reward"
-              value={value.la.judgementReward}
+            <JudgmentAwardField
+              label="Judgment Award"
+              value={value.la.judgmentAward}
               onChange={(v) =>
-                setLa("judgementReward", v)
+                setLa("judgmentAward", v)
               }
               amountSpecValue={
-                value.la.judgementRewardSpecification
+                value.la.judgmentAwardSpecification
               }
               onAmountSpecChange={(v) =>
                 setLa(
-                  "judgementRewardSpecification",
+                  "judgmentAwardSpecification",
                   v
                 )
               }
               computedSpecValue={
-                value.la.judgementRewardComputedSpecification
+                value.la.judgmentAwardComputedSpecification
               }
               onComputedSpecChange={(v) =>
                 setLa(
-                  "judgementRewardComputedSpecification",
+                  "judgmentAwardComputedSpecification",
                   v
                 )
               }
@@ -276,11 +272,11 @@ export function LaSection({
                 const nlrcHasData =
                   !!value.nlrc.date ||
                   !!value.nlrc.status ||
-                  !!value.nlrc.judgementReward ||
+                  !!value.nlrc.judgmentAward ||
                   !!value.nlrc
-                    .judgementRewardSpecification ||
+                    .judgmentAwardSpecification ||
                   !!value.nlrc
-                    .judgementRewardComputedSpecification ||
+                    .judgmentAwardComputedSpecification ||
                   !!value.nlrc.remarks ||
                   !!value.nlrc
                     .remarksSpecification ||
@@ -335,10 +331,10 @@ export function LaSection({
                           ...value.nlrc,
                           date: "",
                           status: "",
-                          judgementReward: "",
-                          judgementRewardSpecification:
+                          judgmentAward: "",
+                          judgmentAwardSpecification:
                             "",
-                          judgementRewardComputedSpecification:
+                          judgmentAwardComputedSpecification:
                             "",
                           remarks: "",
                           remarksSpecification: "",

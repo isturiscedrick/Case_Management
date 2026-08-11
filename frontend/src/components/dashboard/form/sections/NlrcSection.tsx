@@ -12,7 +12,7 @@ import {
 
 import { Field } from "@/components/cases/Field";
 import {
-  JudgementRewardField,
+  JudgmentAwardField,
   inputCls,
 } from "@/components/cases/CurrencyField";
 import { InfoBanner } from "@/components/dashboard/form/shared/InfoBanner";
@@ -83,7 +83,7 @@ export function NlrcSection({
       {senaFilled && laRequired && !laFilled && (
         <InfoBanner tone="info">
           Complete all Labor Arbiter (LA) fields above (Date,
-          Status, Judgement Reward, Remarks) to unlock this
+          Status, Judgment Award, Remarks) to unlock this
           section.
         </InfoBanner>
       )}
@@ -154,35 +154,28 @@ export function NlrcSection({
               </Field>
             </fieldset>
 
-            {/* -----------------------------------------------------
-                JUDGEMENT AWARD
-
-                Intentionally outside restrictNlrcDetailsEditing.
-                It remains editable regardless of the detail lock.
-               ----------------------------------------------------- */}
-
-            <JudgementRewardField
-              label="Judgement Award"
-              value={value.nlrc.judgementReward}
+            <JudgmentAwardField
+              label="Judgment Award"
+              value={value.nlrc.judgmentAward}
               onChange={(v) =>
-                setNlrc("judgementReward", v)
+                setNlrc("judgmentAward", v)
               }
               amountSpecValue={
-                value.nlrc.judgementRewardSpecification
+                value.nlrc.judgmentAwardSpecification
               }
               onAmountSpecChange={(v) =>
                 setNlrc(
-                  "judgementRewardSpecification",
+                  "judgmentAwardSpecification",
                   v,
                 )
               }
               computedSpecValue={
                 value.nlrc
-                  .judgementRewardComputedSpecification
+                  .judgmentAwardComputedSpecification
               }
               onComputedSpecChange={(v) =>
                 setNlrc(
-                  "judgementRewardComputedSpecification",
+                  "judgmentAwardComputedSpecification",
                   v,
                 )
               }
@@ -295,11 +288,11 @@ export function NlrcSection({
                 const caHasData =
                   !!value.ca.date ||
                   !!value.ca.status ||
-                  !!value.ca.judgementReward ||
+                  !!value.ca.judgmentAward ||
                   !!value.ca
-                    .judgementRewardSpecification ||
+                    .judgmentAwardSpecification ||
                   !!value.ca
-                    .judgementRewardComputedSpecification ||
+                    .judgmentAwardComputedSpecification ||
                   !!value.ca.remarks ||
                   !!value.ca
                     .remarksSpecification ||
@@ -357,10 +350,10 @@ export function NlrcSection({
                           ...value.ca,
                           date: "",
                           status: "",
-                          judgementReward: "",
-                          judgementRewardSpecification:
+                          judgmentAward: "",
+                          judgmentAwardSpecification:
                             "",
-                          judgementRewardComputedSpecification:
+                          judgmentAwardComputedSpecification:
                             "",
                           remarks: "",
                           remarksSpecification: "",

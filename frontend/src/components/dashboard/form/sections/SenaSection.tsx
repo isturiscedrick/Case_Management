@@ -291,9 +291,9 @@ export function SenaSection({
                 const laHasData =
                   !!value.la.date ||
                   !!value.la.status ||
-                  !!value.la.judgementReward ||
-                  !!value.la.judgementRewardSpecification ||
-                  !!value.la.judgementRewardComputedSpecification ||
+                  !!value.la.judgmentAward ||
+                  !!value.la.judgmentAwardSpecification ||
+                  !!value.la.judgmentAwardComputedSpecification ||
                   !!value.la.remarks ||
                   !!value.la.remarksSpecification ||
                   !!value.caseProgress.la ||
@@ -326,9 +326,9 @@ export function SenaSection({
                           ...value.la,
                           date: "",
                           status: "",
-                          judgementReward: "",
-                          judgementRewardSpecification: "",
-                          judgementRewardComputedSpecification: "",
+                          judgmentAward: "",
+                          judgmentAwardSpecification: "",
+                          judgmentAwardComputedSpecification: "",
                           remarks: "",
                           remarksSpecification: "",
                         },

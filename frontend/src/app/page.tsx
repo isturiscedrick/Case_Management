@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 
 export default async function Home() {
   const cookieStore = await cookies();
-  const token = cookieStore.get("session")?.value; // adjust cookie name to match your backend
+  const token = cookieStore.get("session")?.value; 
 
   if (token) {
     redirect("/cases");

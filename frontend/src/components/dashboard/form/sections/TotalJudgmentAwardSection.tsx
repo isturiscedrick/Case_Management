@@ -10,14 +10,14 @@ import { inputCls } from "@/components/cases/CurrencyField";
 
 import { formatCurrency } from "@/lib/caseHelpers";
 
-export function TotalJudgementRewardSection({
+export function TotalJudgmentAwardSection({
   value,
-  totalJudgementReward,
+  totalJudgmentAward,
   anyStageSettled,
   setTotalPaidCategory,
 }: {
   value: CaseDraft;
-  totalJudgementReward: string;
+  totalJudgmentAward: string;
   anyStageSettled: boolean;
   setTotalPaidCategory: (
     category: TotalPaidCategory | ""
@@ -27,15 +27,15 @@ export function TotalJudgementRewardSection({
     <div className="rounded-xl border border-emerald-200 bg-emerald-50/40 p-4 shadow-sm sm:p-5">
       <h3 className="mb-3 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-emerald-700">
         <Landmark size={13} />
-        Total Judgement Reward
+        Total Judgment Award
       </h3>
 
       <div className="rounded-lg border border-emerald-200 bg-white px-3 py-2.5 text-lg font-semibold text-emerald-800 shadow-sm">
-        {formatCurrency(totalJudgementReward)}
+        {formatCurrency(totalJudgmentAward)}
       </div>
 
       <p className="mt-1.5 text-[11px] text-emerald-700/70">
-        Reflects the latest stage&apos;s Judgement Reward/Award
+        Reflects the latest stage&apos;s Judgment Award
         (SC, then CA, NLRC, LA) — not a sum of all stages.
       </p>
 
@@ -53,12 +53,12 @@ export function TotalJudgementRewardSection({
           >
             <option value="">Select Category</option>
 
-            <option value="Judgement-Award-L">
-              Judgement-Award-L
+            <option value="Judgment-Award-L">
+              Judgment-Award-L
             </option>
 
-            <option value="Judgement-Award-W">
-              Judgement-Award-W
+            <option value="Judgment-Award-W">
+              Judgment-Award-W
             </option>
 
             <option value="Settlement">

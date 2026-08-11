@@ -14,7 +14,7 @@ import {
 import { Field } from "@/components/cases/Field";
 
 import {
-  JudgementRewardField,
+  JudgmentAwardField,
   inputCls,
 } from "@/components/cases/CurrencyField";
 
@@ -79,7 +79,7 @@ export function ScSection({
 
       {senaFilled && caEnabled && !caFilled && (
         <InfoBanner tone="info">
-          Complete all CA fields above (Date, Status, Judgement
+          Complete all CA fields above (Date, Status, Judgment
           Award, Remarks) to unlock this section.
         </InfoBanner>
       )}
@@ -123,28 +123,28 @@ export function ScSection({
               </select>
             </Field>
 
-            <JudgementRewardField
-              label="Judgement Award"
-              value={value.sc.judgementReward}
+            <JudgmentAwardField
+              label="Judgment Award"
+              value={value.sc.judgmentAward}
               onChange={(v) =>
-                setSc("judgementReward", v)
+                setSc("judgmentAward", v)
               }
               amountSpecValue={
-                value.sc.judgementRewardSpecification
+                value.sc.judgmentAwardSpecification
               }
               onAmountSpecChange={(v) =>
                 setSc(
-                  "judgementRewardSpecification",
+                  "judgmentAwardSpecification",
                   v
                 )
               }
               computedSpecValue={
                 value.sc
-                  .judgementRewardComputedSpecification
+                  .judgmentAwardComputedSpecification
               }
               onComputedSpecChange={(v) =>
                 setSc(
-                  "judgementRewardComputedSpecification",
+                  "judgmentAwardComputedSpecification",
                   v
                 )
               }

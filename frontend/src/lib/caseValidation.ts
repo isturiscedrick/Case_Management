@@ -4,26 +4,18 @@ type StageInfo = LaInfo | NlrcInfo | CaInfo | ScInfo;
 
 const TO_BE_COMPUTED = "To be computed";
 
-// A stage (LA/NLRC/CA/SC) is "filled" when its required fields are set.
-// Progress is intentionally excluded — it's always optional, EXCEPT that
-// whenever Progress is "Not Settled" or "Others", its own Specify text is
-// required before the NEXT stage unlocks (handled separately below, since
-// that's a cross-stage gate rather than a same-stage completeness check).
 function isStageFilled(stage: StageInfo): boolean {
-  // Judgement Reward has two mutually exclusive manual-entry fields
-  // depending on mode: judgementRewardSpecification when it's a numeric
-  // "Amount", judgementRewardComputedSpecification when it's "To be
-  // computed". Only the one matching the current mode is required.
-  const isComputed = stage.judgementReward.trim() === TO_BE_COMPUTED;
-  const judgementRewardSpecFilled = isComputed
-    ? (stage.judgementRewardComputedSpecification ?? "").trim() !== ""
-    : (stage.judgementRewardSpecification ?? "").trim() !== "";
+
+  const isComputed = stage.judgmentAward.trim() === TO_BE_COMPUTED;
+  const judgmentAwardSpecFilled = isComputed
+    ? (stage.judgmentAwardComputedSpecification ?? "").trim() !== ""
+    : (stage.judgmentAwardSpecification ?? "").trim() !== "";
 
   return (
     stage.date.trim() !== "" &&
     stage.status.trim() !== "" &&
-    stage.judgementReward.trim() !== "" &&
-    judgementRewardSpecFilled &&
+    stage.judgmentAward.trim() !== "" &&
+    judgmentAwardSpecFilled &&
     stage.remarks.trim() !== "" &&
     (stage.remarks !== "Other" || (stage.remarksSpecification ?? "").trim() !== "")
   );

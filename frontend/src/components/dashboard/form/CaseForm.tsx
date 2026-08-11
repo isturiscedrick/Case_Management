@@ -16,14 +16,14 @@ import { LaSection } from "./sections/LaSection";
 import { NlrcSection } from "./sections/NlrcSection";
 import { CaSection } from "./sections/CaSection";
 import { ScSection } from "./sections/ScSection";
-import { TotalJudgementRewardSection } from "./sections/TotalJudgementRewardSection";
+import { TotalJudgmentAwardSection } from "./sections/TotalJudgmentAwardSection";
 
 import {
   StageStepper,
   type StageStep,
 } from "./shared/StageStepper";
 import { getStageGates } from "@/lib/caseValidation";
-import { getTotalJudgementReward } from "@/lib/caseHelpers";
+import { getTotalJudgmentAward } from "@/lib/caseHelpers";
 
 export function CaseForm({
   value,
@@ -106,7 +106,7 @@ export function CaseForm({
     caFilled,
     scEnabled,
   } = getStageGates(value);
-  const totalJudgementReward = getTotalJudgementReward(value);
+  const totalJudgmentAward = getTotalJudgmentAward(value);
   const canProceedPastLa = value.caseProgress.la === "Not Settled" || value.caseProgress.la === "Others";
   const canProceedPastNlrc = value.caseProgress.nlrc === "Not Settled" || value.caseProgress.nlrc === "Others";
   const canProceedPastCa = value.caseProgress.ca === "Not Settled" || value.caseProgress.ca === "Others";
@@ -211,9 +211,9 @@ export function CaseForm({
         scVisible={scVisible}
       />
 
-      <TotalJudgementRewardSection
+      <TotalJudgmentAwardSection
         value={value}
-        totalJudgementReward={totalJudgementReward}
+        totalJudgmentAward={totalJudgmentAward}
         anyStageSettled={anyStageSettled}
         setTotalPaidCategory={setTotalPaidCategory}
       />

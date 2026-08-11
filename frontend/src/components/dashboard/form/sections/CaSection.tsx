@@ -12,7 +12,7 @@ import {
 
 import { Field } from "@/components/cases/Field";
 import {
-  JudgementRewardField,
+  JudgmentAwardField,
   inputCls,
 } from "@/components/cases/CurrencyField";
 import { InfoBanner } from "@/components/dashboard/form/shared/InfoBanner";
@@ -85,7 +85,7 @@ export function CaSection({
         !nlrcFilled && (
           <InfoBanner tone="info">
             Complete all NLRC fields above (Date, Status,
-            Judgement Award, Remarks) to unlock this
+            Judgment Award, Remarks) to unlock this
             section.
           </InfoBanner>
         )}
@@ -165,39 +165,39 @@ export function CaSection({
             </fieldset>
 
             {/* -----------------------------------------------------
-                JUDGEMENT AWARD
+                JUDGMENT AWARD
 
                 Intentionally outside restrictCaDetailsEditing.
                ----------------------------------------------------- */}
 
-            <JudgementRewardField
-              label="Judgement Award"
+            <JudgmentAwardField
+              label="Judgment Award"
               value={
-                value.ca.judgementReward
+                value.ca.judgmentAward
               }
               onChange={(v) =>
                 setCa(
-                  "judgementReward",
+                  "judgmentAward",
                   v,
                 )
               }
               amountSpecValue={
                 value.ca
-                  .judgementRewardSpecification
+                  .judgmentAwardSpecification
               }
               onAmountSpecChange={(v) =>
                 setCa(
-                  "judgementRewardSpecification",
+                  "judgmentAwardSpecification",
                   v,
                 )
               }
               computedSpecValue={
                 value.ca
-                  .judgementRewardComputedSpecification
+                  .judgmentAwardComputedSpecification
               }
               onComputedSpecChange={(v) =>
                 setCa(
-                  "judgementRewardComputedSpecification",
+                  "judgmentAwardComputedSpecification",
                   v,
                 )
               }
@@ -309,11 +309,11 @@ export function CaSection({
                 const scHasData =
                   !!value.sc.date ||
                   !!value.sc.status ||
-                  !!value.sc.judgementReward ||
+                  !!value.sc.judgmentAward ||
                   !!value.sc
-                    .judgementRewardSpecification ||
+                    .judgmentAwardSpecification ||
                   !!value.sc
-                    .judgementRewardComputedSpecification ||
+                    .judgmentAwardComputedSpecification ||
                   !!value.sc.remarks ||
                   !!value.sc
                     .remarksSpecification ||
@@ -369,10 +369,10 @@ export function CaSection({
                           ...value.sc,
                           date: "",
                           status: "",
-                          judgementReward: "",
-                          judgementRewardSpecification:
+                          judgmentAward: "",
+                          judgmentAwardSpecification:
                             "",
-                          judgementRewardComputedSpecification:
+                          judgmentAwardComputedSpecification:
                             "",
                           remarks: "",
                           remarksSpecification:

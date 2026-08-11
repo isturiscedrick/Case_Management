@@ -196,25 +196,25 @@ export default function ArchivePage() {
                 <tr>
                   <th className="sticky top-9 z-20 border-b border-slate-200 bg-sky-50/60 p-1.5 text-center">Date</th>
                   <th className="sticky top-9 z-20 border-b border-slate-200 bg-sky-50/60 p-1.5 text-center">Status</th>
-                  <th className="sticky top-9 z-20 border-b border-slate-200 bg-sky-50/60 p-1.5 text-center">Judgement Reward</th>
+                  <th className="sticky top-9 z-20 border-b border-slate-200 bg-sky-50/60 p-1.5 text-center">Judgment Award</th>
                   <th className="sticky top-9 z-20 border-b border-slate-200 bg-sky-50/60 p-1.5 text-center">Remarks</th>
                   <th className="sticky top-9 z-20 border-b border-slate-200 bg-sky-50/60 p-1.5 text-center">Progress</th>
 
                   <th className="sticky top-9 z-20 border-b border-slate-200 bg-violet-50/60 p-1.5 text-center">Date</th>
                   <th className="sticky top-9 z-20 border-b border-slate-200 bg-violet-50/60 p-1.5 text-center">Status</th>
-                  <th className="sticky top-9 z-20 border-b border-slate-200 bg-violet-50/60 p-1.5 text-center">Judgement Reward</th>
+                  <th className="sticky top-9 z-20 border-b border-slate-200 bg-violet-50/60 p-1.5 text-center">Judgment Award</th>
                   <th className="sticky top-9 z-20 border-b border-slate-200 bg-violet-50/60 p-1.5 text-center">Remarks</th>
                   <th className="sticky top-9 z-20 border-b border-slate-200 bg-violet-50/60 p-1.5 text-center">Progress</th>
 
                   <th className="sticky top-9 z-20 border-b border-slate-200 bg-fuchsia-50/60 p-1.5 text-center">Date</th>
                   <th className="sticky top-9 z-20 border-b border-slate-200 bg-fuchsia-50/60 p-1.5 text-center">Status</th>
-                  <th className="sticky top-9 z-20 border-b border-slate-200 bg-fuchsia-50/60 p-1.5 text-center">Judgement Award</th>
+                  <th className="sticky top-9 z-20 border-b border-slate-200 bg-fuchsia-50/60 p-1.5 text-center">Judgment Award</th>
                   <th className="sticky top-9 z-20 border-b border-slate-200 bg-fuchsia-50/60 p-1.5 text-center">Remarks</th>
                   <th className="sticky top-9 z-20 border-b border-slate-200 bg-fuchsia-50/60 p-1.5 text-center">Progress</th>
 
                   <th className="sticky top-9 z-20 border-b border-slate-200 bg-rose-50/60 p-1.5 text-center">Date</th>
                   <th className="sticky top-9 z-20 border-b border-slate-200 bg-rose-50/60 p-1.5 text-center">Status</th>
-                  <th className="sticky top-9 z-20 border-b border-slate-200 bg-rose-50/60 p-1.5 text-center">Judgement Award</th>
+                  <th className="sticky top-9 z-20 border-b border-slate-200 bg-rose-50/60 p-1.5 text-center">Judgment Award</th>
                   <th className="sticky top-9 z-20 border-b border-slate-200 bg-rose-50/60 p-1.5 text-center">Remarks</th>
                   <th className="sticky top-9 z-20 border-b border-slate-200 bg-rose-50/60 p-1.5 text-center">Progress</th>
                 </tr>
@@ -252,7 +252,7 @@ export default function ArchivePage() {
 
                     <td className="bg-sky-50/30 p-2 text-slate-600">{formatDate(item.la.date)}</td>
                     <td className="truncate bg-sky-50/30 p-2 text-slate-600">{item.la.status}</td>
-                    <td className="truncate bg-sky-50/30 p-2 font-medium text-slate-700">{formatCurrency(item.la.judgementReward)}</td>
+                    <td className="truncate bg-sky-50/30 p-2 font-medium text-slate-700">{formatCurrency(item.la.judgmentAward)}</td>
                     <td className="truncate bg-sky-50/30 p-2 text-slate-600">
                       {item.la.remarks}
                       {item.la.remarks === "Other" && item.la.remarksSpecification && (
@@ -265,7 +265,7 @@ export default function ArchivePage() {
 
                     <td className="bg-violet-50/30 p-2 text-slate-600">{formatDate(item.nlrc.date)}</td>
                     <td className="truncate bg-violet-50/30 p-2 text-slate-600">{item.nlrc.status}</td>
-                    <td className="truncate bg-violet-50/30 p-2 font-medium text-slate-700">{formatCurrency(item.nlrc.judgementReward)}</td>
+                    <td className="truncate bg-violet-50/30 p-2 font-medium text-slate-700">{formatCurrency(item.nlrc.judgmentAward)}</td>
                     <td className="truncate bg-violet-50/30 p-2 text-slate-600">
                       {item.nlrc.remarks}
                       {item.nlrc.remarks === "Other" && item.nlrc.remarksSpecification && (
@@ -278,7 +278,7 @@ export default function ArchivePage() {
 
                     <td className="bg-fuchsia-50/30 p-2 text-slate-600">{formatDate(item.ca.date)}</td>
                     <td className="truncate bg-fuchsia-50/30 p-2 text-slate-600">{item.ca.status}</td>
-                    <td className="truncate bg-fuchsia-50/30 p-2 font-medium text-slate-700">{formatCurrency(item.ca.judgementReward)}</td>
+                    <td className="truncate bg-fuchsia-50/30 p-2 font-medium text-slate-700">{formatCurrency(item.ca.judgmentAward)}</td>
                     <td className="truncate bg-fuchsia-50/30 p-2 text-slate-600">
                       {item.ca.remarks}
                       {item.ca.remarks === "Other" && item.ca.remarksSpecification && (
@@ -291,7 +291,7 @@ export default function ArchivePage() {
 
                     <td className="bg-rose-50/30 p-2 text-slate-600">{formatDate(item.sc.date)}</td>
                     <td className="truncate bg-rose-50/30 p-2 text-slate-600">{item.sc.status}</td>
-                    <td className="truncate bg-rose-50/30 p-2 font-medium text-slate-700">{formatCurrency(item.sc.judgementReward)}</td>
+                    <td className="truncate bg-rose-50/30 p-2 font-medium text-slate-700">{formatCurrency(item.sc.judgmentAward)}</td>
                     <td className="truncate bg-rose-50/30 p-2 text-slate-600">
                       {item.sc.remarks}
                       {item.sc.remarks === "Other" && item.sc.remarksSpecification && (
