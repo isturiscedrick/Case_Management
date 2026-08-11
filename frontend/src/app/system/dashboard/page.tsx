@@ -3,16 +3,15 @@
 import { useState } from "react";
 
 // Types
-import type { CaseDraft, CaseItem, CaseStatus, ModalType, StageProgress } from "@/types/case";
-
+import type { CaseDraft, CaseItem, CaseStatus, ModalType, StageProgress, EditRestrictions } from "@/types/case";
 // Constants
-import { CURRENT_USER, EMPTY_CASE } from "@/constants/caseOptions";
+import { EMPTY_CASE, DEFAULT_EDIT_RESTRICTIONS } from "@/constants/caseOptions";
 
-// Data
-import { initialCases, initialCompanies } from "@/data/initialCases";
+// Shared case data/actions
+import { useCases } from "@/contexts/CasesContext";
 
 // Helpers
-import { cloneDraft, getTotalJudgementReward } from "@/lib/caseHelpers";
+import { cloneDraft } from "@/lib/caseHelpers";
 import { getCaseDraftErrors, getStageGates } from "@/lib/caseValidation";
 
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
@@ -33,8 +32,7 @@ export default function CasesPage() {
      CASE DATA
   ======================================================= */
 
-  const [cases, setCases] = useState<CaseItem[]>(initialCases);
-  const [companies] = useState<string[]>(initialCompanies);
+  const { cases, companies, createCase, updateCase, toggleArchive } = useCases();
 
   /* =======================================================
      FILTER STATE
@@ -57,21 +55,11 @@ export default function CasesPage() {
   const [activeCase, setActiveCase] = useState<CaseItem | null>(null);
   const [draft, setDraft] = useState<CaseDraft>(EMPTY_CASE);
 
-  /* =======================================================
+ /* =======================================================
      EDIT RESTRICTIONS
   ======================================================= */
 
-  const [restrictSenaEditing, setRestrictSenaEditing] = useState(false);
-  const [restrictSenaRemarksEditing, setRestrictSenaRemarksEditing] = useState(false);
-  const [restrictLaDetailsEditing, setRestrictLaDetailsEditing] = useState(false);
-  const [restrictLaProgressOnly, setRestrictLaProgressOnly] = useState(false);
-  const [restrictLaProgressEditing, setRestrictLaProgressEditing] = useState(false);
-  const [restrictNlrcDetailsEditing, setRestrictNlrcDetailsEditing] = useState(false);
-  const [restrictNlrcProgressOnly, setRestrictNlrcProgressOnly] = useState(false);
-  const [restrictNlrcProgressEditing, setRestrictNlrcProgressEditing] = useState(false);
-  const [restrictCaDetailsEditing, setRestrictCaDetailsEditing] = useState(false);
-  const [restrictCaProgressOnly, setRestrictCaProgressOnly] = useState(false);
-  const [restrictCaProgressEditing, setRestrictCaProgressEditing] = useState(false);
+  const [editRestrictions, setEditRestrictions] = useState<EditRestrictions>(DEFAULT_EDIT_RESTRICTIONS);
 
   /* =======================================================
      CONFIRMATION STATE
@@ -124,21 +112,8 @@ export default function CasesPage() {
      RESET EDIT RESTRICTIONS
   ======================================================= */
 
-  const resetEditRestrictions = () => {
-    setRestrictSenaEditing(false);
-    setRestrictSenaRemarksEditing(false);
-
-    setRestrictLaDetailsEditing(false);
-    setRestrictLaProgressOnly(false);
-    setRestrictLaProgressEditing(false);
-
-    setRestrictNlrcDetailsEditing(false);
-    setRestrictNlrcProgressOnly(false);
-    setRestrictNlrcProgressEditing(false);
-
-    setRestrictCaDetailsEditing(false);
-    setRestrictCaProgressOnly(false);
-    setRestrictCaProgressEditing(false);
+ const resetEditRestrictions = () => {
+    setEditRestrictions(DEFAULT_EDIT_RESTRICTIONS);
   };
 
   /* =======================================================
@@ -183,27 +158,22 @@ export default function CasesPage() {
     const nlrcProgressIsPending = gates.nlrcFilled && item.caseProgress.nlrc === "";
     const caProgressIsPending = gates.caFilled && item.caseProgress.ca === "";
 
-    setActiveCase(item);
+   setActiveCase(item);
     setDraft(cloneDraft(item));
 
-    /* SEnA */
-    setRestrictSenaEditing(isSenaOnlyCase(item) || gates.laFilled);
-    setRestrictSenaRemarksEditing(gates.laFilled);
-
-    /* LA */
-    setRestrictLaDetailsEditing(gates.laFilled);
-    setRestrictLaProgressOnly(laProgressIsPending);
-    setRestrictLaProgressEditing(gates.laFilled && !laProgressIsPending);
-
-    /* NLRC */
-    setRestrictNlrcDetailsEditing(gates.nlrcFilled);
-    setRestrictNlrcProgressOnly(nlrcProgressIsPending);
-    setRestrictNlrcProgressEditing(gates.nlrcFilled && !nlrcProgressIsPending);
-
-    /* CA */
-    setRestrictCaDetailsEditing(gates.caFilled);
-    setRestrictCaProgressOnly(caProgressIsPending);
-    setRestrictCaProgressEditing(gates.caFilled && !caProgressIsPending);
+    setEditRestrictions({
+      restrictSenaEditing: isSenaOnlyCase(item) || gates.laFilled,
+      restrictSenaRemarksEditing: gates.laFilled,
+      restrictLaDetailsEditing: gates.laFilled,
+      restrictLaProgressOnly: laProgressIsPending,
+      restrictLaProgressEditing: gates.laFilled && !laProgressIsPending,
+      restrictNlrcDetailsEditing: gates.nlrcFilled,
+      restrictNlrcProgressOnly: nlrcProgressIsPending,
+      restrictNlrcProgressEditing: gates.nlrcFilled && !nlrcProgressIsPending,
+      restrictCaDetailsEditing: gates.caFilled,
+      restrictCaProgressOnly: caProgressIsPending,
+      restrictCaProgressEditing: gates.caFilled && !caProgressIsPending,
+    });
 
     setModal("edit");
   };
@@ -246,22 +216,7 @@ export default function CasesPage() {
   ======================================================= */
 
   const saveCreate = () => {
-    const nextId = Math.max(0, ...cases.map((item) => item.id)) + 1;
-    const today = new Date().toISOString().slice(0, 10);
-
-    const newCase: CaseItem = {
-      ...draft,
-      id: nextId,
-      date: today,
-      createdBy: CURRENT_USER,
-      createdAt: today,
-      totalPaid: {
-        ...draft.totalPaid,
-        amount: getTotalJudgementReward(draft),
-      },
-    };
-
-    setCases((prev) => [...prev, newCase]);
+    createCase(draft);
 
     setConfirmSave(null);
     closeModal();
@@ -272,19 +227,7 @@ export default function CasesPage() {
       return;
     }
 
-    const today = new Date().toISOString().slice(0, 10);
-
-    const updatedCase: CaseItem = {
-      ...draft,
-      id: activeCase.id,
-      date: today,
-      totalPaid: {
-        ...draft.totalPaid,
-        amount: getTotalJudgementReward(draft),
-      },
-    };
-
-    setCases((prev) => prev.map((item) => (item.id === activeCase.id ? updatedCase : item)));
+    updateCase(activeCase.id, draft);
 
     setConfirmSave(null);
     closeModal();
@@ -314,9 +257,7 @@ export default function CasesPage() {
       return;
     }
 
-    setCases((prev) =>
-      prev.map((item) => (item.id === confirmArchiveItem.id ? { ...item, archived: !item.archived } : item))
-    );
+    toggleArchive(confirmArchiveItem.id);
 
     setConfirmArchiveItem(null);
   };
@@ -385,19 +326,7 @@ export default function CasesPage() {
           draft={draft}
           onChange={setDraft}
           companies={companies}
-          editRestrictions={{
-            restrictSenaEditing,
-            restrictSenaRemarksEditing,
-            restrictLaDetailsEditing,
-            restrictLaProgressOnly,
-            restrictLaProgressEditing,
-            restrictNlrcDetailsEditing,
-            restrictNlrcProgressOnly,
-            restrictNlrcProgressEditing,
-            restrictCaDetailsEditing,
-            restrictCaProgressOnly,
-            restrictCaProgressEditing,
-          }}
+          editRestrictions={editRestrictions}
           onCancel={closeModal}
           onSave={requestSaveEdit}
         />

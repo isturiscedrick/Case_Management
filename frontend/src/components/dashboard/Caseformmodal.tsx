@@ -1,20 +1,6 @@
-import type { CaseDraft, CaseItem } from "@/types/case";
+import type { CaseDraft, CaseItem, EditRestrictions } from "@/types/case";
 import { Modal } from "@/components/cases/Modal";
 import { CaseForm } from "@/components/dashboard/form/CaseForm";
-
-type EditRestrictions = {
-  restrictSenaEditing: boolean;
-  restrictSenaRemarksEditing: boolean;
-  restrictLaDetailsEditing: boolean;
-  restrictLaProgressOnly: boolean;
-  restrictLaProgressEditing: boolean;
-  restrictNlrcDetailsEditing: boolean;
-  restrictNlrcProgressOnly: boolean;
-  restrictNlrcProgressEditing: boolean;
-  restrictCaDetailsEditing: boolean;
-  restrictCaProgressOnly: boolean;
-  restrictCaProgressEditing: boolean;
-};
 
 export function CaseFormModal({
   mode,
@@ -66,7 +52,7 @@ export function CaseFormModal({
         value={draft}
         onChange={onChange}
         companies={companies}
-        {...(mode === "edit" && editRestrictions ? editRestrictions : {})}
+        restrictions={mode === "edit" ? editRestrictions : undefined}
       />
     </Modal>
   );

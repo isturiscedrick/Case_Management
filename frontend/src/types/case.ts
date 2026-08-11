@@ -5,11 +5,7 @@ export interface LaInfo {
   date: string;
   status: string;
   judgementReward: string;
-  // Manual entry required when judgementReward is a numeric "Amount".
   judgementRewardSpecification?: string;
-  // Separate manual entry required when judgementReward === "To be
-  // computed". Kept independent from judgementRewardSpecification so
-  // switching modes doesn't carry text typed in one mode into the other.
   judgementRewardComputedSpecification?: string;
   remarks: string;
   remarksSpecification?: string;
@@ -75,13 +71,8 @@ export interface CaseItem {
   caseNo: string;
   complainants: string[];
   venue: string;
-
-  // NEW FIELD — handling personnel selected in SEnA, next to Venue.
-  // Optional so existing data/mocks without this field still type-check.
   handlingPersonnel?: string;
   handlingPersonnelSpecification?: string;
-
-  // CHANGED: cause is now an array to support multiple selections.
   cause: string[];
   causeSpecification?: string;
   filingDate: string;
@@ -93,19 +84,12 @@ export interface CaseItem {
   ca: CaInfo;
   sc: ScInfo;
 
-  // NEW COLUMN
   totalPaid: TotalPaidInfo;
 
   caseProgress: CaseProgress;
 
   createdBy: string;
   createdAt: string;
-
-  // NEW FIELDS — who last modified the case and when. Optional so existing
-  // data/mocks that predate this change still type-check; a case that has
-  // never been edited since creation simply won't have these set. The
-  // actual save/submit handler is responsible for populating these on
-  // every update (not covered by this file).
   updatedBy?: string;
   updatedAt?: string;
 
@@ -115,3 +99,17 @@ export interface CaseItem {
 export type CaseDraft = Omit<CaseItem, "id">;
 
 export type ModalType = "create" | "view" | "edit" | null;
+
+export type EditRestrictions = {
+  restrictSenaEditing: boolean;
+  restrictSenaRemarksEditing: boolean;
+  restrictLaDetailsEditing: boolean;
+  restrictLaProgressOnly: boolean;
+  restrictLaProgressEditing: boolean;
+  restrictNlrcDetailsEditing: boolean;
+  restrictNlrcProgressOnly: boolean;
+  restrictNlrcProgressEditing: boolean;
+  restrictCaDetailsEditing: boolean;
+  restrictCaProgressOnly: boolean;
+  restrictCaProgressEditing: boolean;
+};

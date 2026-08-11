@@ -6,7 +6,10 @@ import type {
   ScInfo,
   TotalPaidCategory,
   StageProgress,
+  EditRestrictions,
 } from "@/types/case";
+
+import { DEFAULT_EDIT_RESTRICTIONS } from "@/constants/caseOptions";
 
 import { SenaSection } from "./sections/SenaSection";
 import { LaSection } from "./sections/LaSection";
@@ -26,33 +29,27 @@ export function CaseForm({
   value,
   onChange,
   companies,
-  restrictSenaEditing = false,
-  restrictSenaRemarksEditing = false,
-  restrictLaDetailsEditing = false,
-  restrictLaProgressOnly = false,
-  restrictLaProgressEditing = false,
-  restrictNlrcDetailsEditing = false,
-  restrictNlrcProgressOnly = false,
-  restrictNlrcProgressEditing = false,
-  restrictCaDetailsEditing = false,
-  restrictCaProgressOnly = false,
-  restrictCaProgressEditing = false,
+  restrictions = DEFAULT_EDIT_RESTRICTIONS,
 }: {
   value: CaseDraft;
   onChange: (next: CaseDraft) => void;
   companies: string[];
-  restrictSenaEditing?: boolean;
-  restrictSenaRemarksEditing?: boolean;
-  restrictLaDetailsEditing?: boolean;
-  restrictLaProgressOnly?: boolean;
-  restrictLaProgressEditing?: boolean;
-  restrictNlrcDetailsEditing?: boolean;
-  restrictNlrcProgressOnly?: boolean;
-  restrictNlrcProgressEditing?: boolean;
-  restrictCaDetailsEditing?: boolean;
-  restrictCaProgressOnly?: boolean;
-  restrictCaProgressEditing?: boolean;
+  restrictions?: EditRestrictions;
 }) {
+  const {
+    restrictSenaEditing,
+    restrictSenaRemarksEditing,
+    restrictLaDetailsEditing,
+    restrictLaProgressOnly,
+    restrictLaProgressEditing,
+    restrictNlrcDetailsEditing,
+    restrictNlrcProgressOnly,
+    restrictNlrcProgressEditing,
+    restrictCaDetailsEditing,
+    restrictCaProgressOnly,
+    restrictCaProgressEditing,
+  } = restrictions;
+
   const setTop = <K extends keyof CaseDraft>(key: K, v: CaseDraft[K]) => {
     onChange({ ...value, [key]: v });
   };

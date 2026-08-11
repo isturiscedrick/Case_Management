@@ -1,4 +1,4 @@
-import type { CaseStatus, StageProgress, CaseDraft } from "@/types/case";
+import type { CaseStatus, StageProgress, CaseDraft, EditRestrictions } from "@/types/case";
 export const STATUS_OPTIONS: ("All" | CaseStatus)[] = ["All", "Filed", "Pending", "Execution", "Closed"];
 export const PROGRESS_OPTIONS: Array<"All" | StageProgress> = [
   "All",
@@ -99,6 +99,20 @@ export const TABLE_COLUMN_COUNT = 34;
 // Placeholder for the logged-in user. Wire this to your auth store
 // (e.g. useAuthStore) once available so "Created By" reflects the real user.
 export const CURRENT_USER = "Current User";
+
+export const DEFAULT_EDIT_RESTRICTIONS: EditRestrictions = {
+  restrictSenaEditing: false,
+  restrictSenaRemarksEditing: false,
+  restrictLaDetailsEditing: false,
+  restrictLaProgressOnly: false,
+  restrictLaProgressEditing: false,
+  restrictNlrcDetailsEditing: false,
+  restrictNlrcProgressOnly: false,
+  restrictNlrcProgressEditing: false,
+  restrictCaDetailsEditing: false,
+  restrictCaProgressOnly: false,
+  restrictCaProgressEditing: false,
+};
 
 export const EMPTY_CASE: CaseDraft = {
   company: "",

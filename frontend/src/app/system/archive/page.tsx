@@ -6,7 +6,7 @@ import { Archive, ArchiveRestore, Eye, Search } from "lucide-react";
 import type { CaseItem, StageProgress } from "@/types/case";
 import { formatDate, formatCurrency } from "@/lib/caseHelpers";
 import { TABLE_COLUMN_COUNT } from "@/constants/caseOptions";
-import { initialCases } from "@/data/initialCases";
+import { useCases } from "@/contexts/CasesContext";
 
 import { StatusBadge } from "@/components/cases/StatusBadge";
 import { Modal } from "@/components/cases/Modal";
@@ -16,7 +16,7 @@ import { formatProgress } from "@/components/dashboard/DashboardHelpers";
 
 export default function ArchivePage() {
 
-  const [cases, setCases] = useState<CaseItem[]>(initialCases);
+  const { cases, restoreCase } = useCases();
   const [search, setSearch] = useState("");
   const [progressFilter, setProgressFilter] = useState<"All" | StageProgress>("All");
 
@@ -45,9 +45,7 @@ export default function ArchivePage() {
 
   const confirmRestore = () => {
     if (!restoreItem) return;
-    // Flip the archived flag back to false so the case reappears on the
-    // dashboard's active list, instead of deleting it from this array.
-    setCases((prev) => prev.map((c) => (c.id === restoreItem.id ? { ...c, archived: false } : c)));
+    restoreCase(restoreItem.id);
     setRestoreItem(null);
   };
 
