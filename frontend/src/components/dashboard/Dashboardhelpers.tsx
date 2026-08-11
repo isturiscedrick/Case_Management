@@ -8,22 +8,22 @@ export function isSenaOnlyCase(item: CaseItem) {
   return (
     !item.la.date &&
     !item.la.status &&
-    !item.la.judgementReward &&
+    !item.la.judgmentAward &&
     !item.la.remarks &&
     !item.la.remarksSpecification &&
     !item.nlrc.date &&
     !item.nlrc.status &&
-    !item.nlrc.judgementReward &&
+    !item.nlrc.judgmentAward &&
     !item.nlrc.remarks &&
     !item.nlrc.remarksSpecification &&
     !item.ca.date &&
     !item.ca.status &&
-    !item.ca.judgementReward &&
+    !item.ca.judgmentAward &&
     !item.ca.remarks &&
     !item.ca.remarksSpecification &&
     !item.sc.date &&
     !item.sc.status &&
-    !item.sc.judgementReward &&
+    !item.sc.judgmentAward &&
     !item.sc.remarks &&
     !item.sc.remarksSpecification
   );
