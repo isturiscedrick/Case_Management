@@ -89,7 +89,7 @@ export function getStageGates(draft: CaseDraft) {
     );
 
   const nlrcFilled = isStageFilled(draft.nlrc);
-
+ 
   const caEnabled =
     nlrcFilled &&
     canProceedFromProgress(
@@ -233,15 +233,15 @@ export function getCaseDraftErrors(draft: CaseDraft): string[] {
   );
 }
 
-  if (
+if (
   draft.caseProgress.sc === "Not Settled" ||
   draft.caseProgress.sc === "Others"
 ) {
   if ((draft.caseProgress.scSpecification ?? "").trim() === "") {
-  errors.push(
-    'Specify SC Progress is required when SC Progress is "Not Settled" or "Others".'
-  );
-}
+    errors.push(
+      'Specify SC Progress is required when SC Progress is "Not Settled" or "Others".'
+    );
+  }
 }
 
   const anyStageSettled =
