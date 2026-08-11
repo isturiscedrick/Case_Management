@@ -118,9 +118,9 @@ export function CaseFilters({
             ))}
           </select>
 
-          {/* Filing Date */}
+          {/* Date Range */}
           <div className="flex items-center gap-1.5">
-            <label className="text-[11px] font-medium text-slate-500">Filing Date</label>
+            <label className="text-[11px] font-medium text-slate-500">Date Range</label>
 
             <input
               type="date"

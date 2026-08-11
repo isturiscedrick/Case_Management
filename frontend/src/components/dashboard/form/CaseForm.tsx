@@ -36,20 +36,24 @@ export function CaseForm({
   companies: string[];
   restrictions?: EditRestrictions;
 }) {
-  const {
-    restrictSenaEditing,
-    restrictSenaRemarksEditing,
-    restrictLaDetailsEditing,
-    restrictLaProgressOnly,
-    restrictLaProgressEditing,
-    restrictNlrcDetailsEditing,
-    restrictNlrcProgressOnly,
-    restrictNlrcProgressEditing,
-    restrictCaDetailsEditing,
-    restrictCaProgressOnly,
-    restrictCaProgressEditing,
-  } = restrictions;
 
+const {
+  restrictSenaEditing,
+  restrictSenaRemarksEditing: baseRestrictSenaRemarksEditing,
+  restrictLaDetailsEditing,
+  restrictLaProgressOnly,
+  restrictLaProgressEditing,
+  restrictNlrcDetailsEditing,
+  restrictNlrcProgressOnly,
+  restrictNlrcProgressEditing,
+  restrictCaDetailsEditing,
+  restrictCaProgressOnly,
+  restrictCaProgressEditing,
+} = restrictions;
+
+const restrictSenaRemarksEditing =
+  baseRestrictSenaRemarksEditing && value.remarks.trim() !== "";
+  
   const setTop = <K extends keyof CaseDraft>(key: K, v: CaseDraft[K]) => {
     onChange({ ...value, [key]: v });
   };

@@ -163,8 +163,7 @@ export default function CasesPage() {
 
     setEditRestrictions({
       restrictSenaEditing: isSenaOnlyCase(item) || gates.laFilled,
-      restrictSenaRemarksEditing: gates.laFilled,
-      restrictLaDetailsEditing: gates.laFilled,
+      restrictSenaRemarksEditing: item.remarks.trim() !== "",      restrictLaDetailsEditing: gates.laFilled,
       restrictLaProgressOnly: laProgressIsPending,
       restrictLaProgressEditing: gates.laFilled && !laProgressIsPending,
       restrictNlrcDetailsEditing: gates.nlrcFilled,
