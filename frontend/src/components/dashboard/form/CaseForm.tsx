@@ -134,7 +134,7 @@ export function CaseForm({
     !(restrictCaProgressOnly && !canProceedPastCa);
 
   const stageSteps: StageStep[] = [
-    { key: "sena", label: "SEnA", status: senaFilled ? "done" : "current" },
+    { key: "sena", label: "SENA", status: senaFilled ? "done" : "current" },
     { key: "la", label: "LA", status: !laVisible ? "locked" : laFilled ? "done" : "current" },
     { key: "nlrc", label: "NLRC", status: !nlrcVisible ? "locked" : nlrcFilled ? "done" : "current" },
     { key: "ca", label: "CA", status: !caVisible ? "locked" : caFilled ? "done" : "current" },

@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 // Types
-import type { CaseDraft, CaseItem, CaseStatus, ModalType, StageProgress } from "@/types/case";
+import type { CaseDraft, CaseItem, ModalType, StageProgress, EditRestrictions } from "@/types/case";
 
 // Constants
 import { CURRENT_USER, EMPTY_CASE } from "@/constants/caseOptions";
@@ -11,8 +11,7 @@ import { CURRENT_USER, EMPTY_CASE } from "@/constants/caseOptions";
 // Data
 import { initialCases, initialCompanies } from "@/data/initialCases";
 
-// Helpers
-import { cloneDraft, getTotalJudgementReward } from "@/lib/caseHelpers";
+import { cloneDraft, getCaseStatusSummary, getTotalJudgementReward, type CaseStatusSummary } from "@/lib/caseHelpers";
 import { getCaseDraftErrors, getStageGates } from "@/lib/caseValidation";
 
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
@@ -40,7 +39,7 @@ export default function CasesPage() {
      FILTER STATE
   ======================================================= */
 
-  const [statusFilter, setStatusFilter] = useState<"All" | CaseStatus>("All");
+    const [statusFilter, setStatusFilter] = useState<"All" | CaseStatusSummary>("All");
   const [companyFilter, setCompanyFilter] = useState<string>("All");
   const [progressFilter, setProgressFilter] = useState<"All" | StageProgress>("All");
   const [search, setSearch] = useState("");
@@ -90,7 +89,7 @@ export default function CasesPage() {
     .filter((item) => {
       const matchesArchived = showArchived ? item.archived : !item.archived;
 
-      const matchesStatus = statusFilter === "All" || item.status === statusFilter;
+      const matchesStatus = statusFilter === "All" || getCaseStatusSummary(item) === statusFilter;
 
       const matchesCompany = companyFilter === "All" || item.company === companyFilter;
 

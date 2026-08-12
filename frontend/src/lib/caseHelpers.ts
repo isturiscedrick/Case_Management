@@ -1,5 +1,4 @@
-import type { CaseDraft } from "@/types/case";
-
+import type { CaseDraft, CaseItem } from "@/types/case";
 export function cloneDraft(draft: CaseDraft): CaseDraft {
   return JSON.parse(JSON.stringify(draft));
 }
@@ -38,4 +37,24 @@ export function getTotalJudgementReward(draft: CaseDraft): string {
   const stagesLatestFirst = [draft.sc, draft.ca, draft.nlrc, draft.la];
   const latestStage = stagesLatestFirst.find((stage) => stage.judgementReward.trim() !== "");
   return latestStage ? latestStage.judgementReward : "";
+}
+
+export type CaseStatusSummary = "Settled" | "Not Settled" | "Pending";
+
+// Overall case status across all stages, separate from item.status (which
+// is SEnA's own Filed/Pending/Execution/Closed field). Display-only — never
+// written back to the case, doesn't affect stage gating or validation.
+export function getCaseStatusSummary(item: CaseItem): CaseStatusSummary {
+  const values = [
+    item.status === "Closed" ? "Settled" : "",
+    item.remarks,
+    item.caseProgress.la,
+    item.caseProgress.nlrc,
+    item.caseProgress.ca,
+    item.caseProgress.sc,
+  ];
+
+  if (values.includes("Settled")) return "Settled";
+  if (values.includes("Not Settled") || values.includes("Others")) return "Not Settled";
+  return "Pending";
 }

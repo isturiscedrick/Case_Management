@@ -21,7 +21,7 @@ const STAGE_KEYS: StageKey[] = ["sena", "la", "nlrc", "ca", "sc"];
 const BUCKETS: StatusBucket[] = ["Pending", "Settled", "Not Settled", "Closed"];
 
 const STAGE_LABELS: Record<StageKey, string> = {
-  sena: "SEnA",
+  sena: "SENA",
   la: "Labor Arbiter",
   nlrc: "NLRC",
   ca: "Court of Appeals",

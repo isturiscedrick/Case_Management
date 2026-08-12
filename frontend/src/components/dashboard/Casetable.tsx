@@ -17,8 +17,13 @@ export function CaseTable({
       <div className="min-h-0 flex-1 overflow-auto">
         <table className="min-w-full table-fixed border-separate border-spacing-0 text-[11px]">
           <colgroup>
-            <col className="w-32" />
+            {/* Case Status */}
+            <col className="w-20" />
+            {/* Last Updated */}
             <col className="w-16" />
+
+            {/* SEnA */}
+            <col className="w-32" />
             <col className="w-16" />
             <col className="w-28" />
             <col className="w-20" />
@@ -27,7 +32,6 @@ export function CaseTable({
             <col className="w-32" />
             <col className="w-28" />
             <col className="w-16" />
-
             <col className="w-24" />
 
             {/* LA */}
@@ -69,37 +73,14 @@ export function CaseTable({
           <thead className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
             <tr>
               <th rowSpan={2} className="sticky left-0 top-0 z-30 border-b border-r border-slate-200 bg-slate-50 p-2 text-left">
-                Company
-              </th>
-              <th rowSpan={2} className="sticky top-0 z-20 border-b border-slate-200 bg-slate-50 p-2 text-left">
-                Status
-              </th>
-              <th rowSpan={2} className="sticky top-0 z-20 border-b border-slate-200 bg-slate-50 p-2 text-left">
-                Last Updated
-              </th>
-              <th rowSpan={2} className="sticky top-0 z-20 border-b border-slate-200 bg-slate-50 p-2 text-left">
-                Case Title
-              </th>
-              <th rowSpan={2} className="sticky top-0 z-20 border-b border-slate-200 bg-slate-50 p-2 text-left">
-                Case No.
-              </th>
-              <th rowSpan={2} className="sticky top-0 z-20 border-b border-slate-200 bg-slate-50 p-2 text-left">
-                Complainants
-              </th>
-              <th rowSpan={2} className="sticky top-0 z-20 border-b border-slate-200 bg-slate-50 p-2 text-left">
-                Venue
-              </th>
-              <th rowSpan={2} className="sticky top-0 z-20 border-b border-slate-200 bg-slate-50 p-2 text-left">
-                Handling Personnel
-              </th>
-              <th rowSpan={2} className="sticky top-0 z-20 border-b border-slate-200 bg-slate-50 p-2 text-left">
-                Cause of Action
-              </th>
-              <th rowSpan={2} className="sticky top-0 z-20 border-b border-slate-200 bg-slate-50 p-2 text-left">
-                Filing Date
+                Case Status
               </th>
               <th rowSpan={2} className="sticky top-0 z-20 border-b border-r border-slate-200 bg-slate-50 p-2 text-left">
-                Remarks
+                Last Updated
+              </th>
+
+              <th colSpan={10} className="sticky top-0 z-20 h-9 border-b border-r border-slate-200 bg-teal-50/60 p-1.5 text-center text-teal-700">
+                SEnA
               </th>
 
               <th colSpan={5} className="sticky top-0 z-20 h-9 border-b border-slate-200 bg-sky-50/60 p-1.5 text-center text-sky-700">
@@ -128,6 +109,18 @@ export function CaseTable({
             </tr>
 
             <tr>
+              {/* SEnA */}
+              <th className="sticky top-9 z-20 border-b border-slate-200 bg-teal-50/60 p-1.5 text-center">Company</th>
+              <th className="sticky top-9 z-20 border-b border-slate-200 bg-teal-50/60 p-1.5 text-center">Status</th>
+              <th className="sticky top-9 z-20 border-b border-slate-200 bg-teal-50/60 p-1.5 text-center">Case Title</th>
+              <th className="sticky top-9 z-20 border-b border-slate-200 bg-teal-50/60 p-1.5 text-center">Case No.</th>
+              <th className="sticky top-9 z-20 border-b border-slate-200 bg-teal-50/60 p-1.5 text-center">Complainants</th>
+              <th className="sticky top-9 z-20 border-b border-slate-200 bg-teal-50/60 p-1.5 text-center">Venue</th>
+              <th className="sticky top-9 z-20 border-b border-slate-200 bg-teal-50/60 p-1.5 text-center">Handling Personnel</th>
+              <th className="sticky top-9 z-20 border-b border-slate-200 bg-teal-50/60 p-1.5 text-center">Cause of Action</th>
+              <th className="sticky top-9 z-20 border-b border-slate-200 bg-teal-50/60 p-1.5 text-center">Filing Date</th>
+              <th className="sticky top-9 z-20 border-b border-r border-slate-200 bg-teal-50/60 p-1.5 text-center">Remarks</th>
+
               {/* LA */}
               <th className="sticky top-9 z-20 border-b border-slate-200 bg-sky-50/60 p-1.5 text-center">Date</th>
               <th className="sticky top-9 z-20 border-b border-slate-200 bg-sky-50/60 p-1.5 text-center">Status</th>

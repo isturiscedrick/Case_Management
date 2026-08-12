@@ -1,7 +1,8 @@
 import { Search, SlidersHorizontal } from "lucide-react";
 
-import type { CaseStatus, StageProgress } from "@/types/case";
-import { PROGRESS_OPTIONS, STATUS_OPTIONS } from "@/constants/caseOptions";
+import type { StageProgress } from "@/types/case";
+import type { CaseStatusSummary } from "@/lib/caseHelpers";
+import { PROGRESS_OPTIONS, CASE_STATUS_SUMMARY_OPTIONS } from "@/constants/caseOptions";
 
 export function CaseFilters({
   search,
@@ -27,8 +28,8 @@ export function CaseFilters({
 }: {
   search: string;
   onSearchChange: (value: string) => void;
-  statusFilter: "All" | CaseStatus;
-  onStatusFilterChange: (value: "All" | CaseStatus) => void;
+  statusFilter: "All" | CaseStatusSummary;
+  onStatusFilterChange: (value: "All" | CaseStatusSummary) => void;
   companyFilter: string;
   onCompanyFilterChange: (value: string) => void;
   companyOptions: string[];
@@ -65,10 +66,10 @@ export function CaseFilters({
         {/* Status */}
         <select
           value={statusFilter}
-          onChange={(event) => onStatusFilterChange(event.target.value as "All" | CaseStatus)}
+          onChange={(event) => onStatusFilterChange(event.target.value as "All" | CaseStatusSummary)}
           className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs text-slate-700 outline-none transition focus:border-slate-400 focus:bg-white"
         >
-          {STATUS_OPTIONS.map((status) => (
+          {CASE_STATUS_SUMMARY_OPTIONS.map((status) => (
             <option key={status} value={status}>
               {status === "All" ? "All Status" : status}
             </option>

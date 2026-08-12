@@ -1,9 +1,9 @@
 import { Archive, ArchiveRestore, Eye, RefreshCw } from "lucide-react";
 
 import type { CaseItem } from "@/types/case";
-import { formatCurrency, formatDate } from "@/lib/caseHelpers";
+import { formatCurrency, formatDate, getCaseStatusSummary } from "@/lib/caseHelpers";
 import { formatProgress } from "@/components/dashboard/DashboardHelpers";
-import { StatusBadge } from "@/components/cases/StatusBadge";
+import { CaseStatusSummaryBadge } from "@/components/cases/CaseStatusSummaryBadge";
 
 export function CaseTableRow({
   item,
@@ -20,36 +20,36 @@ export function CaseTableRow({
 
   return (
     <tr className="group border-b border-slate-100 last:border-0 hover:bg-slate-50">
+      {/* Case Status (overall, across all stages) */}
+      <td className="sticky left-0 z-10 border-r border-slate-200 bg-white p-2 group-hover:bg-slate-50">
+        <CaseStatusSummaryBadge status={getCaseStatusSummary(item)} />
+      </td>
+
+      {/* Last Updated */}
+      <td className="border-r border-slate-100 p-2 text-slate-600">{formatDate(item.date)}</td>
+
       {/* Company */}
-      <td
-        title={item.company}
-        className="sticky left-0 z-10 truncate border-r border-slate-200 bg-white p-2 font-medium text-slate-900 group-hover:bg-slate-50"
-      >
+      <td title={item.company} className="truncate bg-teal-50/30 p-2 font-medium text-slate-900">
         {item.company}
       </td>
 
       {/* Status */}
-      <td className="p-2">
-        <StatusBadge status={item.status} />
-      </td>
-
-      {/* Last Updated */}
-      <td className="p-2 text-slate-600">{formatDate(item.date)}</td>
+      <td className="bg-teal-50/30 p-2 text-slate-600">{item.status}</td>
 
       {/* Case Title */}
-      <td className="truncate p-2 text-slate-600">{item.caseTitle}</td>
+      <td className="truncate bg-teal-50/30 p-2 text-slate-600">{item.caseTitle}</td>
 
       {/* Case Number */}
-      <td className="truncate p-2 font-mono text-[11px] text-slate-500">{item.caseNo}</td>
+      <td className="truncate bg-teal-50/30 p-2 font-mono text-[11px] text-slate-500">{item.caseNo}</td>
 
       {/* Complainants */}
-      <td className="p-2 text-slate-600">{item.complainants.join(", ")}</td>
+      <td className="bg-teal-50/30 p-2 text-slate-600">{item.complainants.join(", ")}</td>
 
       {/* Venue */}
-      <td className="truncate p-2 text-slate-600">{item.venue}</td>
+      <td className="truncate bg-teal-50/30 p-2 text-slate-600">{item.venue}</td>
 
       {/* Handling Personnel */}
-      <td className="truncate p-2 text-slate-600">
+      <td className="truncate bg-teal-50/30 p-2 text-slate-600">
         {item.handlingPersonnel}
         {item.handlingPersonnel === "Others" && item.handlingPersonnelSpecification && (
           <div className="text-[10px] text-slate-500">({item.handlingPersonnelSpecification})</div>
@@ -57,16 +57,16 @@ export function CaseTableRow({
       </td>
 
       {/* Cause of Action */}
-      <td className="truncate p-2 text-slate-600">
+      <td className="truncate bg-teal-50/30 p-2 text-slate-600">
         {item.cause.join(", ")}
         {item.causeSpecification && <div className="text-[10px] text-slate-500">({item.causeSpecification})</div>}
       </td>
 
       {/* Filing Date */}
-      <td className="p-2 text-slate-600">{formatDate(item.filingDate)}</td>
+      <td className="bg-teal-50/30 p-2 text-slate-600">{formatDate(item.filingDate)}</td>
 
       {/* Remarks */}
-      <td className="truncate border-r border-slate-100 p-2 text-slate-600">
+      <td className="truncate border-r border-slate-100 bg-teal-50/30 p-2 text-slate-600">
         {item.remarks}
         {item.remarkSpecification && <div className="text-[10px] text-slate-500">({item.remarkSpecification})</div>}
       </td>

@@ -1,5 +1,11 @@
-import type { CaseStatus, StageProgress, CaseDraft } from "@/types/case";
+import type { CaseStatus, StageProgress, CaseDraft, EditRestrictions } from "@/types/case";
 export const STATUS_OPTIONS: ("All" | CaseStatus)[] = ["All", "Filed", "Pending", "Execution", "Closed"];
+export const CASE_STATUS_SUMMARY_OPTIONS: ("All" | "Settled" | "Not Settled" | "Pending")[] = [
+  "All",
+  "Settled",
+  "Not Settled",
+  "Pending",
+];
 export const PROGRESS_OPTIONS: Array<"All" | StageProgress> = [
   "All",
   "Settled",
@@ -35,6 +41,15 @@ export const STATUS_STYLES: Record<CaseStatus, { badge: string; dot: string }> =
 export const DEFAULT_STATUS_STYLE = {
   badge: "bg-slate-100 text-slate-700 ring-slate-200",
   dot: "bg-slate-400",
+};
+
+// Styles for the dashboard's derived "Case Status" column (see
+// getCaseStatusSummary in caseHelpers.ts). Separate from STATUS_STYLES,
+// which colors SEnA's own item.status field.
+export const CASE_STATUS_SUMMARY_STYLES: Record<"Settled" | "Not Settled" | "Pending", { badge: string; dot: string }> = {
+  Settled: { badge: "bg-emerald-50 text-emerald-600 ring-emerald-200", dot: "bg-emerald-500" },
+  "Not Settled": { badge: "bg-rose-50 text-rose-600 ring-rose-200", dot: "bg-rose-500" },
+  Pending: { badge: "bg-amber-50 text-amber-600 ring-amber-200", dot: "bg-amber-500" },
 };
 
 export const PROGRESS_STAGES: Array<{ key: "la" | "nlrc" | "ca" | "sc"; label: string }> = [
@@ -95,14 +110,27 @@ export const STAGE_STATUS_OPTIONS = [
   "Execution",
 ] as const;
 
-export const TABLE_COLUMN_COUNT = 34;
+export const TABLE_COLUMN_COUNT = 35;
 
 // Placeholder for the logged-in user. Wire this to your auth store
 // (e.g. useAuthStore) once available so "Created By" reflects the real user.
 export const CURRENT_USER = "Current User";
 
-export const EMPTY_CASE: CaseDraft = {
-  company: "",
+export const DEFAULT_EDIT_RESTRICTIONS: EditRestrictions = {
+  restrictSenaEditing: false,
+  restrictSenaRemarksEditing: false,
+  restrictLaDetailsEditing: false,
+  restrictLaProgressOnly: false,
+  restrictLaProgressEditing: false,
+  restrictNlrcDetailsEditing: false,
+  restrictNlrcProgressOnly: false,
+  restrictNlrcProgressEditing: false,
+  restrictCaDetailsEditing: false,
+  restrictCaProgressOnly: false,
+  restrictCaProgressEditing: false,
+};
+
+export const EMPTY_CASE: CaseDraft = {  company: "",
   status: "Pending",
   date: "",
   caseTitle: "",

@@ -115,3 +115,17 @@ export interface CaseItem {
 export type CaseDraft = Omit<CaseItem, "id">;
 
 export type ModalType = "create" | "view" | "edit" | null;
+
+export type EditRestrictions = {
+  restrictSenaEditing: boolean;
+  restrictSenaRemarksEditing: boolean;
+  restrictLaDetailsEditing: boolean;
+  restrictLaProgressOnly: boolean;
+  restrictLaProgressEditing: boolean;
+  restrictNlrcDetailsEditing: boolean;
+  restrictNlrcProgressOnly: boolean;
+  restrictNlrcProgressEditing: boolean;
+  restrictCaDetailsEditing: boolean;
+  restrictCaProgressOnly: boolean;
+  restrictCaProgressEditing: boolean;
+};
