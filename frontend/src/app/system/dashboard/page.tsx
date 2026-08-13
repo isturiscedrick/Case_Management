@@ -17,7 +17,7 @@ import { getCaseDraftErrors, getStageGates } from "@/lib/caseValidation";
 
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { SummaryCards } from "@/components/dashboard/SummaryCards ";
-import { CaseFilters } from "@/components/dashboard/CaseFilters";
+import { CaseFilters, type StageFilterKey } from "@/components/dashboard/CaseFilters";
 import { CaseTable } from "@/components/dashboard/CaseTable";
 import { CaseFormModal } from "@/components/dashboard/CaseFormModal";
 import { ViewCaseModal } from "@/components/dashboard/ViewCaseModal";
@@ -33,7 +33,7 @@ export default function CasesPage() {
      CASE DATA
   ======================================================= */
 
-const { cases, addCase, updateCase, toggleArchive } = useCases();
+  const { cases, addCase, updateCase, toggleArchive } = useCases();
   const [companies] = useState<string[]>(initialCompanies);
 
   /* =======================================================
@@ -43,6 +43,7 @@ const { cases, addCase, updateCase, toggleArchive } = useCases();
     const [statusFilter, setStatusFilter] = useState<"All" | CaseStatusSummary>("All");
   const [companyFilter, setCompanyFilter] = useState<string>("All");
   const [progressFilter, setProgressFilter] = useState<"All" | StageProgress>("All");
+  const [stageFilter, setStageFilter] = useState<StageFilterKey>("All");
   const [search, setSearch] = useState("");
   const [showMoreFilters, setShowMoreFilters] = useState(false);
   const [showArchived] = useState(false);
@@ -95,7 +96,13 @@ const { cases, addCase, updateCase, toggleArchive } = useCases();
       const matchesCompany = companyFilter === "All" || item.company === companyFilter;
 
       const matchesProgress =
-        progressFilter === "All" || Object.values(item.caseProgress).some((stage) => stage === progressFilter);
+        progressFilter === "All" ||
+        (stageFilter === "All"
+          ? item.remarks === progressFilter ||
+            Object.values(item.caseProgress).some((stage) => stage === progressFilter)
+          : stageFilter === "sena"
+          ? item.remarks === progressFilter
+          : item.caseProgress[stageFilter] === progressFilter);
 
       const matchesFilingDateRange =
         (!filingDateStart || item.filingDate >= filingDateStart) &&
@@ -114,7 +121,7 @@ const { cases, addCase, updateCase, toggleArchive } = useCases();
     .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
 
   const activeFilterCount =
-    [statusFilter, companyFilter, progressFilter].filter((filter) => filter !== "All").length +
+    [statusFilter, companyFilter, progressFilter, stageFilter].filter((filter) => filter !== "All").length +
     (search ? 1 : 0) +
     (filingDateStart || filingDateEnd ? 1 : 0);
 
@@ -149,6 +156,7 @@ const { cases, addCase, updateCase, toggleArchive } = useCases();
     setStatusFilter("All");
     setCompanyFilter("All");
     setProgressFilter("All");
+    setStageFilter("All");
     setFilingDateStart("");
     setFilingDateEnd("");
     setSearch("");
@@ -339,6 +347,8 @@ const { cases, addCase, updateCase, toggleArchive } = useCases();
         companyOptions={companyOptions}
         progressFilter={progressFilter}
         onProgressFilterChange={setProgressFilter}
+        stageFilter={stageFilter}
+        onStageFilterChange={setStageFilter}
         showMoreFilters={showMoreFilters}
         onToggleMoreFilters={() => setShowMoreFilters((current) => !current)}
         filingDateStart={filingDateStart}

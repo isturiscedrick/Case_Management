@@ -4,6 +4,18 @@ import type { StageProgress } from "@/types/case";
 import type { CaseStatusSummary } from "@/lib/caseHelpers";
 import { PROGRESS_OPTIONS, CASE_STATUS_SUMMARY_OPTIONS } from "@/constants/caseOptions";
 
+export type StageFilterKey = "All" | "sena" | "la" | "nlrc" | "ca" | "sc";
+
+// Local to this filter — includes SEnA (whose progress lives in item.remarks,
+// not item.caseProgress) alongside the four downstream stages.
+const FILTER_STAGES: Array<{ key: Exclude<StageFilterKey, "All">; label: string }> = [
+  { key: "sena", label: "SEnA" },
+  { key: "la", label: "LA" },
+  { key: "nlrc", label: "NLRC" },
+  { key: "ca", label: "CA" },
+  { key: "sc", label: "SC" },
+];
+
 export function CaseFilters({
   search,
   onSearchChange,
@@ -14,6 +26,8 @@ export function CaseFilters({
   companyOptions,
   progressFilter,
   onProgressFilterChange,
+  stageFilter,
+  onStageFilterChange,
   showMoreFilters,
   onToggleMoreFilters,
   filingDateStart,
@@ -35,6 +49,8 @@ export function CaseFilters({
   companyOptions: string[];
   progressFilter: "All" | StageProgress;
   onProgressFilterChange: (value: "All" | StageProgress) => void;
+  stageFilter: StageFilterKey;
+  onStageFilterChange: (value: StageFilterKey) => void;
   showMoreFilters: boolean;
   onToggleMoreFilters: () => void;
   filingDateStart: string;
@@ -106,6 +122,20 @@ export function CaseFilters({
       {/* MORE FILTERS */}
       {showMoreFilters && (
         <div className="mt-2 flex flex-col gap-2 border-t border-slate-100 pt-2 sm:flex-row sm:items-center">
+          {/* Stage */}
+          <select
+            value={stageFilter}
+            onChange={(event) => onStageFilterChange(event.target.value as StageFilterKey)}
+            className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs text-slate-700 outline-none transition focus:border-slate-400 focus:bg-white sm:w-36"
+          >
+            <option value="All">All Stages</option>
+            {FILTER_STAGES.map((stage) => (
+              <option key={stage.key} value={stage.key}>
+                {stage.label} only
+              </option>
+            ))}
+          </select>
+
           {/* Progress */}
           <select
             value={progressFilter}
@@ -114,7 +144,11 @@ export function CaseFilters({
           >
             {PROGRESS_OPTIONS.map((progress) => (
               <option key={progress} value={progress}>
-                {progress === "All" ? "Any Stage Progress" : `Any stage: ${progress}`}
+                {progress === "All"
+                  ? "Any Progress"
+                  : stageFilter === "All"
+                  ? `Any stage: ${progress}`
+                  : progress}
               </option>
             ))}
           </select>
