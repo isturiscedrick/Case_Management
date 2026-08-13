@@ -5,6 +5,7 @@ import {
   BarChart3,
   Handshake,
   Briefcase,
+  Building2,
   Users,
   PieChart as PieChartIcon,
   CalendarRange,
@@ -15,10 +16,10 @@ import { initialCases } from "@/data/initialCases";
 import { formatCurrency } from "@/lib/caseHelpers";
 import { STAGE_STYLES, type StageKey } from "@/components/dashboard/form/shared/SectionHeader";
 
-type StatusBucket = "Pending" | "Settled" | "Not Settled" | "Closed";
+type StatusBucket = "Pending" | "Settled" | "Not Settled";
 
 const STAGE_KEYS: StageKey[] = ["sena", "la", "nlrc", "ca", "sc"];
-const BUCKETS: StatusBucket[] = ["Pending", "Settled", "Not Settled", "Closed"];
+const BUCKETS: StatusBucket[] = ["Pending", "Settled", "Not Settled"];
 
 const STAGE_LABELS: Record<StageKey, string> = {
   sena: "SENA",
@@ -32,7 +33,6 @@ const BUCKET_STYLES: Record<StatusBucket, { dot: string; bar: string; text: stri
   Pending: { dot: "bg-amber-400", bar: "bg-amber-400", text: "text-amber-700" },
   Settled: { dot: "bg-emerald-500", bar: "bg-emerald-500", text: "text-emerald-700" },
   "Not Settled": { dot: "bg-rose-500", bar: "bg-rose-500", text: "text-rose-700" },
-  Closed: { dot: "bg-slate-500", bar: "bg-slate-500", text: "text-slate-700" },
 };
 
 const CATEGORY_ORDER: TotalPaidCategory[] = ["Judgment-Award-W", "Judgment-Award-L", "Settlement"];
@@ -42,6 +42,19 @@ const CATEGORY_META: Record<TotalPaidCategory, { label: string; dot: string; hex
   "Judgment-Award-L": { label: "Judgment Award (Lost)", dot: "bg-rose-500", hex: "#f43f5e", text: "text-rose-700" },
   Settlement: { label: "Settlement", dot: "bg-amber-500", hex: "#f59e0b", text: "text-amber-700" },
 };
+
+// Cycled through for the per-company pie/bar chart, since the number of
+// companies is dynamic and can't be given fixed Tailwind classes ahead of time.
+const COMPANY_CHART_COLORS = [
+  "#0ea5e9", // sky
+  "#f59e0b", // amber
+  "#10b981", // emerald
+  "#f43f5e", // rose
+  "#8b5cf6", // violet
+  "#ec4899", // fuchsia
+  "#14b8a6", // teal
+  "#64748b", // slate
+];
 
 function isStageFilled(stage: CaseItem["la"]) {
   return !!(
@@ -74,7 +87,6 @@ function getStageProgressValue(item: CaseItem, stage: StageKey): string {
 }
 
 function classifyStatus(item: CaseItem, stage: StageKey): StatusBucket {
-  if (item.status === "Closed") return "Closed";
   const progress = getStageProgressValue(item, stage);
   if (progress === "Settled") return "Settled";
   if (progress === "Not Settled" || progress === "Others") return "Not Settled";
@@ -113,11 +125,11 @@ export default function AnalyticsPage() {
   // Stage -> bucket -> count
   const stageBreakdown = useMemo(() => {
     const result: Record<StageKey, Record<StatusBucket, number>> = {
-      sena: { Pending: 0, Settled: 0, "Not Settled": 0, Closed: 0 },
-      la: { Pending: 0, Settled: 0, "Not Settled": 0, Closed: 0 },
-      nlrc: { Pending: 0, Settled: 0, "Not Settled": 0, Closed: 0 },
-      ca: { Pending: 0, Settled: 0, "Not Settled": 0, Closed: 0 },
-      sc: { Pending: 0, Settled: 0, "Not Settled": 0, Closed: 0 },
+      sena: { Pending: 0, Settled: 0, "Not Settled": 0 },
+      la: { Pending: 0, Settled: 0, "Not Settled": 0 },
+      nlrc: { Pending: 0, Settled: 0, "Not Settled": 0 },
+      ca: { Pending: 0, Settled: 0, "Not Settled": 0 },
+      sc: { Pending: 0, Settled: 0, "Not Settled": 0 },
     };
 
     cases.forEach((item) => {
@@ -175,6 +187,34 @@ export default function AnalyticsPage() {
     });
     return `conic-gradient(${stops.join(", ")})`;
   }, [categoryTotals, categoryCaseTotal]);
+
+  // Case count per company, for the "Cases by Company" pie/bar chart below.
+  const companyBreakdown = useMemo(() => {
+    const map = new Map<string, number>();
+    cases.forEach((item) => {
+      const name = item.company?.trim() || "Unspecified";
+      map.set(name, (map.get(name) ?? 0) + 1);
+    });
+    return Array.from(map.entries())
+      .map(([name, count], index) => ({
+        name,
+        count,
+        color: COMPANY_CHART_COLORS[index % COMPANY_CHART_COLORS.length],
+      }))
+      .sort((a, b) => b.count - a.count);
+  }, [cases]);
+
+  const companyPieGradient = useMemo(() => {
+    if (cases.length === 0) return "conic-gradient(#e2e8f0 0deg 360deg)";
+    let cursor = 0;
+    const stops = companyBreakdown.map(({ count, color }) => {
+      const start = cursor;
+      const sliceDeg = (count / cases.length) * 360;
+      cursor += sliceDeg;
+      return `${color} ${start}deg ${cursor}deg`;
+    });
+    return `conic-gradient(${stops.join(", ")})`;
+  }, [companyBreakdown, cases.length]);
 
   // Cases handled per personnel — name plus the case titles they're on
   const personnelBreakdown = useMemo(() => {
@@ -385,6 +425,78 @@ export default function AnalyticsPage() {
                       {meta.label}
                     </span>
                     <span className={`font-medium ${meta.text}`}>
+                      {count} ({pct}%)
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* CASES BY COMPANY */}
+      <div>
+        <h2 className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-[#12331F]">
+          <Building2 size={14} className="text-slate-400" />
+          Cases by Company
+        </h2>
+        <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto]">
+          {/* Company bars */}
+          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            {companyBreakdown.length === 0 ? (
+              <p className="text-xs italic text-slate-400">No cases match the current filters.</p>
+            ) : (
+              <div className="space-y-3">
+                {companyBreakdown.map(({ name, count, color }) => {
+                  const pct = cases.length > 0 ? (count / cases.length) * 100 : 0;
+                  return (
+                    <div key={name} className="flex items-center gap-3">
+                      <div className="flex w-40 shrink-0 items-center gap-1.5">
+                        <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: color }} />
+                        <span className="truncate text-xs font-medium text-slate-700" title={name}>
+                          {name}
+                        </span>
+                      </div>
+                      <div className="relative h-6 flex-1 overflow-hidden rounded-md bg-slate-100">
+                        <div
+                          className="h-full rounded-md opacity-80"
+                          style={{ width: `${count > 0 ? Math.max(pct, 3) : 0}%`, backgroundColor: color }}
+                        />
+                      </div>
+                      <div className="w-16 shrink-0 text-right text-[11px] text-slate-400">
+                        {count} case{count === 1 ? "" : "s"}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Pie chart (by case count) */}
+          <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="flex items-center gap-1.5 self-start text-[11px] uppercase tracking-wide text-slate-400">
+              <PieChartIcon size={13} />
+              By case count
+            </div>
+            <div className="relative h-36 w-36">
+              <div className="h-36 w-36 rounded-full" style={{ background: companyPieGradient }} />
+              <div className="absolute inset-3 flex flex-col items-center justify-center rounded-full bg-white">
+                <span className="text-lg font-semibold text-[#12331F]">{cases.length}</span>
+                <span className="text-[10px] text-slate-400">cases</span>
+              </div>
+            </div>
+            <div className="w-full space-y-1">
+              {companyBreakdown.map(({ name, count, color }) => {
+                const pct = cases.length > 0 ? Math.round((count / cases.length) * 100) : 0;
+                return (
+                  <div key={name} className="flex items-center justify-between gap-2 text-[11px]">
+                    <span className="flex min-w-0 items-center gap-1.5 text-slate-500">
+                      <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: color }} />
+                      <span className="truncate" title={name}>{name}</span>
+                    </span>
+                    <span className="shrink-0 font-medium text-slate-700">
                       {count} ({pct}%)
                     </span>
                   </div>

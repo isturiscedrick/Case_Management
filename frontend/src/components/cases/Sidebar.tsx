@@ -2,7 +2,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, History, Archive, BarChart3, Scale, ChevronRight, ChevronsLeft } from "lucide-react";
+import { LayoutDashboard, History, Archive, BarChart3, Scale, ChevronRight, ChevronsLeft, User } from "lucide-react";
+import { CURRENT_USER } from "@/constants/caseOptions";
 const NAV_ITEMS = [
   { href: "/system/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/system/analytics", label: "Analytics", icon: BarChart3 },
@@ -97,8 +98,31 @@ export default function Sidebar() {
               )}
             </Link>
           );
-        })}
+})}
       </nav>
+
+      {/* Logged-in user */}
+      <div
+        className={`border-t border-white/10 py-4 ${
+          collapsed ? "flex justify-center px-0" : "px-4"
+        }`}
+      >
+        <div
+          className={`flex items-center ${collapsed ? "" : "gap-2.5"}`}
+          title={collapsed ? CURRENT_USER : undefined}
+        >
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/10 text-white">
+            <User className="h-4 w-4" />
+          </div>
+
+          {!collapsed && (
+            <div className="min-w-0">
+              <p className="truncate text-sm font-medium text-white">{CURRENT_USER}</p>
+              <p className="text-xs text-white/40">Logged in</p>
+            </div>
+          )}
+        </div>
+      </div>
     </aside>
   );
 }
