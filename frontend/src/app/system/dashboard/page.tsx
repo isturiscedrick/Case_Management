@@ -87,6 +87,10 @@ export default function CasesPage() {
 
   const companyOptions = ["All", ...companies];
 
+  // Archived cases live on a separate page — the summary cards must reflect
+  // only active (non-archived) cases, never archived ones.
+  const activeCases = cases.filter((item) => !item.archived);
+
   const filteredCases = cases
     .filter((item) => {
       const matchesArchived = showArchived ? item.archived : !item.archived;
@@ -335,7 +339,7 @@ export default function CasesPage() {
     <div className="flex h-full min-w-0 flex-col gap-4 overflow-hidden bg-[#F5F1E3] p-4">
       <DashboardHeader onCreate={openCreate} />
 
-      <SummaryCards cases={cases} />
+      <SummaryCards cases={activeCases} />
 
       <CaseFilters
         search={search}

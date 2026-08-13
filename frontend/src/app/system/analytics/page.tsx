@@ -15,6 +15,7 @@ import type { CaseItem, TotalPaidCategory } from "@/types/case";
 import { initialCases } from "@/data/initialCases";
 import { formatCurrency } from "@/lib/caseHelpers";
 import { STAGE_STYLES, type StageKey } from "@/components/dashboard/form/shared/SectionHeader";
+import { SummaryCards } from "@/components/dashboard/SummaryCards ";
 
 type StatusBucket = "Pending" | "Settled" | "Not Settled";
 
@@ -311,6 +312,13 @@ export default function AnalyticsPage() {
       {/* STATUS BREAKDOWN PER STAGE */}
       <div>
         <h2 className="mb-2 text-sm font-semibold text-[#12331F]">Case Status by Stage</h2>
+
+        {/* Overall totals — same rollup used on the dashboard, scoped to the
+            cases currently in view (date range applied above). */}
+        <div className="mb-3">
+          <SummaryCards cases={cases} />
+        </div>
+
         <div className="grid gap-3 lg:grid-cols-2 xl:grid-cols-3">
           {STAGE_KEYS.map((stage) => {
             const meta = STAGE_STYLES[stage];

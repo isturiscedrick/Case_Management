@@ -1,7 +1,8 @@
-import { Briefcase, CheckCircle2, Clock3, FileCheck2 } from "lucide-react";
+import { Briefcase, CheckCircle2, Clock3, XCircle } from "lucide-react";
 
 import type { CaseItem } from "@/types/case";
 import { SummaryCard } from "@/components/cases/SummaryCard";
+import { getCaseStatusSummary } from "@/lib/caseHelpers";
 
 export function SummaryCards({ cases }: { cases: CaseItem[] }) {
   return (
@@ -14,24 +15,24 @@ export function SummaryCards({ cases }: { cases: CaseItem[] }) {
       />
 
       <SummaryCard
-        label="Filed"
-        value={cases.filter((item) => item.status === "Filed").length}
-        icon={FileCheck2}
-        accent="bg-sky-50 text-sky-600"
+        label="Settled"
+        value={cases.filter((item) => getCaseStatusSummary(item) === "Settled").length}
+        icon={CheckCircle2}
+        accent="bg-emerald-50 text-emerald-600"
       />
 
       <SummaryCard
         label="Pending"
-        value={cases.filter((item) => item.status === "Pending").length}
+        value={cases.filter((item) => getCaseStatusSummary(item) === "Pending").length}
         icon={Clock3}
         accent="bg-amber-50 text-amber-600"
       />
 
       <SummaryCard
-        label="Closed"
-        value={cases.filter((item) => item.status === "Closed").length}
-        icon={CheckCircle2}
-        accent="bg-emerald-50 text-emerald-600"
+        label="Not Settled"
+        value={cases.filter((item) => getCaseStatusSummary(item) === "Not Settled").length}
+        icon={XCircle}
+        accent="bg-rose-50 text-rose-600"
       />
     </div>
   );
