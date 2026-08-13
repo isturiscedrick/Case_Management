@@ -6,11 +6,15 @@ export function CaseTable({
   onView,
   onEdit,
   onToggleArchive,
+  hideEdit = false,
 }: {
   cases: CaseItem[];
   onView: (item: CaseItem) => void;
   onEdit: (item: CaseItem) => void;
   onToggleArchive: (item: CaseItem) => void;
+  // Passed straight through to CaseTableRow — set by the Archive page to
+  // drop the "Update case" action for read-only archived rows.
+  hideEdit?: boolean;
 }) {
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
@@ -153,7 +157,14 @@ export function CaseTable({
 
           <tbody>
             {cases.map((item) => (
-              <CaseTableRow key={item.id} item={item} onView={onView} onEdit={onEdit} onToggleArchive={onToggleArchive} />
+              <CaseTableRow
+                key={item.id}
+                item={item}
+                onView={onView}
+                onEdit={onEdit}
+                onToggleArchive={onToggleArchive}
+                hideEdit={hideEdit}
+              />
             ))}
 
             {cases.length === 0 && (

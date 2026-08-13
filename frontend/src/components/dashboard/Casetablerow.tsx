@@ -10,11 +10,15 @@ export function CaseTableRow({
   onView,
   onEdit,
   onToggleArchive,
+  hideEdit = false,
 }: {
   item: CaseItem;
   onView: (item: CaseItem) => void;
   onEdit: (item: CaseItem) => void;
   onToggleArchive: (item: CaseItem) => void;
+  // Hides the "Update case" action. Used by the Archive page, where cases
+  // are read-only until restored.
+  hideEdit?: boolean;
 }) {
   const isResolved = !!item.totalPaid?.category;
 
@@ -146,19 +150,21 @@ export function CaseTableRow({
             <Eye size={13} />
           </button>
 
-          <button
-            aria-label={isResolved ? "Case resolved — updates locked" : "Update case"}
-            onClick={() => onEdit(item)}
-            disabled={isResolved}
-            title={isResolved ? "This case is resolved and can no longer be updated." : undefined}
-            className={`rounded-md border p-1.5 transition ${
-              isResolved
-                ? "cursor-not-allowed border-slate-100 text-slate-300"
-                : "border-slate-200 text-slate-500 hover:border-slate-300 hover:bg-white hover:text-slate-900"
-            }`}
-          >
-            <RefreshCw size={13} />
-          </button>
+          {!hideEdit && (
+            <button
+              aria-label={isResolved ? "Case resolved — updates locked" : "Update case"}
+              onClick={() => onEdit(item)}
+              disabled={isResolved}
+              title={isResolved ? "This case is resolved and can no longer be updated." : undefined}
+              className={`rounded-md border p-1.5 transition ${
+                isResolved
+                  ? "cursor-not-allowed border-slate-100 text-slate-300"
+                  : "border-slate-200 text-slate-500 hover:border-slate-300 hover:bg-white hover:text-slate-900"
+              }`}
+            >
+              <RefreshCw size={13} />
+            </button>
+          )}
 
           <button
             aria-label={item.archived ? "Restore case" : "Archive case"}
