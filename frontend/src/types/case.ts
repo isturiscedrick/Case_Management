@@ -4,13 +4,9 @@ export type StageProgress = "" | "Settled" | "Not Settled" | "Others";
 export interface LaInfo {
   date: string;
   status: string;
-  judgementReward: string;
-  // Manual entry required when judgementReward is a numeric "Amount".
-  judgementRewardSpecification?: string;
-  // Separate manual entry required when judgementReward === "To be
-  // computed". Kept independent from judgementRewardSpecification so
-  // switching modes doesn't carry text typed in one mode into the other.
-  judgementRewardComputedSpecification?: string;
+  judgmentAward: string;
+  judgmentAwardSpecification?: string;
+  judgmentAwardComputedSpecification?: string;
   remarks: string;
   remarksSpecification?: string;
 }
@@ -18,9 +14,9 @@ export interface LaInfo {
 export interface NlrcInfo {
   date: string;
   status: string;
-  judgementReward: string;
-  judgementRewardSpecification?: string;
-  judgementRewardComputedSpecification?: string;
+  judgmentAward: string;
+  judgmentAwardSpecification?: string;
+  judgmentAwardComputedSpecification?: string;
   remarks: string;
   remarksSpecification?: string;
 }
@@ -28,9 +24,9 @@ export interface NlrcInfo {
 export interface CaInfo {
   date: string;
   status: string;
-  judgementReward: string;
-  judgementRewardSpecification?: string;
-  judgementRewardComputedSpecification?: string;
+  judgmentAward: string;
+  judgmentAwardSpecification?: string;
+  judgmentAwardComputedSpecification?: string;
   remarks: string;
   remarksSpecification?: string;
 }
@@ -38,9 +34,9 @@ export interface CaInfo {
 export interface ScInfo {
   date: string;
   status: string;
-  judgementReward: string;
-  judgementRewardSpecification?: string;
-  judgementRewardComputedSpecification?: string;
+  judgmentAward: string;
+  judgmentAwardSpecification?: string;
+  judgmentAwardComputedSpecification?: string;
   remarks: string;
   remarksSpecification?: string;
 }
@@ -57,8 +53,8 @@ export interface CaseProgress {
 }
 
 export type TotalPaidCategory =
-  | "Judgement-Award-L"
-  | "Judgement-Award-W"
+  | "Judgment-Award-L"
+  | "Judgment-Award-W"
   | "Settlement";
 
 export interface TotalPaidInfo {

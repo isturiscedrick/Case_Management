@@ -38,7 +38,7 @@ export function CurrencyField({
 
 const TO_BE_COMPUTED = "To be computed";
 
-export function JudgementRewardField({
+export function JudgmentAwardField({
   label,
   value,
   onChange,

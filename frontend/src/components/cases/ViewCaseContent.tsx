@@ -1,6 +1,6 @@
 import { Landmark, User } from "lucide-react";
 import type { CaseItem } from "@/types/case";
-import { formatDate, formatCurrency, getTotalJudgementReward } from "@/lib/caseHelpers";
+import { formatDate, formatCurrency, getTotalJudgmentAward } from "@/lib/caseHelpers";
 import { getStageGates } from "@/lib/caseValidation";
 import { DetailRow } from "@/components/table/DetailRow";
 import { StatusBadge } from "./StatusBadge";
@@ -16,33 +16,28 @@ function formatProgress(value: string, specification?: string) {
   return value || "-";
 }
 
-// Mirrors JudgementRewardField's two modes in CaseForm: a numeric "Amount"
-// (with a required basis/remarks spec) or "To be computed" (with a
-// required computation-basis spec). Falls back to "-" when nothing's set.
-function formatJudgementReward(info: {
-  judgementReward: string;
-  judgementRewardSpecification?: string;
-  judgementRewardComputedSpecification?: string;
+function formatJudgmentAward(info: {
+  judgmentAward: string;
+  judgmentAwardSpecification?: string;
+  judgmentAwardComputedSpecification?: string;
 }) {
-  if (!info.judgementReward) return "-";
+  if (!info.judgmentAward) return "-";
 
-  if (info.judgementReward === TO_BE_COMPUTED) {
-    return info.judgementRewardComputedSpecification
-      ? `${TO_BE_COMPUTED} (${info.judgementRewardComputedSpecification})`
+  if (info.judgmentAward === TO_BE_COMPUTED) {
+    return info.judgmentAwardComputedSpecification
+      ? `${TO_BE_COMPUTED} (${info.judgmentAwardComputedSpecification})`
       : TO_BE_COMPUTED;
   }
 
-  const amount = formatCurrency(info.judgementReward);
-  return info.judgementRewardSpecification
-    ? `${amount} (${info.judgementRewardSpecification})`
+  const amount = formatCurrency(info.judgmentAward);
+  return info.judgmentAwardSpecification
+    ? `${amount} (${info.judgmentAwardSpecification})`
     : amount;
 }
 
 export function ViewCaseContent({ item }: { item: CaseItem }) {
-  const totalJudgementReward = getTotalJudgementReward(item);
-  // Same gating rules CaseForm uses to decide whether a stage's fields are
-  // enabled/reachable yet — hide the whole section here if the stage isn't
-  // enabled, rather than only when it has no data.
+  const totalJudgmentAward = getTotalJudgmentAward(item);
+
   const { laEnabled, nlrcEnabled, caEnabled, scEnabled } = getStageGates(item);
 
   return (
@@ -98,7 +93,7 @@ export function ViewCaseContent({ item }: { item: CaseItem }) {
         <div className="grid gap-x-6 sm:grid-cols-5">
           <DetailRow label="Date" value={formatDate(item.la.date)} />
           <DetailRow label="Status" value={item.la.status} />
-          <DetailRow label="Judgement Reward" value={formatJudgementReward(item.la)} />
+          <DetailRow label="Judgment Reward" value={formatJudgmentAward(item.la)} />
           <DetailRow label="Progress" value={formatProgress(item.caseProgress.la, item.caseProgress.laSpecification)} />
           <DetailRow
             label="Remarks"
@@ -118,7 +113,7 @@ export function ViewCaseContent({ item }: { item: CaseItem }) {
         <div className="grid gap-x-6 sm:grid-cols-5">
           <DetailRow label="Date" value={formatDate(item.nlrc.date)} />
           <DetailRow label="Status" value={item.nlrc.status} />
-          <DetailRow label="Judgement Award" value={formatJudgementReward(item.nlrc)} />
+          <DetailRow label="Judgment Award" value={formatJudgmentAward(item.nlrc)} />
           <DetailRow label="Progress" value={formatProgress(item.caseProgress.nlrc, item.caseProgress.nlrcSpecification)} />
           <DetailRow
             label="Remarks"
@@ -138,7 +133,7 @@ export function ViewCaseContent({ item }: { item: CaseItem }) {
         <div className="grid gap-x-6 sm:grid-cols-5">
           <DetailRow label="Date" value={formatDate(item.ca.date)} />
           <DetailRow label="Status" value={item.ca.status} />
-          <DetailRow label="Judgement Award" value={formatJudgementReward(item.ca)} />
+          <DetailRow label="Judgment Award" value={formatJudgmentAward(item.ca)} />
           <DetailRow label="Progress" value={formatProgress(item.caseProgress.ca, item.caseProgress.caSpecification)} />
           <DetailRow
             label="Remarks"
@@ -158,7 +153,7 @@ export function ViewCaseContent({ item }: { item: CaseItem }) {
         <div className="grid gap-x-6 sm:grid-cols-5">
           <DetailRow label="Date" value={formatDate(item.sc.date)} />
           <DetailRow label="Status" value={item.sc.status} />
-          <DetailRow label="Judgement Award" value={formatJudgementReward(item.sc)} />
+          <DetailRow label="ment Award" value={formatJudgmentAward(item.sc)} />
           <DetailRow label="Progress" value={formatProgress(item.caseProgress.sc, item.caseProgress.scSpecification)} />
           <DetailRow
             label="Remarks"
@@ -175,10 +170,10 @@ export function ViewCaseContent({ item }: { item: CaseItem }) {
       <div className="rounded-xl border border-emerald-200 bg-emerald-50/40 p-4 shadow-sm sm:p-5">
         <h3 className="mb-3 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-emerald-700">
           <Landmark size={13} />
-          Total Judgement Reward
+          Total Judgment Reward
         </h3>
         <div className="max-w-sm space-y-3">
-          <DetailRow label="Amount" value={formatCurrency(totalJudgementReward)} />
+          <DetailRow label="Amount" value={formatCurrency(totalJudgmentAward)} />
           <DetailRow label="Category" value={item.totalPaid?.category || "-"} />
         </div>
       </div>

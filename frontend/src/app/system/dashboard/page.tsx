@@ -11,7 +11,7 @@ import { CURRENT_USER, EMPTY_CASE } from "@/constants/caseOptions";
 // Data
 import { initialCases, initialCompanies } from "@/data/initialCases";
 
-import { cloneDraft, getCaseStatusSummary, getTotalJudgementReward, type CaseStatusSummary } from "@/lib/caseHelpers";
+import { cloneDraft, getCaseStatusSummary, getTotalJudgmentAward, type CaseStatusSummary } from "@/lib/caseHelpers";
 import { getCaseDraftErrors, getStageGates } from "@/lib/caseValidation";
 
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
@@ -256,7 +256,7 @@ export default function CasesPage() {
       createdAt: today,
       totalPaid: {
         ...draft.totalPaid,
-        amount: getTotalJudgementReward(draft),
+        amount: getTotalJudgmentAward(draft),
       },
     };
 
@@ -279,7 +279,7 @@ export default function CasesPage() {
       date: today,
       totalPaid: {
         ...draft.totalPaid,
-        amount: getTotalJudgementReward(draft),
+        amount: getTotalJudgmentAward(draft),
       },
     };
 

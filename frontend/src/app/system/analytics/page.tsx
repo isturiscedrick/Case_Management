@@ -35,26 +35,21 @@ const BUCKET_STYLES: Record<StatusBucket, { dot: string; bar: string; text: stri
   Closed: { dot: "bg-slate-500", bar: "bg-slate-500", text: "text-slate-700" },
 };
 
-// Category of the Total Judgement Award (totalPaid.category).
-const CATEGORY_ORDER: TotalPaidCategory[] = ["Judgement-Award-W", "Judgement-Award-L", "Settlement"];
+const CATEGORY_ORDER: TotalPaidCategory[] = ["Judgment-Award-W", "Judgment-Award-L", "Settlement"];
 
 const CATEGORY_META: Record<TotalPaidCategory, { label: string; dot: string; hex: string; text: string }> = {
-  "Judgement-Award-W": { label: "Judgement Award (Won)", dot: "bg-emerald-500", hex: "#10b981", text: "text-emerald-700" },
-  "Judgement-Award-L": { label: "Judgement Award (Lost)", dot: "bg-rose-500", hex: "#f43f5e", text: "text-rose-700" },
+  "Judgment-Award-W": { label: "Judgment Award (Won)", dot: "bg-emerald-500", hex: "#10b981", text: "text-emerald-700" },
+  "Judgment-Award-L": { label: "Judgment Award (Lost)", dot: "bg-rose-500", hex: "#f43f5e", text: "text-rose-700" },
   Settlement: { label: "Settlement", dot: "bg-amber-500", hex: "#f59e0b", text: "text-amber-700" },
 };
 
-// Mirrors the "has data" checks used elsewhere (ViewCaseContent, CaseForm's
-// reset logic) — a stage counts as filled if any of its own fields have
-// data, including the judgement reward specification fields, not just the
-// four originally checked here.
 function isStageFilled(stage: CaseItem["la"]) {
   return !!(
     stage.date ||
     stage.status ||
-    stage.judgementReward ||
-    stage.judgementRewardSpecification ||
-    stage.judgementRewardComputedSpecification ||
+    stage.judgmentAward ||
+    stage.judgmentAwardSpecification ||
+    stage.judgmentAwardComputedSpecification ||
     stage.remarks ||
     stage.remarksSpecification
   );
@@ -139,11 +134,10 @@ export default function AnalyticsPage() {
     [cases]
   );
 
-  // Total Judgement Award broken down by category (Won / Lost / Settlement)
   const categoryTotals = useMemo(() => {
     const totals: Record<TotalPaidCategory, { amount: number; count: number }> = {
-      "Judgement-Award-W": { amount: 0, count: 0 },
-      "Judgement-Award-L": { amount: 0, count: 0 },
+      "Judgment-Award-W": { amount: 0, count: 0 },
+      "Judgment-Award-L": { amount: 0, count: 0 },
       Settlement: { amount: 0, count: 0 },
     };
 
@@ -202,7 +196,7 @@ export default function AnalyticsPage() {
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="font-serif text-lg font-medium tracking-tight text-[#12331F] md:text-xl">Analytics</h1>
-          <p className="mt-0.5 text-xs text-slate-500">Case status and judgement award breakdown by stage.</p>
+          <p className="mt-0.5 text-xs text-slate-500">Case status and judgment award breakdown by stage.</p>
         </div>
 
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
@@ -256,7 +250,7 @@ export default function AnalyticsPage() {
             <BarChart3 size={18} />
           </div>
           <div>
-            <p className="text-[11px] uppercase tracking-wide text-slate-400">Total Judgement Awards Paid</p>
+            <p className="text-[11px] uppercase tracking-wide text-slate-400">Total Judgment Awards Paid</p>
             <p className="text-lg font-semibold text-[#12331F]">{formatCurrency(String(grandTotal))}</p>
           </div>
         </div>
@@ -332,7 +326,6 @@ export default function AnalyticsPage() {
         </div>
       </div>
 
-      {/* TOTAL JUDGEMENT AWARD BY CATEGORY + PIE CHART */}
       <div>
         <h2 className="mb-2 text-sm font-semibold text-[#12331F]">Award Outcome Breakdown</h2>
         <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto]">

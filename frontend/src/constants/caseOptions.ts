@@ -13,10 +13,6 @@ export const PROGRESS_OPTIONS: Array<"All" | StageProgress> = [
   "Others",
 ];
 
-// Status options for the SEnA stage's own Status field specifically.
-// SEnA never reaches "Execution" (that only applies once a judgement is
-// being enforced at a later stage), so it's excluded here while remaining
-// available in STATUS_OPTIONS for filtering/summary purposes.
 export const SENA_STATUS_OPTIONS: CaseStatus[] = ["Filed", "Pending", "Closed"];
 
 export const STATUS_STYLES: Record<CaseStatus, { badge: string; dot: string }> = {
@@ -93,8 +89,8 @@ export const STAGE_REMARKS_OPTIONS = [
 ] as const;
 
 export const TOTAL_PAID_CATEGORY_OPTIONS = [
-  "Judgement-Award-L",
-  "Judgement-Award-W",
+  "Judgment-Award-L",
+  "Judgment-Award-W",
   "Settlement",
 ] as const;
 
@@ -144,10 +140,10 @@ export const EMPTY_CASE: CaseDraft = {  company: "",
   filingDate: "",
   remarks: "",
   remarkSpecification: "",
-  la: { date: "", status: "", judgementReward: "", judgementRewardSpecification: "", remarks: "", remarksSpecification: "" },
-  nlrc: { date: "", status: "", judgementReward: "", judgementRewardSpecification: "", remarks: "", remarksSpecification: "" },
-  ca: { date: "", status: "", judgementReward: "", judgementRewardSpecification: "", remarks: "", remarksSpecification: "" },
-  sc: { date: "", status: "", judgementReward: "", judgementRewardSpecification: "", remarks: "", remarksSpecification: "" },
+  la: { date: "", status: "", judgmentAward: "", judgmentAwardSpecification: "", remarks: "", remarksSpecification: "" },
+  nlrc: { date: "", status: "", judgmentAward: "", judgmentAwardSpecification: "", remarks: "", remarksSpecification: "" },
+  ca: { date: "", status: "", judgmentAward: "", judgmentAwardSpecification: "", remarks: "", remarksSpecification: "" },
+  sc: { date: "", status: "", judgmentAward: "", judgmentAwardSpecification: "", remarks: "", remarksSpecification: "" },
   totalPaid: { amount: "", category: "" },
   caseProgress: {
     la: "",
