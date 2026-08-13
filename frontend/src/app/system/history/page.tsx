@@ -2,7 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { History, Search } from "lucide-react";
-import { sampleHistory, type HistoryAction } from "@/data/historyEvents";
+import type { HistoryAction } from "@/data/historyEvents";
+import { useCases } from "@/context/CasesContext";
 
 const ACTION_STYLES: Record<HistoryAction, { label: string; badge: string; dot: string }> = {
   created: { label: "Created", badge: "bg-sky-50 text-sky-600 ring-sky-200", dot: "bg-sky-500" },
@@ -25,7 +26,7 @@ function formatTimestamp(iso: string) {
 }
 
 export default function HistoryPage() {
-  const [history] = useState(sampleHistory);
+  const { historyLog: history } = useCases();
   const [search, setSearch] = useState("");
   const [actionFilter, setActionFilter] = useState<"All" | HistoryAction>("All");
 

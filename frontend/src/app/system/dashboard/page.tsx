@@ -9,7 +9,8 @@ import type { CaseDraft, CaseItem, ModalType, StageProgress, EditRestrictions } 
 import { CURRENT_USER, EMPTY_CASE } from "@/constants/caseOptions";
 
 // Data
-import { initialCases, initialCompanies } from "@/data/initialCases";
+import { initialCompanies } from "@/data/initialCases";
+import { useCases } from "@/context/CasesContext";
 
 import { cloneDraft, getCaseStatusSummary, getTotalJudgmentAward, type CaseStatusSummary } from "@/lib/caseHelpers";
 import { getCaseDraftErrors, getStageGates } from "@/lib/caseValidation";
@@ -32,7 +33,7 @@ export default function CasesPage() {
      CASE DATA
   ======================================================= */
 
-  const [cases, setCases] = useState<CaseItem[]>(initialCases);
+const { cases, addCase, updateCase, toggleArchive } = useCases();
   const [companies] = useState<string[]>(initialCompanies);
 
   /* =======================================================
@@ -260,7 +261,7 @@ export default function CasesPage() {
       },
     };
 
-    setCases((prev) => [...prev, newCase]);
+    addCase(newCase);
 
     setConfirmSave(null);
     closeModal();
@@ -283,7 +284,7 @@ export default function CasesPage() {
       },
     };
 
-    setCases((prev) => prev.map((item) => (item.id === activeCase.id ? updatedCase : item)));
+    updateCase(updatedCase);
 
     setConfirmSave(null);
     closeModal();
@@ -313,9 +314,7 @@ export default function CasesPage() {
       return;
     }
 
-    setCases((prev) =>
-      prev.map((item) => (item.id === confirmArchiveItem.id ? { ...item, archived: !item.archived } : item))
-    );
+    toggleArchive(confirmArchiveItem.id);
 
     setConfirmArchiveItem(null);
   };
