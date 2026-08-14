@@ -4,15 +4,17 @@ import type { CaseItem } from "@/types/case";
 import { SummaryCard } from "@/components/cases/SummaryCard";
 import { getCaseStatusSummary } from "@/lib/caseHelpers";
 
-export function SummaryCards({ cases }: { cases: CaseItem[] }) {
+export function SummaryCards({ cases, hideTotal = false }: { cases: CaseItem[]; hideTotal?: boolean }) {
   return (
-    <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
-      <SummaryCard
-        label="Total Cases"
-        value={cases.length}
-        icon={Briefcase}
-        accent="bg-slate-100 text-slate-700"
-      />
+    <div className={`grid gap-2.5 sm:grid-cols-2 ${hideTotal ? "lg:grid-cols-3" : "lg:grid-cols-4"}`}>
+      {!hideTotal && (
+        <SummaryCard
+          label="Total Cases"
+          value={cases.length}
+          icon={Briefcase}
+          accent="bg-slate-100 text-slate-700"
+        />
+      )}
 
       <SummaryCard
         label="Settled"

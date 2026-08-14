@@ -3,7 +3,6 @@
 import { useMemo, useState } from "react";
 import {
   BarChart3,
-  Handshake,
   Briefcase,
   Building2,
   Users,
@@ -275,7 +274,7 @@ export default function AnalyticsPage() {
       </div>
 
       {/* TOP SUMMARY */}
-      <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-2.5 sm:grid-cols-2">
         <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100 text-slate-700">
             <Briefcase size={18} />
@@ -295,18 +294,6 @@ export default function AnalyticsPage() {
             <p className="text-lg font-semibold text-[#12331F]">{formatCurrency(String(grandTotal))}</p>
           </div>
         </div>
-
-        <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-50 text-amber-700">
-            <Handshake size={18} />
-          </div>
-          <div>
-            <p className="text-[11px] uppercase tracking-wide text-slate-400">Cases Still at SEnA</p>
-            <p className="text-lg font-semibold text-[#12331F]">
-              {stageBreakdown.sena.Pending + stageBreakdown.sena.Settled + stageBreakdown.sena["Not Settled"]}
-            </p>
-          </div>
-        </div>
       </div>
 
       {/* STATUS BREAKDOWN PER STAGE */}
@@ -316,7 +303,7 @@ export default function AnalyticsPage() {
         {/* Overall totals — same rollup used on the dashboard, scoped to the
             cases currently in view (date range applied above). */}
         <div className="mb-3">
-          <SummaryCards cases={cases} />
+          <SummaryCards cases={cases} hideTotal />
         </div>
 
         <div className="grid gap-3 lg:grid-cols-2 xl:grid-cols-3">
