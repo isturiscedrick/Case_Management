@@ -2,7 +2,7 @@ import { Landmark, User } from "lucide-react";
 import type { CaseItem } from "@/types/case";
 import { formatDate, formatCurrency, getTotalJudgmentAward } from "@/lib/caseHelpers";
 import { getStageGates } from "@/lib/caseValidation";
-import { DetailRow } from "@/components/table/DetailRow";
+import { DetailRow } from "@/components/shared/DetailRow";
 import { StatusBadge } from "./StatusBadge";
 import { SectionHeader, STAGE_STYLES } from "@/components/dashboard/form/shared/SectionHeader";
 

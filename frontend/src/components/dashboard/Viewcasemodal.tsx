@@ -1,6 +1,6 @@
 import type { CaseItem } from "@/types/case";
-import { Modal } from "@/components/cases/Modal";
-import { ViewCaseContent } from "@/components/cases/ViewCaseContent";
+import { Modal } from "@/components/shared/Modal";
+import { ViewCaseContent } from "@/components/shared/ViewCaseContent";
 
 export function ViewCaseModal({ item, onClose }: { item: CaseItem; onClose: () => void }) {
   return (

@@ -8,12 +8,11 @@ import { formatDate, formatCurrency } from "@/lib/caseHelpers";
 import { TABLE_COLUMN_COUNT } from "@/constants/caseOptions";
 import { useCases } from "@/context/CasesContext";
 
-import { StatusBadge } from "@/components/cases/StatusBadge";
-import { Modal } from "@/components/cases/Modal";
-import { ConfirmDialog } from "@/components/cases/ConfirmDialog";
-import { ViewCaseContent } from "@/components/cases/ViewCaseContent";
-import { formatProgress } from "@/components/dashboard/DashboardHelpers";
-
+import { StatusBadge } from "@/components/shared/StatusBadge";
+import { Modal } from "@/components/shared/Modal";
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
+import { ViewCaseContent } from "@/components/shared/ViewCaseContent";
+import { formatProgress } from "@/components/shared/caseTableHelpers";
 export default function ArchivePage() {
 
   const { cases, toggleArchive } = useCases();

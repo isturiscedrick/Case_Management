@@ -1,4 +1,4 @@
-import Sidebar from "@/components/cases/Sidebar";
+import Sidebar from "@/components/shared/Sidebar";
 import { CasesProvider } from "@/context/CasesContext";
 
 export default function SystemLayout({ children }: { children: React.ReactNode }) {

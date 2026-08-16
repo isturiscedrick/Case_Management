@@ -1,6 +1,5 @@
 import type { CaseDraft, CaseItem } from "@/types/case";
-import { ConfirmDialog } from "@/components/cases/ConfirmDialog";
-
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 export function SaveConfirmDialog({
   mode,
   draft,

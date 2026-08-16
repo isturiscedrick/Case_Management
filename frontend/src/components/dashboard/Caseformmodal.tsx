@@ -1,7 +1,6 @@
 import type { CaseDraft, CaseItem } from "@/types/case";
-import { Modal } from "@/components/cases/Modal";
+import { Modal } from "@/components/shared/Modal";
 import { CaseForm } from "@/components/dashboard/form/CaseForm";
-
 type EditRestrictions = {
   restrictSenaEditing: boolean;
   restrictSenaRemarksEditing: boolean;

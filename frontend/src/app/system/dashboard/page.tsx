@@ -23,7 +23,7 @@ import { CaseFormModal } from "@/components/dashboard/CaseFormModal";
 import { ViewCaseModal } from "@/components/dashboard/ViewCaseModal";
 import { SaveConfirmDialog } from "@/components/dashboard/SaveConfirmDialog";
 import { ArchiveConfirmDialog } from "@/components/dashboard/ArchiveConfirmDialog";
-import { isSenaOnlyCase } from "@/components/dashboard/DashboardHelpers";
+import { isSenaOnlyCase } from "@/components/shared/caseTableHelpers";
 /* =========================================================
    PAGE
 ========================================================= */
