@@ -14,7 +14,7 @@ import type { CaseItem, TotalPaidCategory } from "@/types/case";
 import { initialCases } from "@/data/initialCases";
 import { formatCurrency } from "@/lib/caseHelpers";
 import { STAGE_STYLES, type StageKey } from "@/components/dashboard/form/shared/SectionHeader";
-import { SummaryCards } from "@/components/dashboard/SummaryCards ";
+import { SummaryCards } from "@/components/shared/SummaryCards";
 
 type StatusBucket = "Pending" | "Settled" | "Not Settled";
 

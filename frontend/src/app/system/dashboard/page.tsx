@@ -16,7 +16,7 @@ import { cloneDraft, getCaseStatusSummary, getTotalJudgmentAward, type CaseStatu
 import { getCaseDraftErrors, getStageGates } from "@/lib/caseValidation";
 
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
-import { SummaryCards } from "@/components/dashboard/SummaryCards ";
+import { SummaryCards } from "@/components/shared/SummaryCards";
 import { CaseFilters, type StageFilterKey } from "@/components/dashboard/CaseFilters";
 import { CaseTable } from "@/components/dashboard/CaseTable";
 import { CaseFormModal } from "@/components/dashboard/CaseFormModal";

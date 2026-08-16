@@ -1,7 +1,7 @@
 import { Briefcase, CheckCircle2, Clock3, XCircle } from "lucide-react";
 
 import type { CaseItem } from "@/types/case";
-import { SummaryCard } from "@/components/cases/SummaryCard";
+import { SummaryCard } from "@/components/shared/SummaryCard";
 import { getCaseStatusSummary } from "@/lib/caseHelpers";
 
 export function SummaryCards({ cases, hideTotal = false }: { cases: CaseItem[]; hideTotal?: boolean }) {
