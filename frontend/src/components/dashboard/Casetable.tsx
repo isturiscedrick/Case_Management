@@ -79,7 +79,7 @@ export function CaseTable({
                 Last Updated
               </th>
 
-              <th colSpan={10} className="sticky top-0 z-20 h-9 border-b border-r border-slate-200 bg-teal-50/60 p-1.5 text-center text-teal-700">
+              <th colSpan={10} className="sticky top-0 z-20 h-9 border-b border-r border-slate-200 bg-yellow-50/60 p-1.5 text-center text-yellow-700">
                 SEnA
               </th>
 
@@ -89,10 +89,10 @@ export function CaseTable({
               <th colSpan={5} className="sticky top-0 z-20 h-9 border-b border-slate-200 bg-violet-50/60 p-1.5 text-center text-violet-700">
                 National Labor Relations Commission
               </th>
-              <th colSpan={5} className="sticky top-0 z-20 h-9 border-b border-slate-200 bg-fuchsia-50/60 p-1.5 text-center text-fuchsia-700">
+              <th colSpan={5} className="sticky top-0 z-20 h-9 border-b border-slate-200 bg-green-50/60 p-1.5 text-center text-green-700">
                 Court of Appeals
               </th>
-              <th colSpan={5} className="sticky top-0 z-20 h-9 border-b border-r border-slate-200 bg-rose-50/60 p-1.5 text-center text-rose-700">
+              <th colSpan={5} className="sticky top-0 z-20 h-9 border-b border-r border-slate-200 bg-pink-50/60 p-1.5 text-center text-pink-700">
                 Supreme Court
               </th>
 
@@ -110,16 +110,16 @@ export function CaseTable({
 
             <tr>
               {/* SEnA */}
-              <th className="sticky top-9 z-20 border-b border-slate-200 bg-teal-50/60 p-1.5 text-center">Company</th>
-              <th className="sticky top-9 z-20 border-b border-slate-200 bg-teal-50/60 p-1.5 text-center">Status</th>
-              <th className="sticky top-9 z-20 border-b border-slate-200 bg-teal-50/60 p-1.5 text-center">Case Title</th>
-              <th className="sticky top-9 z-20 border-b border-slate-200 bg-teal-50/60 p-1.5 text-center">Case No.</th>
-              <th className="sticky top-9 z-20 border-b border-slate-200 bg-teal-50/60 p-1.5 text-center">Complainants</th>
-              <th className="sticky top-9 z-20 border-b border-slate-200 bg-teal-50/60 p-1.5 text-center">Venue</th>
-              <th className="sticky top-9 z-20 border-b border-slate-200 bg-teal-50/60 p-1.5 text-center">Handling Personnel</th>
-              <th className="sticky top-9 z-20 border-b border-slate-200 bg-teal-50/60 p-1.5 text-center">Cause of Action</th>
-              <th className="sticky top-9 z-20 border-b border-slate-200 bg-teal-50/60 p-1.5 text-center">Filing Date</th>
-              <th className="sticky top-9 z-20 border-b border-r border-slate-200 bg-teal-50/60 p-1.5 text-center">Remarks</th>
+              <th className="sticky top-9 z-20 border-b border-slate-200 bg-yellow-50/60 p-1.5 text-center">Company</th>
+              <th className="sticky top-9 z-20 border-b border-slate-200 bg-yellow-50/60 p-1.5 text-center">Status</th>
+              <th className="sticky top-9 z-20 border-b border-slate-200 bg-yellow-50/60 p-1.5 text-center">Case Title</th>
+              <th className="sticky top-9 z-20 border-b border-slate-200 bg-yellow-50/60 p-1.5 text-center">Case No.</th>
+              <th className="sticky top-9 z-20 border-b border-slate-200 bg-yellow-50/60 p-1.5 text-center">Complainants</th>
+              <th className="sticky top-9 z-20 border-b border-slate-200 bg-yellow-50/60 p-1.5 text-center">Venue</th>
+              <th className="sticky top-9 z-20 border-b border-slate-200 bg-yellow-50/60 p-1.5 text-center">Handling Personnel</th>
+              <th className="sticky top-9 z-20 border-b border-slate-200 bg-yellow-50/60 p-1.5 text-center">Cause of Action</th>
+              <th className="sticky top-9 z-20 border-b border-slate-200 bg-yellow-50/60 p-1.5 text-center">Filing Date</th>
+              <th className="sticky top-9 z-20 border-b border-r border-slate-200 bg-yellow-50/60 p-1.5 text-center">Remarks</th>
 
               {/* LA */}
               <th className="sticky top-9 z-20 border-b border-slate-200 bg-sky-50/60 p-1.5 text-center">Date</th>
@@ -136,18 +136,18 @@ export function CaseTable({
               <th className="sticky top-9 z-20 border-b border-slate-200 bg-violet-50/60 p-1.5 text-center">Progress</th>
 
               {/* CA */}
-              <th className="sticky top-9 z-20 border-b border-slate-200 bg-fuchsia-50/60 p-1.5 text-center">Date</th>
-              <th className="sticky top-9 z-20 border-b border-slate-200 bg-fuchsia-50/60 p-1.5 text-center">Status</th>
-              <th className="sticky top-9 z-20 border-b border-slate-200 bg-fuchsia-50/60 p-1.5 text-center">Judgment Award</th>
-              <th className="sticky top-9 z-20 border-b border-slate-200 bg-fuchsia-50/60 p-1.5 text-center">Remarks</th>
-              <th className="sticky top-9 z-20 border-b border-slate-200 bg-fuchsia-50/60 p-1.5 text-center">Progress</th>
+              <th className="sticky top-9 z-20 border-b border-slate-200 bg-green-50/60 p-1.5 text-center">Date</th>
+              <th className="sticky top-9 z-20 border-b border-slate-200 bg-green-50/60 p-1.5 text-center">Status</th>
+              <th className="sticky top-9 z-20 border-b border-slate-200 bg-green-50/60 p-1.5 text-center">Judgment Award</th>
+              <th className="sticky top-9 z-20 border-b border-slate-200 bg-green-50/60 p-1.5 text-center">Remarks</th>
+              <th className="sticky top-9 z-20 border-b border-slate-200 bg-green-50/60 p-1.5 text-center">Progress</th>
 
               {/* SC */}
-              <th className="sticky top-9 z-20 border-b border-slate-200 bg-rose-50/60 p-1.5 text-center">Date</th>
-              <th className="sticky top-9 z-20 border-b border-slate-200 bg-rose-50/60 p-1.5 text-center">Status</th>
-              <th className="sticky top-9 z-20 border-b border-slate-200 bg-rose-50/60 p-1.5 text-center">Judgment Award</th>
-              <th className="sticky top-9 z-20 border-b border-slate-200 bg-rose-50/60 p-1.5 text-center">Remarks</th>
-              <th className="sticky top-9 z-20 border-b border-slate-200 bg-rose-50/60 p-1.5 text-center">Progress</th>
+              <th className="sticky top-9 z-20 border-b border-slate-200 bg-pink-50/60 p-1.5 text-center">Date</th>
+              <th className="sticky top-9 z-20 border-b border-slate-200 bg-pink-50/60 p-1.5 text-center">Status</th>
+              <th className="sticky top-9 z-20 border-b border-slate-200 bg-pink-50/60 p-1.5 text-center">Judgment Award</th>
+              <th className="sticky top-9 z-20 border-b border-slate-200 bg-pink-50/60 p-1.5 text-center">Remarks</th>
+              <th className="sticky top-9 z-20 border-b border-slate-200 bg-pink-50/60 p-1.5 text-center">Progress</th>
             </tr>
           </thead>
 

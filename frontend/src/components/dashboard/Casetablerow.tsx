@@ -37,27 +37,27 @@ export function CaseTableRow({
       <td className="border-r border-slate-100 p-2 text-slate-600">{formatDate(item.date)}</td>
 
       {/* Company */}
-      <td title={item.company} className="truncate bg-teal-50/30 p-2 font-medium text-slate-900">
+      <td title={item.company} className="truncate bg-yellow-50/30 p-2 font-medium text-slate-900">
         {item.company}
       </td>
 
       {/* Status */}
-      <td className="bg-teal-50/30 p-2 text-slate-600">{item.status}</td>
+      <td className="bg-yellow-50/30 p-2 text-slate-600">{item.status}</td>
 
       {/* Case Title */}
-      <td className="truncate bg-teal-50/30 p-2 text-slate-600">{item.caseTitle}</td>
+      <td className="truncate bg-yellow-50/30 p-2 text-slate-600">{item.caseTitle}</td>
 
       {/* Case Number */}
-      <td className="truncate bg-teal-50/30 p-2 font-mono text-[11px] text-slate-500">{item.caseNo}</td>
+      <td className="truncate bg-yellow-50/30 p-2 font-mono text-[11px] text-slate-500">{item.caseNo}</td>
 
       {/* Complainants */}
-      <td className="bg-teal-50/30 p-2 text-slate-600">{item.complainants.join(", ")}</td>
+      <td className="bg-yellow-50/30 p-2 text-slate-600">{item.complainants.join(", ")}</td>
 
       {/* Venue */}
-      <td className="truncate bg-teal-50/30 p-2 text-slate-600">{item.venue}</td>
+      <td className="truncate bg-yellow-50/30 p-2 text-slate-600">{item.venue}</td>
 
       {/* Handling Personnel */}
-      <td className="truncate bg-teal-50/30 p-2 text-slate-600">
+      <td className="truncate bg-yellow-50/30 p-2 text-slate-600">
         {item.handlingPersonnel}
         {item.handlingPersonnel === "Others" && item.handlingPersonnelSpecification && (
           <div className="text-[10px] text-slate-500">({item.handlingPersonnelSpecification})</div>
@@ -65,16 +65,16 @@ export function CaseTableRow({
       </td>
 
       {/* Cause of Action */}
-      <td className="truncate bg-teal-50/30 p-2 text-slate-600">
+      <td className="truncate bg-yellow-50/30 p-2 text-slate-600">
         {item.cause.join(", ")}
         {item.causeSpecification && <div className="text-[10px] text-slate-500">({item.causeSpecification})</div>}
       </td>
 
       {/* Filing Date */}
-      <td className="bg-teal-50/30 p-2 text-slate-600">{formatDate(item.filingDate)}</td>
+      <td className="bg-yellow-50/30 p-2 text-slate-600">{formatDate(item.filingDate)}</td>
 
       {/* Remarks */}
-      <td className="truncate border-r border-slate-100 bg-teal-50/30 p-2 text-slate-600">
+      <td className="truncate border-r border-slate-100 bg-yellow-50/30 p-2 text-slate-600">
         {item.remarks}
         {item.remarkSpecification && <div className="text-[10px] text-slate-500">({item.remarkSpecification})</div>}
       </td>
@@ -108,30 +108,30 @@ export function CaseTableRow({
       </td>
 
       {/* COURT OF APPEALS */}
-      <td className="bg-fuchsia-50/30 p-2 text-slate-600">{formatDate(item.ca.date)}</td>
-      <td className="truncate bg-fuchsia-50/30 p-2 text-slate-600">{item.ca.status}</td>
-      <td className="truncate bg-fuchsia-50/30 p-2 font-medium text-slate-700">{formatCurrency(item.ca.judgmentAward)}</td>
-      <td className="truncate bg-fuchsia-50/30 p-2 text-slate-600">
+      <td className="bg-green-50/30 p-2 text-slate-600">{formatDate(item.ca.date)}</td>
+      <td className="truncate bg-green-50/30 p-2 text-slate-600">{item.ca.status}</td>
+      <td className="truncate bg-green-50/30 p-2 font-medium text-slate-700">{formatCurrency(item.ca.judgmentAward)}</td>
+      <td className="truncate bg-green-50/30 p-2 text-slate-600">
         {item.ca.remarks}
         {item.ca.remarks === "Other" && item.ca.remarksSpecification && (
           <div className="text-[10px] text-slate-500">({item.ca.remarksSpecification})</div>
         )}
       </td>
-      <td className="truncate bg-fuchsia-50/30 p-2 text-slate-600">
+      <td className="truncate bg-green-50/30 p-2 text-slate-600">
         {formatProgress(item.caseProgress.ca, item.caseProgress.caSpecification)}
       </td>
 
       {/* SUPREME COURT */}
-      <td className="bg-rose-50/30 p-2 text-slate-600">{formatDate(item.sc.date)}</td>
-      <td className="truncate bg-rose-50/30 p-2 text-slate-600">{item.sc.status}</td>
-      <td className="truncate bg-rose-50/30 p-2 font-medium text-slate-700">{formatCurrency(item.sc.judgmentAward)}</td>
-      <td className="truncate bg-rose-50/30 p-2 text-slate-600">
+      <td className="bg-pink-50/30 p-2 text-slate-600">{formatDate(item.sc.date)}</td>
+      <td className="truncate bg-pink-50/30 p-2 text-slate-600">{item.sc.status}</td>
+      <td className="truncate bg-pink-50/30 p-2 font-medium text-slate-700">{formatCurrency(item.sc.judgmentAward)}</td>
+      <td className="truncate bg-pink-50/30 p-2 text-slate-600">
         {item.sc.remarks}
         {item.sc.remarks === "Other" && item.sc.remarksSpecification && (
           <div className="text-[10px] text-slate-500">({item.sc.remarksSpecification})</div>
         )}
       </td>
-      <td className="truncate bg-rose-50/30 p-2 text-slate-600">
+      <td className="truncate bg-pink-50/30 p-2 text-slate-600">
         {formatProgress(item.caseProgress.sc, item.caseProgress.scSpecification)}
       </td>
 

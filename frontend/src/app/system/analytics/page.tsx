@@ -16,10 +16,10 @@ import { formatCurrency } from "@/lib/caseHelpers";
 import { STAGE_STYLES, type StageKey } from "@/components/dashboard/form/shared/SectionHeader";
 import { SummaryCards } from "@/components/shared/SummaryCards";
 
-type StatusBucket = "Pending" | "Settled" | "Not Settled";
+type StatusBucket = "Pending" | "Settled" | "Not Settled" | "Closed";
 
 const STAGE_KEYS: StageKey[] = ["sena", "la", "nlrc", "ca", "sc"];
-const BUCKETS: StatusBucket[] = ["Pending", "Settled", "Not Settled"];
+const BUCKETS: StatusBucket[] = ["Pending", "Settled", "Not Settled", "Closed"];
 
 const STAGE_LABELS: Record<StageKey, string> = {
   sena: "SENA",
@@ -33,6 +33,7 @@ const BUCKET_STYLES: Record<StatusBucket, { dot: string; bar: string; text: stri
   Pending: { dot: "bg-amber-400", bar: "bg-amber-400", text: "text-amber-700" },
   Settled: { dot: "bg-emerald-500", bar: "bg-emerald-500", text: "text-emerald-700" },
   "Not Settled": { dot: "bg-rose-500", bar: "bg-rose-500", text: "text-rose-700" },
+  Closed: { dot: "bg-slate-400", bar: "bg-slate-400", text: "text-slate-700" },
 };
 
 const CATEGORY_ORDER: TotalPaidCategory[] = ["Judgment-Award-W", "Judgment-Award-L", "Settlement"];
@@ -86,7 +87,14 @@ function getStageProgressValue(item: CaseItem, stage: StageKey): string {
   return item.caseProgress[stage];
 }
 
+// "Closed" is the case-level lock flag (set via "Close Case" in the form,
+// see CaseForm.tsx -> setTop("closed", true)). It takes priority over
+// stage/remarks progress, mirroring how getCaseStatusSummary() in
+// caseHelpers.ts treats it — a closed case's current stage should read
+// "Closed" regardless of what progress value that stage was left at.
 function classifyStatus(item: CaseItem, stage: StageKey): StatusBucket {
+  if (item.closed) return "Closed";
+
   const progress = getStageProgressValue(item, stage);
   if (progress === "Settled") return "Settled";
   if (progress === "Not Settled" || progress === "Others") return "Not Settled";
@@ -125,11 +133,11 @@ export default function AnalyticsPage() {
   // Stage -> bucket -> count
   const stageBreakdown = useMemo(() => {
     const result: Record<StageKey, Record<StatusBucket, number>> = {
-      sena: { Pending: 0, Settled: 0, "Not Settled": 0 },
-      la: { Pending: 0, Settled: 0, "Not Settled": 0 },
-      nlrc: { Pending: 0, Settled: 0, "Not Settled": 0 },
-      ca: { Pending: 0, Settled: 0, "Not Settled": 0 },
-      sc: { Pending: 0, Settled: 0, "Not Settled": 0 },
+      sena: { Pending: 0, Settled: 0, "Not Settled": 0, Closed: 0 },
+      la: { Pending: 0, Settled: 0, "Not Settled": 0, Closed: 0 },
+      nlrc: { Pending: 0, Settled: 0, "Not Settled": 0, Closed: 0 },
+      ca: { Pending: 0, Settled: 0, "Not Settled": 0, Closed: 0 },
+      sc: { Pending: 0, Settled: 0, "Not Settled": 0, Closed: 0 },
     };
 
     cases.forEach((item) => {

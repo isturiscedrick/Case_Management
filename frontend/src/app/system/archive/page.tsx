@@ -178,10 +178,10 @@ export default function ArchivePage() {
                   <th colSpan={5} className="sticky top-0 z-20 h-9 border-b border-slate-200 bg-violet-50/60 p-1.5 text-center text-violet-700">
                     National Labor Relations Commission
                   </th>
-                  <th colSpan={5} className="sticky top-0 z-20 h-9 border-b border-slate-200 bg-fuchsia-50/60 p-1.5 text-center text-fuchsia-700">
+                  <th colSpan={5} className="sticky top-0 z-20 h-9 border-b border-slate-200 bg-green-50/60 p-1.5 text-center text-green-700">
                     Court of Appeals
                   </th>
-                  <th colSpan={5} className="sticky top-0 z-20 h-9 border-b border-r border-slate-200 bg-rose-50/60 p-1.5 text-center text-rose-700">
+                  <th colSpan={5} className="sticky top-0 z-20 h-9 border-b border-r border-slate-200 bg-pink-50/60 p-1.5 text-center text-pink-700">
                     Supreme Court
                   </th>
                   <th rowSpan={2} className="sticky top-0 z-20 border-b border-slate-200 bg-emerald-50/60 p-2 text-center text-emerald-700">
@@ -207,17 +207,17 @@ export default function ArchivePage() {
                   <th className="sticky top-9 z-20 border-b border-slate-200 bg-violet-50/60 p-1.5 text-center">Remarks</th>
                   <th className="sticky top-9 z-20 border-b border-slate-200 bg-violet-50/60 p-1.5 text-center">Progress</th>
 
-                  <th className="sticky top-9 z-20 border-b border-slate-200 bg-fuchsia-50/60 p-1.5 text-center">Date</th>
-                  <th className="sticky top-9 z-20 border-b border-slate-200 bg-fuchsia-50/60 p-1.5 text-center">Status</th>
-                  <th className="sticky top-9 z-20 border-b border-slate-200 bg-fuchsia-50/60 p-1.5 text-center">Judgment Award</th>
-                  <th className="sticky top-9 z-20 border-b border-slate-200 bg-fuchsia-50/60 p-1.5 text-center">Remarks</th>
-                  <th className="sticky top-9 z-20 border-b border-slate-200 bg-fuchsia-50/60 p-1.5 text-center">Progress</th>
+                  <th className="sticky top-9 z-20 border-b border-slate-200 bg-green-50/60 p-1.5 text-center">Date</th>
+                  <th className="sticky top-9 z-20 border-b border-slate-200 bg-green-50/60 p-1.5 text-center">Status</th>
+                  <th className="sticky top-9 z-20 border-b border-slate-200 bg-green-50/60 p-1.5 text-center">Judgment Award</th>
+                  <th className="sticky top-9 z-20 border-b border-slate-200 bg-green-50/60 p-1.5 text-center">Remarks</th>
+                  <th className="sticky top-9 z-20 border-b border-slate-200 bg-green-50/60 p-1.5 text-center">Progress</th>
 
-                  <th className="sticky top-9 z-20 border-b border-slate-200 bg-rose-50/60 p-1.5 text-center">Date</th>
-                  <th className="sticky top-9 z-20 border-b border-slate-200 bg-rose-50/60 p-1.5 text-center">Status</th>
-                  <th className="sticky top-9 z-20 border-b border-slate-200 bg-rose-50/60 p-1.5 text-center">Judgment Award</th>
-                  <th className="sticky top-9 z-20 border-b border-slate-200 bg-rose-50/60 p-1.5 text-center">Remarks</th>
-                  <th className="sticky top-9 z-20 border-b border-slate-200 bg-rose-50/60 p-1.5 text-center">Progress</th>
+                  <th className="sticky top-9 z-20 border-b border-slate-200 bg-pink-50/60 p-1.5 text-center">Date</th>
+                  <th className="sticky top-9 z-20 border-b border-slate-200 bg-pink-50/60 p-1.5 text-center">Status</th>
+                  <th className="sticky top-9 z-20 border-b border-slate-200 bg-pink-50/60 p-1.5 text-center">Judgment Award</th>
+                  <th className="sticky top-9 z-20 border-b border-slate-200 bg-pink-50/60 p-1.5 text-center">Remarks</th>
+                  <th className="sticky top-9 z-20 border-b border-slate-200 bg-pink-50/60 p-1.5 text-center">Progress</th>
                 </tr>
               </thead>
 
@@ -277,29 +277,29 @@ export default function ArchivePage() {
                       {formatProgress(item.caseProgress.nlrc, item.caseProgress.nlrcSpecification)}
                     </td>
 
-                    <td className="bg-fuchsia-50/30 p-2 text-slate-600">{formatDate(item.ca.date)}</td>
-                    <td className="truncate bg-fuchsia-50/30 p-2 text-slate-600">{item.ca.status}</td>
-                    <td className="truncate bg-fuchsia-50/30 p-2 font-medium text-slate-700">{formatCurrency(item.ca.judgmentAward)}</td>
-                    <td className="truncate bg-fuchsia-50/30 p-2 text-slate-600">
+                    <td className="bg-green-50/30 p-2 text-slate-600">{formatDate(item.ca.date)}</td>
+                    <td className="truncate bg-green-50/30 p-2 text-slate-600">{item.ca.status}</td>
+                    <td className="truncate bg-green-50/30 p-2 font-medium text-slate-700">{formatCurrency(item.ca.judgmentAward)}</td>
+                    <td className="truncate bg-green-50/30 p-2 text-slate-600">
                       {item.ca.remarks}
                       {item.ca.remarks === "Other" && item.ca.remarksSpecification && (
                         <div className="text-[10px] text-slate-500">({item.ca.remarksSpecification})</div>
                       )}
                     </td>
-                    <td className="truncate bg-fuchsia-50/30 p-2 text-slate-600">
+                    <td className="truncate bg-green-50/30 p-2 text-slate-600">
                       {formatProgress(item.caseProgress.ca, item.caseProgress.caSpecification)}
                     </td>
 
-                    <td className="bg-rose-50/30 p-2 text-slate-600">{formatDate(item.sc.date)}</td>
-                    <td className="truncate bg-rose-50/30 p-2 text-slate-600">{item.sc.status}</td>
-                    <td className="truncate bg-rose-50/30 p-2 font-medium text-slate-700">{formatCurrency(item.sc.judgmentAward)}</td>
-                    <td className="truncate bg-rose-50/30 p-2 text-slate-600">
+                    <td className="bg-pink-50/30 p-2 text-slate-600">{formatDate(item.sc.date)}</td>
+                    <td className="truncate bg-pink-50/30 p-2 text-slate-600">{item.sc.status}</td>
+                    <td className="truncate bg-pink-50/30 p-2 font-medium text-slate-700">{formatCurrency(item.sc.judgmentAward)}</td>
+                    <td className="truncate bg-pink-50/30 p-2 text-slate-600">
                       {item.sc.remarks}
                       {item.sc.remarks === "Other" && item.sc.remarksSpecification && (
                         <div className="text-[10px] text-slate-500">({item.sc.remarksSpecification})</div>
                       )}
                     </td>
-                    <td className="truncate bg-rose-50/30 p-2 text-slate-600">
+                    <td className="truncate bg-pink-50/30 p-2 text-slate-600">
                       {formatProgress(item.caseProgress.sc, item.caseProgress.scSpecification)}
                     </td>
 

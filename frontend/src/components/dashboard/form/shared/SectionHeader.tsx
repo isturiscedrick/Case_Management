@@ -12,11 +12,11 @@ import {
 export const STAGE_STYLES = {
   sena: {
     icon: Handshake,
-    ring: "border-teal-200",
-    chip: "bg-teal-50 text-teal-700",
-    bar: "bg-teal-50/60",
-    text: "text-teal-700",
-    dot: "bg-teal-500",
+    ring: "border-yellow-200",
+    chip: "bg-yellow-50 text-yellow-700",
+    bar: "bg-yellow-50/60",
+    text: "text-yellow-700",
+    dot: "bg-yellow-500",
   },
   la: {
     icon: Gavel,
@@ -36,19 +36,19 @@ export const STAGE_STYLES = {
   },
   ca: {
     icon: Landmark,
-    ring: "border-fuchsia-200",
-    chip: "bg-fuchsia-50 text-fuchsia-700",
-    bar: "bg-fuchsia-50/60",
-    text: "text-fuchsia-700",
-    dot: "bg-fuchsia-500",
+    ring: "border-green-200",
+    chip: "bg-green-50 text-green-700",
+    bar: "bg-green-50/60",
+    text: "text-green-700",
+    dot: "bg-green-500",
   },
   sc: {
     icon: Scale,
-    ring: "border-rose-200",
-    chip: "bg-rose-50 text-rose-700",
-    bar: "bg-rose-50/60",
-    text: "text-rose-700",
-    dot: "bg-rose-500",
+    ring: "border-pink-200",
+    chip: "bg-pink-50 text-pink-700",
+    bar: "bg-pink-50/60",
+    text: "text-pink-700",
+    dot: "bg-pink-500",
   },
 } as const;
 
