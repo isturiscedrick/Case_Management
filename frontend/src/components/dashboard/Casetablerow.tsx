@@ -19,7 +19,12 @@ export function CaseTableRow({
   // are read-only until restored.
   hideEdit?: boolean;
 }) {
-  const isResolved = !!item.totalPaid?.category;
+  // Update is locked once a case is resolved (has a Total Paid category) OR
+  // once it has been explicitly closed via "Close Case" in the form.
+  const isLocked = !!item.totalPaid?.category || !!item.closed;
+  const lockReason = item.closed
+    ? "This case is closed and can no longer be updated."
+    : "This case is resolved and can no longer be updated.";
 
   return (
     <tr className="group border-b border-slate-100 last:border-0 hover:bg-slate-50">
@@ -151,12 +156,12 @@ export function CaseTableRow({
 
           {!hideEdit && (
             <button
-              aria-label={isResolved ? "Case resolved — updates locked" : "Update case"}
+              aria-label={isLocked ? "Update locked" : "Update case"}
               onClick={() => onEdit(item)}
-              disabled={isResolved}
-              title={isResolved ? "This case is resolved and can no longer be updated." : undefined}
+              disabled={isLocked}
+              title={isLocked ? lockReason : undefined}
               className={`rounded-md border p-1.5 transition ${
-                isResolved
+                isLocked
                   ? "cursor-not-allowed border-slate-100 text-slate-300"
                   : "border-slate-200 text-slate-500 hover:border-slate-300 hover:bg-white hover:text-slate-900"
               }`}

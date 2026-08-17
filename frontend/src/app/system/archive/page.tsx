@@ -10,7 +10,7 @@ import { useCases } from "@/context/CasesContext";
 
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { Modal } from "@/components/shared/Modal";
-import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
+import { ArchiveConfirmDialog } from "@/components/dashboard/ArchiveConfirmDialog";
 import { ViewCaseContent } from "@/components/shared/ViewCaseContent";
 import { formatProgress } from "@/components/shared/caseTableHelpers";
 export default function ArchivePage() {
@@ -353,10 +353,8 @@ export default function ArchivePage() {
 
       {/* RESTORE CONFIRMATION */}
       {restoreItem && (
-        <ConfirmDialog
-          title="Restore Case"
-          message={`Restore "${restoreItem.caseNo} · ${restoreItem.company}" to the active case list?`}
-          confirmLabel="Restore"
+        <ArchiveConfirmDialog
+          item={restoreItem}
           onConfirm={confirmRestore}
           onCancel={() => setRestoreItem(null)}
         />

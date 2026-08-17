@@ -184,8 +184,8 @@ export default function CasesPage() {
   };
 
   const openEdit = (item: CaseItem) => {
-    // Resolved cases are locked.
-    if (item.totalPaid?.category) {
+    // Resolved cases and closed cases are locked from further edits.
+    if (item.totalPaid?.category || item.closed) {
       return;
     }
 

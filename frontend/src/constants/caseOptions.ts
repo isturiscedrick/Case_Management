@@ -1,10 +1,11 @@
 import type { CaseStatus, StageProgress, CaseDraft, EditRestrictions } from "@/types/case";
 export const STATUS_OPTIONS: ("All" | CaseStatus)[] = ["All", "Filed", "Pending", "Execution", "Closed"];
-export const CASE_STATUS_SUMMARY_OPTIONS: ("All" | "Settled" | "Not Settled" | "Pending")[] = [
+export const CASE_STATUS_SUMMARY_OPTIONS: ("All" | "Settled" | "Not Settled" | "Pending" | "Closed")[] = [
   "All",
   "Settled",
   "Not Settled",
   "Pending",
+  "Closed",
 ];
 export const PROGRESS_OPTIONS: Array<"All" | StageProgress> = [
   "All",
@@ -42,10 +43,11 @@ export const DEFAULT_STATUS_STYLE = {
 // Styles for the dashboard's derived "Case Status" column (see
 // getCaseStatusSummary in caseHelpers.ts). Separate from STATUS_STYLES,
 // which colors SEnA's own item.status field.
-export const CASE_STATUS_SUMMARY_STYLES: Record<"Settled" | "Not Settled" | "Pending", { badge: string; dot: string }> = {
+export const CASE_STATUS_SUMMARY_STYLES: Record<"Settled" | "Not Settled" | "Pending" | "Closed", { badge: string; dot: string }> = {
   Settled: { badge: "bg-emerald-50 text-emerald-600 ring-emerald-200", dot: "bg-emerald-500" },
   "Not Settled": { badge: "bg-rose-50 text-rose-600 ring-rose-200", dot: "bg-rose-500" },
   Pending: { badge: "bg-amber-50 text-amber-600 ring-amber-200", dot: "bg-amber-500" },
+  Closed: { badge: "bg-slate-100 text-slate-600 ring-slate-200", dot: "bg-slate-400" },
 };
 
 export const PROGRESS_STAGES: Array<{ key: "la" | "nlrc" | "ca" | "sc"; label: string }> = [

@@ -27,9 +27,16 @@ export function getTotalJudgmentAward(draft: CaseDraft): string {
   return latestStage ? latestStage.judgmentAward : "";
 }
 
-export type CaseStatusSummary = "Settled" | "Not Settled" | "Pending";
+export type CaseStatusSummary = "Settled" | "Not Settled" | "Pending" | "Closed";
 
 export function getCaseStatusSummary(item: CaseItem): CaseStatusSummary {
+  // "Closed" is the standalone lock flag set via "Close Case" in the form
+  // (CaseForm.tsx -> setTop("closed", true)). It takes priority over
+  // stage/remarks progress, since a closed case's Case Status column should
+  // read "Closed" regardless of what state its stages were in at the
+  // moment it was closed.
+  if (item.closed) return "Closed";
+
   const values = [
     item.status === "Closed" ? "Settled" : "",
     item.remarks,

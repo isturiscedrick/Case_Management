@@ -11,9 +11,19 @@ export function ArchiveConfirmDialog({
 }) {
   const title = item.archived ? "Restore Case" : "Archive Case";
   const confirmLabel = item.archived ? "Restore" : "Archive";
+  const confirmPhrase = item.archived ? "RESTORE" : "ARCHIVE";
   const message = item.archived
     ? `Restore "${item.caseNo} · ${item.company}" to the active case list?`
     : `Archive "${item.caseNo} · ${item.company}"? You can restore it later from the Archived Cases page.`;
 
-  return <ConfirmDialog title={title} message={message} confirmLabel={confirmLabel} onConfirm={onConfirm} onCancel={onCancel} />;
+  return (
+    <ConfirmDialog
+      title={title}
+      message={message}
+      confirmLabel={confirmLabel}
+      confirmPhrase={confirmPhrase}
+      onConfirm={onConfirm}
+      onCancel={onCancel}
+    />
+  );
 }

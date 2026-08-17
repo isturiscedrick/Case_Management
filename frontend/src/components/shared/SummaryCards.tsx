@@ -1,4 +1,4 @@
-import { Briefcase, CheckCircle2, Clock3, XCircle } from "lucide-react";
+import { Briefcase, CheckCircle2, Clock3, XCircle, Lock } from "lucide-react";
 
 import type { CaseItem } from "@/types/case";
 import { SummaryCard } from "@/components/shared/SummaryCard";
@@ -6,7 +6,7 @@ import { getCaseStatusSummary } from "@/lib/caseHelpers";
 
 export function SummaryCards({ cases, hideTotal = false }: { cases: CaseItem[]; hideTotal?: boolean }) {
   return (
-    <div className={`grid gap-2.5 sm:grid-cols-2 ${hideTotal ? "lg:grid-cols-3" : "lg:grid-cols-4"}`}>
+    <div className={`grid gap-2.5 sm:grid-cols-2 ${hideTotal ? "lg:grid-cols-4" : "lg:grid-cols-5"}`}>
       {!hideTotal && (
         <SummaryCard
           label="Total Cases"
@@ -35,6 +35,13 @@ export function SummaryCards({ cases, hideTotal = false }: { cases: CaseItem[]; 
         value={cases.filter((item) => getCaseStatusSummary(item) === "Not Settled").length}
         icon={XCircle}
         accent="bg-rose-50 text-rose-600"
+      />
+
+      <SummaryCard
+        label="Closed"
+        value={cases.filter((item) => getCaseStatusSummary(item) === "Closed").length}
+        icon={Lock}
+        accent="bg-slate-100 text-slate-600"
       />
     </div>
   );
