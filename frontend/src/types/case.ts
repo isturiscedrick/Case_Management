@@ -105,6 +105,10 @@ export interface CaseItem {
   updatedBy?: string;
   updatedAt?: string;
 
+  // Set true when "Close Case" is used in the form. Purely a lock flag —
+  // does not affect status, remarks, or any stage's data.
+  closed?: boolean;
+
   archived: boolean;
 }
 

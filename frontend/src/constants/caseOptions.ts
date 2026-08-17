@@ -126,7 +126,8 @@ export const DEFAULT_EDIT_RESTRICTIONS: EditRestrictions = {
   restrictCaProgressEditing: false,
 };
 
-export const EMPTY_CASE: CaseDraft = {  company: "",
+export const EMPTY_CASE: CaseDraft = {
+  company: "",
   status: "Pending",
   date: "",
   caseTitle: "",
@@ -157,5 +158,6 @@ export const EMPTY_CASE: CaseDraft = {  company: "",
   },
   createdBy: "",
   createdAt: "",
+  closed: false,
   archived: false,
 };

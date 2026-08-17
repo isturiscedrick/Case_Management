@@ -1,3 +1,6 @@
+import { Ban, Lock } from "lucide-react";
+import { useState } from "react";
+
 import type {
   CaseDraft,
   LaInfo,
@@ -21,6 +24,7 @@ import {
 } from "./shared/StageStepper";
 import { getStageGates } from "@/lib/caseValidation";
 import { getTotalJudgmentAward } from "@/lib/caseHelpers";
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 
 export function CaseForm({
   value,
@@ -53,6 +57,8 @@ export function CaseForm({
   restrictCaProgressOnly?: boolean;
   restrictCaProgressEditing?: boolean;
 }) {
+  const [showCloseConfirm, setShowCloseConfirm] = useState(false);
+
   const setTop = <K extends keyof CaseDraft>(key: K, v: CaseDraft[K]) => {
     onChange({ ...value, [key]: v });
   };
@@ -113,7 +119,21 @@ export function CaseForm({
   const canProceedPastLa = value.caseProgress.la === "Not Settled" || value.caseProgress.la === "Others";
   const canProceedPastNlrc = value.caseProgress.nlrc === "Not Settled" || value.caseProgress.nlrc === "Others";
   const canProceedPastCa = value.caseProgress.ca === "Not Settled" || value.caseProgress.ca === "Others";
-  
+
+  // "Closed" is a standalone lock flag — it never overwrites status,
+  // remarks, or any stage's data. It only disables the form.
+  const isClosed = !!value.closed;
+
+  const requestCloseCase = () => {
+    if (isClosed) return;
+    setShowCloseConfirm(true);
+  };
+
+  const confirmCloseCase = () => {
+    setTop("closed", true);
+    setShowCloseConfirm(false);
+  };
+
   const anyStageSettled =
     value.remarks === "Settled" ||
     value.caseProgress.la === "Settled" ||
@@ -143,83 +163,113 @@ export function CaseForm({
 
   return (
     <div className="space-y-6">
-      <StageStepper steps={stageSteps} />
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <StageStepper steps={stageSteps} />
 
-      <SenaSection
-        value={value}
-        onChange={onChange}
-        companies={companies}
-        restrictSenaEditing={restrictSenaEditing}
-        restrictSenaRemarksEditing={restrictSenaRemarksEditing}
-        setTop={setTop}
-      />
+        {isClosed ? (
+          <span className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-500">
+            <Lock size={13} />
+            Case Closed — form locked
+          </span>
+        ) : (
+          <button
+            type="button"
+            onClick={requestCloseCase}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-medium text-rose-600 transition hover:bg-rose-100"
+          >
+            <Ban size={13} />
+            Close Case
+          </button>
+        )}
+      </div>
 
-      <LaSection
-        value={value}
-        onChange={onChange}
-        setLa={setLa}
-        setProgressSpecification={setProgressSpecification}
-        senaFilled={senaFilled}
-        laRequired={laRequired}
-        laFilled={laFilled}
-        laVisible={laVisible}
-        restrictLaDetailsEditing={restrictLaDetailsEditing}
-        restrictLaProgressOnly={restrictLaProgressOnly}
-        restrictLaProgressEditing={restrictLaProgressEditing}
-      />
+      <fieldset disabled={isClosed} className="contents">
+        <SenaSection
+          value={value}
+          onChange={onChange}
+          companies={companies}
+          restrictSenaEditing={restrictSenaEditing}
+          restrictSenaRemarksEditing={restrictSenaRemarksEditing}
+          setTop={setTop}
+        />
 
-      <NlrcSection
-        value={value}
-        onChange={onChange}
-        setNlrc={setNlrc}
-        setProgressSpecification={setProgressSpecification}
-        senaFilled={senaFilled}
-        laRequired={laRequired}
-        laFilled={laFilled}
-        nlrcEnabled={nlrcEnabled}
-        nlrcFilled={nlrcFilled}
-        nlrcVisible={nlrcVisible}
-        restrictNlrcDetailsEditing={restrictNlrcDetailsEditing}
-        restrictNlrcProgressOnly={restrictNlrcProgressOnly}
-        restrictNlrcProgressEditing={restrictNlrcProgressEditing}
-      />
+        <LaSection
+          value={value}
+          onChange={onChange}
+          setLa={setLa}
+          setProgressSpecification={setProgressSpecification}
+          senaFilled={senaFilled}
+          laRequired={laRequired}
+          laFilled={laFilled}
+          laVisible={laVisible}
+          restrictLaDetailsEditing={restrictLaDetailsEditing}
+          restrictLaProgressOnly={restrictLaProgressOnly}
+          restrictLaProgressEditing={restrictLaProgressEditing}
+        />
 
-      <CaSection
-        value={value}
-        onChange={onChange}
-        setCa={setCa}
-        setProgressSpecification={setProgressSpecification}
-        senaFilled={senaFilled}
-        nlrcEnabled={nlrcEnabled}
-        nlrcFilled={nlrcFilled}
-        caEnabled={caEnabled}
-        caFilled={caFilled}
-        caVisible={caVisible}
-        restrictCaDetailsEditing={restrictCaDetailsEditing}
-        restrictCaProgressOnly={restrictCaProgressOnly}
-        restrictCaProgressEditing={restrictCaProgressEditing}
-      />
+        <NlrcSection
+          value={value}
+          onChange={onChange}
+          setNlrc={setNlrc}
+          setProgressSpecification={setProgressSpecification}
+          senaFilled={senaFilled}
+          laRequired={laRequired}
+          laFilled={laFilled}
+          nlrcEnabled={nlrcEnabled}
+          nlrcFilled={nlrcFilled}
+          nlrcVisible={nlrcVisible}
+          restrictNlrcDetailsEditing={restrictNlrcDetailsEditing}
+          restrictNlrcProgressOnly={restrictNlrcProgressOnly}
+          restrictNlrcProgressEditing={restrictNlrcProgressEditing}
+        />
 
-      <ScSection
-        value={value}
-        onChange={onChange}
-        setSc={setSc}
-        setProgress={setProgress}
-        setProgressSpecification={setProgressSpecification}
-        setTotalPaidCategory={setTotalPaidCategory}
-        senaFilled={senaFilled}
-        caEnabled={caEnabled}
-        caFilled={caFilled}
-        scEnabled={scEnabled}
-        scVisible={scVisible}
-      />
+        <CaSection
+          value={value}
+          onChange={onChange}
+          setCa={setCa}
+          setProgressSpecification={setProgressSpecification}
+          senaFilled={senaFilled}
+          nlrcEnabled={nlrcEnabled}
+          nlrcFilled={nlrcFilled}
+          caEnabled={caEnabled}
+          caFilled={caFilled}
+          caVisible={caVisible}
+          restrictCaDetailsEditing={restrictCaDetailsEditing}
+          restrictCaProgressOnly={restrictCaProgressOnly}
+          restrictCaProgressEditing={restrictCaProgressEditing}
+        />
 
-      <TotalJudgmentAwardSection
-        value={value}
-        totalJudgmentAward={totalJudgmentAward}
-        anyStageSettled={anyStageSettled}
-        setTotalPaidCategory={setTotalPaidCategory}
-      />
+        <ScSection
+          value={value}
+          onChange={onChange}
+          setSc={setSc}
+          setProgress={setProgress}
+          setProgressSpecification={setProgressSpecification}
+          setTotalPaidCategory={setTotalPaidCategory}
+          senaFilled={senaFilled}
+          caEnabled={caEnabled}
+          caFilled={caFilled}
+          scEnabled={scEnabled}
+          scVisible={scVisible}
+        />
+
+        <TotalJudgmentAwardSection
+          value={value}
+          totalJudgmentAward={totalJudgmentAward}
+          anyStageSettled={anyStageSettled}
+          setTotalPaidCategory={setTotalPaidCategory}
+        />
+      </fieldset>
+
+      {showCloseConfirm && (
+        <ConfirmDialog
+          title="Close Case"
+          message="Close this case? The form will be locked from further edits. No existing SEnA or stage data will be changed."
+          confirmLabel="Close Case"
+          onConfirm={confirmCloseCase}
+          onCancel={() => setShowCloseConfirm(false)}
+        />
+      )}
     </div>
   );
 }
