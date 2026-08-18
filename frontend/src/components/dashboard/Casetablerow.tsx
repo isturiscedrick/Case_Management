@@ -4,6 +4,30 @@ import type { CaseItem } from "@/types/case";
 import { formatCurrency, formatDate, getCaseStatusSummary } from "@/lib/caseHelpers";
 import { formatProgress } from "@/components/shared/caseTableHelpers";
 import { CaseStatusSummaryBadge } from "@/components/dashboard/CaseStatusSummaryBadge";
+
+const TO_BE_COMPUTED = "To be computed";
+
+// Mirrors ViewCaseContent.tsx's formatJudgmentAward so the table shows the
+// same specification text as the view modal, not just the bare amount.
+function formatJudgmentAward(info: {
+  judgmentAward: string;
+  judgmentAwardSpecification?: string;
+  judgmentAwardComputedSpecification?: string;
+}) {
+  if (!info.judgmentAward) return "-";
+
+  if (info.judgmentAward === TO_BE_COMPUTED) {
+    return info.judgmentAwardComputedSpecification
+      ? `${TO_BE_COMPUTED} (${info.judgmentAwardComputedSpecification})`
+      : TO_BE_COMPUTED;
+  }
+
+  const amount = formatCurrency(info.judgmentAward);
+  return info.judgmentAwardSpecification
+    ? `${amount} (${info.judgmentAwardSpecification})`
+    : amount;
+}
+
 export function CaseTableRow({
   item,
   onView,
@@ -79,10 +103,10 @@ export function CaseTableRow({
         {item.remarkSpecification && <div className="text-[10px] text-slate-500">({item.remarkSpecification})</div>}
       </td>
 
-      {/* LABOR ARBITER */}
+         {/* LABOR ARBITER */}
       <td className="bg-sky-50/30 p-2 text-slate-600">{formatDate(item.la.date)}</td>
       <td className="truncate bg-sky-50/30 p-2 text-slate-600">{item.la.status}</td>
-      <td className="truncate bg-sky-50/30 p-2 font-medium text-slate-700">{formatCurrency(item.la.judgmentAward)}</td>
+      <td className="truncate bg-sky-50/30 p-2 font-medium text-slate-700">{formatJudgmentAward(item.la)}</td>
       <td className="truncate bg-sky-50/30 p-2 text-slate-600">
         {item.la.remarks}
         {item.la.remarks === "Other" && item.la.remarksSpecification && (
@@ -93,10 +117,10 @@ export function CaseTableRow({
         {formatProgress(item.caseProgress.la, item.caseProgress.laSpecification)}
       </td>
 
-      {/* NLRC */}
+        {/* NLRC */}
       <td className="bg-violet-50/30 p-2 text-slate-600">{formatDate(item.nlrc.date)}</td>
       <td className="truncate bg-violet-50/30 p-2 text-slate-600">{item.nlrc.status}</td>
-      <td className="truncate bg-violet-50/30 p-2 font-medium text-slate-700">{formatCurrency(item.nlrc.judgmentAward)}</td>
+      <td className="truncate bg-violet-50/30 p-2 font-medium text-slate-700">{formatJudgmentAward(item.nlrc)}</td>
       <td className="truncate bg-violet-50/30 p-2 text-slate-600">
         {item.nlrc.remarks}
         {item.nlrc.remarks === "Other" && item.nlrc.remarksSpecification && (
@@ -110,7 +134,7 @@ export function CaseTableRow({
       {/* COURT OF APPEALS */}
       <td className="bg-green-50/30 p-2 text-slate-600">{formatDate(item.ca.date)}</td>
       <td className="truncate bg-green-50/30 p-2 text-slate-600">{item.ca.status}</td>
-      <td className="truncate bg-green-50/30 p-2 font-medium text-slate-700">{formatCurrency(item.ca.judgmentAward)}</td>
+      <td className="truncate bg-green-50/30 p-2 font-medium text-slate-700">{formatJudgmentAward(item.ca)}</td>
       <td className="truncate bg-green-50/30 p-2 text-slate-600">
         {item.ca.remarks}
         {item.ca.remarks === "Other" && item.ca.remarksSpecification && (
@@ -124,7 +148,7 @@ export function CaseTableRow({
       {/* SUPREME COURT */}
       <td className="bg-pink-50/30 p-2 text-slate-600">{formatDate(item.sc.date)}</td>
       <td className="truncate bg-pink-50/30 p-2 text-slate-600">{item.sc.status}</td>
-      <td className="truncate bg-pink-50/30 p-2 font-medium text-slate-700">{formatCurrency(item.sc.judgmentAward)}</td>
+      <td className="truncate bg-pink-50/30 p-2 font-medium text-slate-700">{formatJudgmentAward(item.sc)}</td>
       <td className="truncate bg-pink-50/30 p-2 text-slate-600">
         {item.sc.remarks}
         {item.sc.remarks === "Other" && item.sc.remarksSpecification && (
