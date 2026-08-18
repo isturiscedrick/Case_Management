@@ -80,12 +80,12 @@ export function CaSection({
         </InfoBanner>
       )}
 
-      {senaFilled &&
+     {senaFilled &&
         nlrcEnabled &&
         !nlrcFilled && (
           <InfoBanner tone="info">
-            Complete all NLRC fields above (Date, Status,
-            Judgment Award, Remarks) to unlock this
+            Complete the required NLRC fields above (Date, Status,
+            Judgment Award) to unlock this
             section.
           </InfoBanner>
         )}

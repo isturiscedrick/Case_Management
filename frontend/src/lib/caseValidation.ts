@@ -20,13 +20,16 @@ function isStageFilled(stage: StageInfo): boolean {
     ? (stage.judgmentAwardComputedSpecification ?? "").trim() !== ""
     : (stage.judgmentAwardSpecification ?? "").trim() !== "";
 
+  // Remarks is optional — a stage only needs Date, Status, and Judgment
+  // Award (+ its specification) to count as filled. If Remarks IS set to
+  // "Other", its specification is still required.
   return (
     stage.date.trim() !== "" &&
     stage.status.trim() !== "" &&
     stage.judgmentAward.trim() !== "" &&
     judgmentAwardSpecFilled &&
-    stage.remarks.trim() !== "" &&
-    (stage.remarks !== "Other" ||
+    (stage.remarks.trim() === "" ||
+      stage.remarks !== "Other" ||
       (stage.remarksSpecification ?? "").trim() !== "")
   );
 }

@@ -72,11 +72,11 @@ export function LaSection({
       />
 
       {/* LA REQUIRED WARNING */}
-      {senaFilled && laRequired && !laFilled && (
+        {senaFilled && laRequired && !laFilled && (
         <InfoBanner tone="warning">
           SEnA Remarks is "Not Settled" or "Others" — LA fields
-          (Date, Status, Judgment Award, Remarks) are now required
-          to create the case. LA Progress is optional.
+          (Date, Status, Judgment Award) are now required
+          to create the case. Remarks and LA Progress are optional.
         </InfoBanner>
       )}
 

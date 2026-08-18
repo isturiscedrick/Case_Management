@@ -79,8 +79,8 @@ export function ScSection({
 
       {senaFilled && caEnabled && !caFilled && (
         <InfoBanner tone="info">
-          Complete all CA fields above (Date, Status, Judgment
-          Award, Remarks) to unlock this section.
+          Complete the required CA fields above (Date, Status, Judgment
+          Award) to unlock this section.
         </InfoBanner>
       )}
 
