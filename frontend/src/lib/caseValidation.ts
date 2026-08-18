@@ -13,7 +13,7 @@ const TO_BE_COMPUTED = "To be computed";
 /**
  * Checks whether all required fields in a stage are completed.
  */
-function isStageFilled(stage: StageInfo): boolean {
+export function isStageFilled(stage: StageInfo): boolean {
   const isComputed = stage.judgmentAward.trim() === TO_BE_COMPUTED;
 
   const judgmentAwardSpecFilled = isComputed

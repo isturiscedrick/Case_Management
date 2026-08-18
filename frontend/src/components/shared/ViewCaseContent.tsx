@@ -1,7 +1,7 @@
 import { Landmark, User } from "lucide-react";
 import type { CaseItem } from "@/types/case";
 import { formatDate, formatCurrency, getTotalJudgmentAward } from "@/lib/caseHelpers";
-import { getStageGates } from "@/lib/caseValidation";
+import { isStageFilled } from "@/lib/caseValidation";
 import { DetailRow } from "@/components/shared/DetailRow";
 import { StatusBadge } from "./StatusBadge";
 import { SectionHeader, STAGE_STYLES } from "@/components/dashboard/form/shared/SectionHeader";
@@ -38,7 +38,10 @@ function formatJudgmentAward(info: {
 export function ViewCaseContent({ item }: { item: CaseItem }) {
   const totalJudgmentAward = getTotalJudgmentAward(item);
 
-  const { laEnabled, nlrcEnabled, caEnabled, scEnabled } = getStageGates(item);
+  const laEnabled = isStageFilled(item.la);
+  const nlrcEnabled = isStageFilled(item.nlrc);
+  const caEnabled = isStageFilled(item.ca);
+  const scEnabled = isStageFilled(item.sc);
 
   return (
     <div className="space-y-4">
