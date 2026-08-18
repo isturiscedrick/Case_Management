@@ -130,7 +130,8 @@ export function CaseForm({
   };
 
   const confirmCloseCase = () => {
-    setTop("closed", true);
+    const today = new Date().toISOString().slice(0, 10);
+    onChange({ ...value, closed: true, closedDate: today });
     setShowCloseConfirm(false);
   };
 

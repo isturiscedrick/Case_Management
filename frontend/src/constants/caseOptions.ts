@@ -161,5 +161,6 @@ export const EMPTY_CASE: CaseDraft = {
   createdBy: "",
   createdAt: "",
   closed: false,
+  closedDate: "",
   archived: false,
 };

@@ -49,6 +49,8 @@ export default function CasesPage() {
   const [showArchived] = useState(false);
   const [filingDateStart, setFilingDateStart] = useState<string>("");
   const [filingDateEnd, setFilingDateEnd] = useState<string>("");
+  const [closedDateStart, setClosedDateStart] = useState<string>("");
+  const [closedDateEnd, setClosedDateEnd] = useState<string>("");
 
   /* =======================================================
      MODAL STATE
@@ -112,6 +114,16 @@ export default function CasesPage() {
         (!filingDateStart || item.filingDate >= filingDateStart) &&
         (!filingDateEnd || item.filingDate <= filingDateEnd);
 
+      // Only constrains results when the item is actually closed; a case
+      // with no closedDate set (not closed) is excluded once either bound
+      // is set, since it has nothing to compare against.
+      const matchesClosedDateRange =
+        !closedDateStart && !closedDateEnd
+          ? true
+          : !!item.closedDate &&
+            (!closedDateStart || item.closedDate >= closedDateStart) &&
+            (!closedDateEnd || item.closedDate <= closedDateEnd);
+
       const keyword = search.toLowerCase();
 
       const matchesSearch =
@@ -120,14 +132,15 @@ export default function CasesPage() {
         item.complainants.some((name) => name.toLowerCase().includes(keyword)) ||
         item.cause.some((cause) => cause.toLowerCase().includes(keyword));
 
-      return matchesArchived && matchesStatus && matchesCompany && matchesProgress && matchesFilingDateRange && matchesSearch;
+      return matchesArchived && matchesStatus && matchesCompany && matchesProgress && matchesFilingDateRange && matchesClosedDateRange && matchesSearch;
     })
     .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
 
   const activeFilterCount =
     [statusFilter, companyFilter, progressFilter, stageFilter].filter((filter) => filter !== "All").length +
     (search ? 1 : 0) +
-    (filingDateStart || filingDateEnd ? 1 : 0);
+    (filingDateStart || filingDateEnd ? 1 : 0) +
+    (closedDateStart || closedDateEnd ? 1 : 0);
 
   const activeCaseCount = cases.filter((item) => item.archived === showArchived).length;
 
@@ -163,7 +176,19 @@ export default function CasesPage() {
     setStageFilter("All");
     setFilingDateStart("");
     setFilingDateEnd("");
+    setClosedDateStart("");
+    setClosedDateEnd("");
     setSearch("");
+  };
+
+  // Clear Closed Date whenever Status moves away from "Closed", since the
+  // inputs are hidden and shouldn't silently keep filtering in the background.
+  const handleStatusFilterChange = (value: "All" | CaseStatusSummary) => {
+    setStatusFilter(value);
+    if (value !== "Closed") {
+      setClosedDateStart("");
+      setClosedDateEnd("");
+    }
   };
 
   /* =======================================================
@@ -345,7 +370,7 @@ export default function CasesPage() {
         search={search}
         onSearchChange={setSearch}
         statusFilter={statusFilter}
-        onStatusFilterChange={setStatusFilter}
+        onStatusFilterChange={handleStatusFilterChange}
         companyFilter={companyFilter}
         onCompanyFilterChange={setCompanyFilter}
         companyOptions={companyOptions}
@@ -359,6 +384,10 @@ export default function CasesPage() {
         onFilingDateStartChange={setFilingDateStart}
         filingDateEnd={filingDateEnd}
         onFilingDateEndChange={setFilingDateEnd}
+        closedDateStart={closedDateStart}
+        onClosedDateStartChange={setClosedDateStart}
+        closedDateEnd={closedDateEnd}
+        onClosedDateEndChange={setClosedDateEnd}
         filteredCount={filteredCases.length}
         totalCount={activeCaseCount}
         showArchived={showArchived}

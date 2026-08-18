@@ -108,6 +108,9 @@ export interface CaseItem {
   // Set true when "Close Case" is used in the form. Purely a lock flag —
   // does not affect status, remarks, or any stage's data.
   closed?: boolean;
+  // ISO date ("YYYY-MM-DD") when "Close Case" was confirmed. Only set
+  // alongside closed=true; used for the Closed Date range filter.
+  closedDate?: string;
 
   archived: boolean;
 }

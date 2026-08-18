@@ -34,6 +34,10 @@ export function CaseFilters({
   onFilingDateStartChange,
   filingDateEnd,
   onFilingDateEndChange,
+  closedDateStart,
+  onClosedDateStartChange,
+  closedDateEnd,
+  onClosedDateEndChange,
   filteredCount,
   totalCount,
   showArchived,
@@ -57,6 +61,10 @@ export function CaseFilters({
   onFilingDateStartChange: (value: string) => void;
   filingDateEnd: string;
   onFilingDateEndChange: (value: string) => void;
+  closedDateStart: string;
+  onClosedDateStartChange: (value: string) => void;
+  closedDateEnd: string;
+  onClosedDateEndChange: (value: string) => void;
   filteredCount: number;
   totalCount: number;
   showArchived: boolean;
@@ -175,6 +183,32 @@ export function CaseFilters({
               className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs text-slate-700 outline-none transition focus:border-slate-400 focus:bg-white"
             />
           </div>
+
+          {/* Closed Date — only shown once the user has filtered down to
+              Closed cases via the Status dropdown; irrelevant otherwise. */}
+          {statusFilter === "Closed" && (
+            <div className="flex items-center gap-1.5">
+              <label className="text-[11px] font-medium text-slate-500">Closed Date</label>
+
+              <input
+                type="date"
+                value={closedDateStart}
+                onChange={(event) => onClosedDateStartChange(event.target.value)}
+                max={closedDateEnd || undefined}
+                className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs text-slate-700 outline-none transition focus:border-slate-400 focus:bg-white"
+              />
+
+              <span className="text-[11px] text-slate-400">to</span>
+
+              <input
+                type="date"
+                value={closedDateEnd}
+                onChange={(event) => onClosedDateEndChange(event.target.value)}
+                min={closedDateStart || undefined}
+                className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs text-slate-700 outline-none transition focus:border-slate-400 focus:bg-white"
+              />
+            </div>
+          )}
         </div>
       )}
 
