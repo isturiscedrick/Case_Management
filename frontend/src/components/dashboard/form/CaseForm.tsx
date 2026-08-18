@@ -1,4 +1,4 @@
-import { Ban, Lock } from "lucide-react";
+import { Ban, Lock, Unlock } from "lucide-react";
 import { useState } from "react";
 
 import type {
@@ -124,6 +124,12 @@ export function CaseForm({
   // remarks, or any stage's data. It only disables the form.
   const isClosed = !!value.closed;
 
+  // A settled case (has a Total Paid category) locks all field sections
+  // just like Closed does, but leaves the Close Case button itself active —
+  // Close/Unclose is the only action still available once settled.
+  const isSettled = !!value.totalPaid?.category;
+  const isFieldsetLocked = isClosed || isSettled;
+
   const requestCloseCase = () => {
     if (isClosed) return;
     setShowCloseConfirm(true);
@@ -133,6 +139,13 @@ export function CaseForm({
     const today = new Date().toISOString().slice(0, 10);
     onChange({ ...value, closed: true, closedDate: today });
     setShowCloseConfirm(false);
+  };
+
+  // Uncloses immediately — no confirm dialog. Clears the lock flag and its
+  // date; edits are then subject to the normal stage restrictions (passed
+  // in via props from CasesPage.openEdit), not fully unlocked.
+  const uncloseCase = () => {
+    onChange({ ...value, closed: false, closedDate: "" });
   };
 
   const anyStageSettled =
@@ -168,23 +181,43 @@ export function CaseForm({
         <StageStepper steps={stageSteps} />
 
         {isClosed ? (
-          <span className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-500">
-            <Lock size={13} />
-            Case Closed — form locked
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-500">
+              <Lock size={13} />
+              Case Closed — form locked
+            </span>
+
+            <button
+              type="button"
+              onClick={uncloseCase}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-600 transition hover:bg-emerald-100"
+            >
+              <Unlock size={13} />
+              Unclose Case
+            </button>
+          </div>
         ) : (
-          <button
-            type="button"
-            onClick={requestCloseCase}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-medium text-rose-600 transition hover:bg-rose-100"
-          >
-            <Ban size={13} />
-            Close Case
-          </button>
+          <div className="flex items-center gap-2">
+            {isSettled && (
+              <span className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-500">
+                <Lock size={13} />
+                Settled — fields locked
+              </span>
+            )}
+
+            <button
+              type="button"
+              onClick={requestCloseCase}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-medium text-rose-600 transition hover:bg-rose-100"
+            >
+              <Ban size={13} />
+              Close Case
+            </button>
+          </div>
         )}
       </div>
 
-      <fieldset disabled={isClosed} className="contents">
+      <fieldset disabled={isFieldsetLocked} className="contents">
         <SenaSection
           value={value}
           onChange={onChange}
@@ -265,7 +298,11 @@ export function CaseForm({
       {showCloseConfirm && (
         <ConfirmDialog
           title="Close Case"
-          message="Close this case? The form will be locked from further edits. No existing SEnA or stage data will be changed."
+          message={
+            isSettled
+              ? "Close this settled case? This marks the case fully complete. No existing SEnA or stage data will be changed."
+              : "Close this case? The form will be locked from further edits. No existing SEnA or stage data will be changed."
+          }
           confirmLabel="Close Case"
           onConfirm={confirmCloseCase}
           onCancel={() => setShowCloseConfirm(false)}

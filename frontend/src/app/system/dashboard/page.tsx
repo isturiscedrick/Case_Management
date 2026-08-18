@@ -209,8 +209,10 @@ export default function CasesPage() {
   };
 
   const openEdit = (item: CaseItem) => {
-    // Resolved cases and closed cases are locked from further edits.
-    if (item.totalPaid?.category || item.closed) {
+    // Only closed cases are locked from further edits now — "Close Case" is
+    // the sole lock mechanism. A resolved (settled) case is no longer
+    // auto-locked; the user closes it explicitly when they're done.
+    if (item.closed) {
       return;
     }
 

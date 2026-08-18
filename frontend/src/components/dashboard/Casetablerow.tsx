@@ -43,12 +43,11 @@ export function CaseTableRow({
   // are read-only until restored.
   hideEdit?: boolean;
 }) {
-  // Update is locked once a case is resolved (has a Total Paid category) OR
-  // once it has been explicitly closed via "Close Case" in the form.
-  const isLocked = !!item.totalPaid?.category || !!item.closed;
-  const lockReason = item.closed
-    ? "This case is closed and can no longer be updated."
-    : "This case is resolved and can no longer be updated.";
+  // Update is locked only once a case has been explicitly closed via
+  // "Close Case" in the form. Being resolved (having a Total Paid category)
+  // no longer auto-locks editing — Close Case is the sole lock mechanism.
+  const isLocked = !!item.closed;
+  const lockReason = "This case is closed and can no longer be updated.";
 
   return (
     <tr className="group border-b border-slate-100 last:border-0 hover:bg-slate-50">
