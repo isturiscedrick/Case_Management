@@ -65,23 +65,49 @@ export function CaseForm({
 }) {
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
 
+  // Central guard: whenever the draft changes, if no stage is settled
+  // anymore, the Total Judgment Award category must not remain set.
+  // This catches every path that can un-settle a stage (SEnA remarks,
+  // LA/NLRC/CA/SC progress dropdowns, or any future one) without each
+  // section's onChange needing its own bespoke reset logic. All setters
+  // in this file, and every onChange passed down to a stage section,
+  // route through this instead of calling the raw onChange prop directly.
+  const guardedOnChange = (next: CaseDraft) => {
+    const nextAnyStageSettled =
+      next.remarks === "Settled" ||
+      next.caseProgress.la === "Settled" ||
+      next.caseProgress.nlrc === "Settled" ||
+      next.caseProgress.ca === "Settled" ||
+      next.caseProgress.sc === "Settled";
+
+    if (!nextAnyStageSettled && next.totalPaid.category) {
+      onChange({
+        ...next,
+        totalPaid: { ...next.totalPaid, category: "" },
+      });
+      return;
+    }
+
+    onChange(next);
+  };
+
   const setTop = <K extends keyof CaseDraft>(key: K, v: CaseDraft[K]) => {
-    onChange({ ...value, [key]: v });
+    guardedOnChange({ ...value, [key]: v });
   };
   const setLa = <K extends keyof LaInfo>(key: K, v: LaInfo[K]) => {
-    onChange({ ...value, la: { ...value.la, [key]: v } });
+    guardedOnChange({ ...value, la: { ...value.la, [key]: v } });
   };
   const setNlrc = <K extends keyof NlrcInfo>(key: K, v: NlrcInfo[K]) => {
-    onChange({ ...value, nlrc: { ...value.nlrc, [key]: v } });
+    guardedOnChange({ ...value, nlrc: { ...value.nlrc, [key]: v } });
   };
   const setCa = <K extends keyof CaInfo>(key: K, v: CaInfo[K]) => {
-    onChange({ ...value, ca: { ...value.ca, [key]: v } });
+    guardedOnChange({ ...value, ca: { ...value.ca, [key]: v } });
   };
   const setSc = <K extends keyof ScInfo>(key: K, v: ScInfo[K]) => {
-    onChange({ ...value, sc: { ...value.sc, [key]: v } });
+    guardedOnChange({ ...value, sc: { ...value.sc, [key]: v } });
   };
   const setTotalPaidCategory = (category: TotalPaidCategory | "") => {
-    onChange({
+    guardedOnChange({
       ...value,
       totalPaid: { ...value.totalPaid, category },
     });
@@ -89,7 +115,7 @@ export function CaseForm({
 
   const setProgress = (key: "la" | "nlrc" | "ca" | "sc", v: StageProgress) => {
     const specKey = `${key}Specification` as const;
-    onChange({
+    guardedOnChange({
       ...value,
       caseProgress: {
         ...value.caseProgress,
@@ -101,7 +127,7 @@ export function CaseForm({
 
   const setProgressSpecification = (key: "la" | "nlrc" | "ca" | "sc", v: string) => {
     const specKey = `${key}Specification` as const;
-    onChange({
+    guardedOnChange({
       ...value,
       caseProgress: {
         ...value.caseProgress,
@@ -410,7 +436,7 @@ export function CaseForm({
         {activeStep === "sena" && (
           <SenaSection
             value={value}
-            onChange={onChange}
+            onChange={guardedOnChange}
             companies={companies}
             restrictSenaEditing={restrictSenaEditing}
             restrictSenaRemarksEditing={restrictSenaRemarksEditing}
@@ -421,7 +447,7 @@ export function CaseForm({
         {activeStep === "la" && (
           <LaSection
             value={value}
-            onChange={onChange}
+            onChange={guardedOnChange}
             setLa={setLa}
             setProgressSpecification={setProgressSpecification}
             senaFilled={senaFilled}
@@ -437,7 +463,7 @@ export function CaseForm({
         {activeStep === "nlrc" && (
           <NlrcSection
             value={value}
-            onChange={onChange}
+            onChange={guardedOnChange}
             setNlrc={setNlrc}
             setProgressSpecification={setProgressSpecification}
             senaFilled={senaFilled}
@@ -455,7 +481,7 @@ export function CaseForm({
         {activeStep === "ca" && (
           <CaSection
             value={value}
-            onChange={onChange}
+            onChange={guardedOnChange}
             setCa={setCa}
             setProgressSpecification={setProgressSpecification}
             senaFilled={senaFilled}
@@ -473,7 +499,7 @@ export function CaseForm({
         {activeStep === "sc" && (
           <ScSection
             value={value}
-            onChange={onChange}
+            onChange={guardedOnChange}
             setSc={setSc}
             setProgress={setProgress}
             setProgressSpecification={setProgressSpecification}
