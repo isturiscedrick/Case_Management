@@ -168,7 +168,7 @@ export function LaSection({
             {/* ================================================= */}
 
             <fieldset
-              disabled={restrictLaDetailsEditing}
+              disabled={restrictLaProgressEditing}
               className="contents"
             >
               <Field label="Remarks">
@@ -220,7 +220,7 @@ export function LaSection({
 
           {value.la.remarks === "Other" && (
             <fieldset
-              disabled={restrictLaDetailsEditing}
+              disabled={restrictLaProgressEditing}
               className="contents"
             >
               <div className="mt-3 grid gap-4 sm:grid-cols-3">

@@ -200,7 +200,7 @@ export function CaSection({
             {/* Remarks */}
 
             <fieldset
-              disabled={restrictCaDetailsEditing}
+              disabled={restrictCaProgressEditing}
               className="contents"
             >
               <Field label="Remarks">
@@ -252,7 +252,7 @@ export function CaSection({
 
           {value.ca.remarks === "Other" && (
             <fieldset
-              disabled={restrictCaDetailsEditing}
+              disabled={restrictCaProgressEditing}
               className="contents"
             >
               <div className="mt-3 grid gap-4 sm:grid-cols-3">

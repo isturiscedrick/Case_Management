@@ -127,25 +127,6 @@ export function CaseForm({
   const canProceedPastNlrc = value.caseProgress.nlrc === "Not Settled" || value.caseProgress.nlrc === "Others";
   const canProceedPastCa = value.caseProgress.ca === "Not Settled" || value.caseProgress.ca === "Others";
 
-  const isClosed = !!value.closed;
-  const isSettled = !!value.totalPaid?.category;
-  const isFieldsetLocked = isClosed || isSettled;
-
-  const requestCloseCase = () => {
-    if (isClosed) return;
-    setShowCloseConfirm(true);
-  };
-
-  const confirmCloseCase = () => {
-    const today = new Date().toISOString().slice(0, 10);
-    onChange({ ...value, closed: true, closedDate: today });
-    setShowCloseConfirm(false);
-  };
-
-  const uncloseCase = () => {
-    onChange({ ...value, closed: false, closedDate: "" });
-  };
-
   const anyStageSettled =
     value.remarks === "Settled" ||
     value.caseProgress.la === "Settled" ||
@@ -197,6 +178,10 @@ export function CaseForm({
   const [activeStep, setActiveStep] = useState<WizardStep>(computeInitialStep);
   const [maxReachedIndex, setMaxReachedIndex] = useState<number>(STEP_ORDER.indexOf(activeStep));
 
+  const isClosed = !!value.closed;
+  const isSettled = !!value.totalPaid?.category;
+  const isFieldsetLocked = isClosed || (isSettled && activeStep === "review");
+
   // Only steps the user can actually fill right now — locked/future
   // stages are omitted entirely rather than shown grayed out. A step
   // that was already reached stays visible even if its gate condition
@@ -221,18 +206,17 @@ export function CaseForm({
   const isFirstStep = currentIndex === 0;
   const isLastStep = currentIndex === STEP_ORDER.length - 1;
 
-  // Dedicated completeness check for whichever stage is active. Reuses
-  // isStageFilled (imported from caseValidation.ts, same rule Save
-  // already enforces) rather than duplicating field checks here, so
-  // there's one source of truth for "all required fields in this stage
-  // are filled." SEnA reuses senaFilled for the same reason. Applies to
-  // every step including SC, which wasn't gated before this change.
-function isCurrentStageFullyFilled(): boolean {
-  const remarksComplete =
-    value.remarks.trim() !== "" &&
-    (value.remarks !== "Others" && value.remarks !== "Not Settled"
-      ? true
-      : (value.remarkSpecification ?? "").trim() !== "");
+  // Dedicated completeness check for the wizard's Next button only — this
+  // is stricter than Save's validation (getCaseDraftErrors /
+  // isStageFilled in caseValidation.ts), which still treats Remarks and
+  // Progress as optional. That Save-time rule is untouched; this function
+  // adds nothing to it and lives only here, gating navigation, not saving.
+  function isCurrentStageFullyFilled(): boolean {
+    const remarksComplete =
+      value.remarks.trim() !== "" &&
+      (value.remarks !== "Others" && value.remarks !== "Not Settled"
+        ? true
+        : (value.remarkSpecification ?? "").trim() !== "");
 
     function progressComplete(progress: StageProgress, specification?: string) {
       return (
@@ -338,7 +322,13 @@ function isCurrentStageFullyFilled(): boolean {
 
   function goBack() {
     if (isFirstStep) return;
-    setActiveStep(STEP_ORDER[currentIndex - 1]);
+    for (let i = currentIndex - 1; i >= 0; i--) {
+      const candidate = STEP_ORDER[i];
+      if (i === 0 || isStepVisible(candidate)) {
+        setActiveStep(candidate);
+        return;
+      }
+    }
   }
 
   function goNext() {
@@ -354,6 +344,21 @@ function isCurrentStageFullyFilled(): boolean {
       }
     }
   }
+
+  const requestCloseCase = () => {
+    if (isClosed) return;
+    setShowCloseConfirm(true);
+  };
+
+  const confirmCloseCase = () => {
+    const today = new Date().toISOString().slice(0, 10);
+    onChange({ ...value, closed: true, closedDate: today });
+    setShowCloseConfirm(false);
+  };
+
+  const uncloseCase = () => {
+    onChange({ ...value, closed: false, closedDate: "" });
+  };
 
   return (
     <div className="space-y-5">

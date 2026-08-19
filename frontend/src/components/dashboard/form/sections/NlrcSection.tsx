@@ -184,7 +184,7 @@ export function NlrcSection({
 
             {/* Remarks */}
             <fieldset
-              disabled={restrictNlrcDetailsEditing}
+              disabled={restrictNlrcProgressEditing}
               className="contents"
             >
               <Field label="Remarks">
@@ -235,7 +235,7 @@ export function NlrcSection({
 
           {value.nlrc.remarks === "Other" && (
             <fieldset
-              disabled={restrictNlrcDetailsEditing}
+              disabled={restrictNlrcProgressEditing}
               className="contents"
             >
               <div className="mt-3 grid gap-4 sm:grid-cols-3">
