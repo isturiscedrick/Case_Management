@@ -1,4 +1,4 @@
-import { Ban, Lock, Unlock } from "lucide-react";
+import { Ban, Lock, Unlock, ArrowLeft, ArrowRight } from "lucide-react";
 import { useState } from "react";
 
 import type {
@@ -22,9 +22,15 @@ import {
   StageStepper,
   type StageStep,
 } from "./shared/StageStepper";
-import { getStageGates } from "@/lib/caseValidation";
+import { getStageGates, isStageFilled } from "@/lib/caseValidation";
 import { getTotalJudgmentAward } from "@/lib/caseHelpers";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
+
+// Wizard steps. "review" is the existing Total Judgment Award section,
+// which was previously always rendered unconditionally below SC — it's
+// now its own step instead of always being on-screen.
+type WizardStep = "sena" | "la" | "nlrc" | "ca" | "sc" | "review";
+const STEP_ORDER: WizardStep[] = ["sena", "la", "nlrc", "ca", "sc", "review"];
 
 export function CaseForm({
   value,
@@ -104,6 +110,7 @@ export function CaseForm({
     });
   };
 
+  // --- Unchanged gating logic (same source of truth as before) ----------
   const {
     senaFilled,
     laEnabled,
@@ -120,13 +127,7 @@ export function CaseForm({
   const canProceedPastNlrc = value.caseProgress.nlrc === "Not Settled" || value.caseProgress.nlrc === "Others";
   const canProceedPastCa = value.caseProgress.ca === "Not Settled" || value.caseProgress.ca === "Others";
 
-  // "Closed" is a standalone lock flag — it never overwrites status,
-  // remarks, or any stage's data. It only disables the form.
   const isClosed = !!value.closed;
-
-  // A settled case (has a Total Paid category) locks all field sections
-  // just like Closed does, but leaves the Close Case button itself active —
-  // Close/Unclose is the only action still available once settled.
   const isSettled = !!value.totalPaid?.category;
   const isFieldsetLocked = isClosed || isSettled;
 
@@ -141,9 +142,6 @@ export function CaseForm({
     setShowCloseConfirm(false);
   };
 
-  // Uncloses immediately — no confirm dialog. Clears the lock flag and its
-  // date; edits are then subject to the normal stage restrictions (passed
-  // in via props from CasesPage.openEdit), not fully unlocked.
   const uncloseCase = () => {
     onChange({ ...value, closed: false, closedDate: "" });
   };
@@ -166,6 +164,7 @@ export function CaseForm({
     !(restrictLaProgressOnly && !canProceedPastLa) &&
     !(restrictNlrcProgressOnly && !canProceedPastNlrc) &&
     !(restrictCaProgressOnly && !canProceedPastCa);
+  // -----------------------------------------------------------------------
 
   const stageSteps: StageStep[] = [
     { key: "sena", label: "SENA", status: senaFilled ? "done" : "current" },
@@ -175,10 +174,195 @@ export function CaseForm({
     { key: "sc", label: "SC", status: !scVisible ? "locked" : "current" },
   ];
 
+  // A step is reachable if its underlying section is currently visible
+  // (same booleans used for inline rendering before), or "review" which
+  // was always rendered regardless of stage completion previously.
+  function isStepVisible(step: WizardStep): boolean {
+    if (step === "sena") return true;
+    if (step === "la") return laVisible;
+    if (step === "nlrc") return nlrcVisible;
+    if (step === "ca") return caVisible;
+    if (step === "sc") return scVisible;
+    return true; // review
+  }
+
+  // Default to the first not-yet-done visible step, so re-opening a
+  // partially filled case lands the user where they left off.
+  function computeInitialStep(): WizardStep {
+    const firstIncomplete = stageSteps.find((s) => s.status !== "done" && s.status !== "locked");
+    if (firstIncomplete) return firstIncomplete.key as WizardStep;
+    return "review";
+  }
+
+  const [activeStep, setActiveStep] = useState<WizardStep>(computeInitialStep);
+  const [maxReachedIndex, setMaxReachedIndex] = useState<number>(STEP_ORDER.indexOf(activeStep));
+
+  // Only steps the user can actually fill right now — locked/future
+  // stages are omitted entirely rather than shown grayed out. A step
+  // that was already reached stays visible even if its gate condition
+  // would now say otherwise, so navigating back still works.
+  const visibleStageSteps = stageSteps.filter(
+    (s) => isStepVisible(s.key as WizardStep) || STEP_ORDER.indexOf(s.key as WizardStep) <= maxReachedIndex
+  );
+
+  function canGoToStep(step: WizardStep): boolean {
+    const index = STEP_ORDER.indexOf(step);
+    return index <= maxReachedIndex || isStepVisible(step);
+  }
+
+  function goToStep(step: WizardStep) {
+    if (!canGoToStep(step)) return;
+    setActiveStep(step);
+    const index = STEP_ORDER.indexOf(step);
+    if (index > maxReachedIndex) setMaxReachedIndex(index);
+  }
+
+  const currentIndex = STEP_ORDER.indexOf(activeStep);
+  const isFirstStep = currentIndex === 0;
+  const isLastStep = currentIndex === STEP_ORDER.length - 1;
+
+  // Dedicated completeness check for whichever stage is active. Reuses
+  // isStageFilled (imported from caseValidation.ts, same rule Save
+  // already enforces) rather than duplicating field checks here, so
+  // there's one source of truth for "all required fields in this stage
+  // are filled." SEnA reuses senaFilled for the same reason. Applies to
+  // every step including SC, which wasn't gated before this change.
+function isCurrentStageFullyFilled(): boolean {
+  const remarksComplete =
+    value.remarks.trim() !== "" &&
+    (value.remarks !== "Others" && value.remarks !== "Not Settled"
+      ? true
+      : (value.remarkSpecification ?? "").trim() !== "");
+
+    function progressComplete(progress: StageProgress, specification?: string) {
+      return (
+        progress.trim() !== "" &&
+        (progress !== "Others" && progress !== "Not Settled"
+          ? true
+          : (specification ?? "").trim() !== "")
+      );
+    }
+
+    if (activeStep === "sena") {
+      const handlingPersonnelComplete =
+        value.handlingPersonnel === "Others"
+          ? (value.handlingPersonnelSpecification ?? "").trim() !== ""
+          : (value.handlingPersonnel ?? "").trim() !== "";
+
+      const causeComplete =
+        value.cause.length > 0 &&
+        (!value.cause.includes("Others") ||
+          (value.causeSpecification ?? "").trim() !== "");
+
+      const senaComplete =
+        value.company.trim() !== "" &&
+        value.status.trim() !== "" &&
+        value.caseTitle.trim() !== "" &&
+        value.caseNo.trim() !== "" &&
+        value.complainants.every((c) => c.trim() !== "") &&
+        value.venue.trim() !== "" &&
+        handlingPersonnelComplete &&
+        causeComplete &&
+        value.filingDate.trim() !== "";
+
+      return senaComplete && remarksComplete;
+    }
+
+    if (activeStep === "la") {
+      const laRemarksComplete =
+        value.la.remarks.trim() !== "" &&
+        (value.la.remarks !== "Other" ||
+          (value.la.remarksSpecification ?? "").trim() !== "");
+
+      const laStageComplete =
+        value.la.date.trim() !== "" &&
+        value.la.status.trim() !== "" &&
+        value.la.judgmentAward.trim() !== "" &&
+        laRemarksComplete;
+
+      return laStageComplete && progressComplete(value.caseProgress.la, value.caseProgress.laSpecification);
+    }
+
+    if (activeStep === "nlrc") {
+      const nlrcRemarksComplete =
+        value.nlrc.remarks.trim() !== "" &&
+        (value.nlrc.remarks !== "Other" ||
+          (value.nlrc.remarksSpecification ?? "").trim() !== "");
+
+      const nlrcStageComplete =
+        value.nlrc.date.trim() !== "" &&
+        value.nlrc.status.trim() !== "" &&
+        value.nlrc.judgmentAward.trim() !== "" &&
+        nlrcRemarksComplete;
+
+      return (
+        nlrcStageComplete &&
+        progressComplete(value.caseProgress.nlrc, value.caseProgress.nlrcSpecification)
+      );
+    }
+
+    if (activeStep === "ca") {
+      const caRemarksComplete =
+        value.ca.remarks.trim() !== "" &&
+        (value.ca.remarks !== "Other" ||
+          (value.ca.remarksSpecification ?? "").trim() !== "");
+
+      const caStageComplete =
+        value.ca.date.trim() !== "" &&
+        value.ca.status.trim() !== "" &&
+        value.ca.judgmentAward.trim() !== "" &&
+        caRemarksComplete;
+
+      return caStageComplete && progressComplete(value.caseProgress.ca, value.caseProgress.caSpecification);
+    }
+
+    if (activeStep === "sc") {
+      const scRemarksComplete =
+        value.sc.remarks.trim() !== "" &&
+        (value.sc.remarks !== "Other" ||
+          (value.sc.remarksSpecification ?? "").trim() !== "");
+
+      const scStageComplete =
+        value.sc.date.trim() !== "" &&
+        value.sc.status.trim() !== "" &&
+        value.sc.judgmentAward.trim() !== "" &&
+        scRemarksComplete;
+
+      return scStageComplete && progressComplete(value.caseProgress.sc, value.caseProgress.scSpecification);
+    }
+
+    return true; // review — no further gate before Save
+  }
+
+  const isCurrentStepComplete = isCurrentStageFullyFilled();
+
+  function goBack() {
+    if (isFirstStep) return;
+    setActiveStep(STEP_ORDER[currentIndex - 1]);
+  }
+
+  function goNext() {
+    if (isLastStep) return;
+    // Skip forward past any steps that aren't visible yet (mirrors the
+    // previous conditional-rendering behavior — a hidden section was
+    // simply not shown, never a dead stop).
+    for (let i = currentIndex + 1; i < STEP_ORDER.length; i++) {
+      const candidate = STEP_ORDER[i];
+      if (isStepVisible(candidate) || i === STEP_ORDER.length - 1) {
+        goToStep(candidate);
+        return;
+      }
+    }
+  }
+
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <StageStepper steps={stageSteps} />
+    <div className="space-y-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <StageStepper
+          steps={visibleStageSteps}
+          activeKey={activeStep === "review" ? undefined : activeStep}
+          onStepClick={(key) => goToStep(key as WizardStep)}
+        />
 
         {isClosed ? (
           <div className="flex items-center gap-2">
@@ -218,82 +402,128 @@ export function CaseForm({
       </div>
 
       <fieldset disabled={isFieldsetLocked} className="contents">
-        <SenaSection
-          value={value}
-          onChange={onChange}
-          companies={companies}
-          restrictSenaEditing={restrictSenaEditing}
-          restrictSenaRemarksEditing={restrictSenaRemarksEditing}
-          setTop={setTop}
-        />
+        {activeStep === "sena" && (
+          <SenaSection
+            value={value}
+            onChange={onChange}
+            companies={companies}
+            restrictSenaEditing={restrictSenaEditing}
+            restrictSenaRemarksEditing={restrictSenaRemarksEditing}
+            setTop={setTop}
+          />
+        )}
 
-        <LaSection
-          value={value}
-          onChange={onChange}
-          setLa={setLa}
-          setProgressSpecification={setProgressSpecification}
-          senaFilled={senaFilled}
-          laRequired={laRequired}
-          laFilled={laFilled}
-          laVisible={laVisible}
-          restrictLaDetailsEditing={restrictLaDetailsEditing}
-          restrictLaProgressOnly={restrictLaProgressOnly}
-          restrictLaProgressEditing={restrictLaProgressEditing}
-        />
+        {activeStep === "la" && (
+          <LaSection
+            value={value}
+            onChange={onChange}
+            setLa={setLa}
+            setProgressSpecification={setProgressSpecification}
+            senaFilled={senaFilled}
+            laRequired={laRequired}
+            laFilled={laFilled}
+            laVisible={laVisible}
+            restrictLaDetailsEditing={restrictLaDetailsEditing}
+            restrictLaProgressOnly={restrictLaProgressOnly}
+            restrictLaProgressEditing={restrictLaProgressEditing}
+          />
+        )}
 
-        <NlrcSection
-          value={value}
-          onChange={onChange}
-          setNlrc={setNlrc}
-          setProgressSpecification={setProgressSpecification}
-          senaFilled={senaFilled}
-          laRequired={laRequired}
-          laFilled={laFilled}
-          nlrcEnabled={nlrcEnabled}
-          nlrcFilled={nlrcFilled}
-          nlrcVisible={nlrcVisible}
-          restrictNlrcDetailsEditing={restrictNlrcDetailsEditing}
-          restrictNlrcProgressOnly={restrictNlrcProgressOnly}
-          restrictNlrcProgressEditing={restrictNlrcProgressEditing}
-        />
+        {activeStep === "nlrc" && (
+          <NlrcSection
+            value={value}
+            onChange={onChange}
+            setNlrc={setNlrc}
+            setProgressSpecification={setProgressSpecification}
+            senaFilled={senaFilled}
+            laRequired={laRequired}
+            laFilled={laFilled}
+            nlrcEnabled={nlrcEnabled}
+            nlrcFilled={nlrcFilled}
+            nlrcVisible={nlrcVisible}
+            restrictNlrcDetailsEditing={restrictNlrcDetailsEditing}
+            restrictNlrcProgressOnly={restrictNlrcProgressOnly}
+            restrictNlrcProgressEditing={restrictNlrcProgressEditing}
+          />
+        )}
 
-        <CaSection
-          value={value}
-          onChange={onChange}
-          setCa={setCa}
-          setProgressSpecification={setProgressSpecification}
-          senaFilled={senaFilled}
-          nlrcEnabled={nlrcEnabled}
-          nlrcFilled={nlrcFilled}
-          caEnabled={caEnabled}
-          caFilled={caFilled}
-          caVisible={caVisible}
-          restrictCaDetailsEditing={restrictCaDetailsEditing}
-          restrictCaProgressOnly={restrictCaProgressOnly}
-          restrictCaProgressEditing={restrictCaProgressEditing}
-        />
+        {activeStep === "ca" && (
+          <CaSection
+            value={value}
+            onChange={onChange}
+            setCa={setCa}
+            setProgressSpecification={setProgressSpecification}
+            senaFilled={senaFilled}
+            nlrcEnabled={nlrcEnabled}
+            nlrcFilled={nlrcFilled}
+            caEnabled={caEnabled}
+            caFilled={caFilled}
+            caVisible={caVisible}
+            restrictCaDetailsEditing={restrictCaDetailsEditing}
+            restrictCaProgressOnly={restrictCaProgressOnly}
+            restrictCaProgressEditing={restrictCaProgressEditing}
+          />
+        )}
 
-        <ScSection
-          value={value}
-          onChange={onChange}
-          setSc={setSc}
-          setProgress={setProgress}
-          setProgressSpecification={setProgressSpecification}
-          setTotalPaidCategory={setTotalPaidCategory}
-          senaFilled={senaFilled}
-          caEnabled={caEnabled}
-          caFilled={caFilled}
-          scEnabled={scEnabled}
-          scVisible={scVisible}
-        />
+        {activeStep === "sc" && (
+          <ScSection
+            value={value}
+            onChange={onChange}
+            setSc={setSc}
+            setProgress={setProgress}
+            setProgressSpecification={setProgressSpecification}
+            setTotalPaidCategory={setTotalPaidCategory}
+            senaFilled={senaFilled}
+            caEnabled={caEnabled}
+            caFilled={caFilled}
+            scEnabled={scEnabled}
+            scVisible={scVisible}
+          />
+        )}
 
-        <TotalJudgmentAwardSection
-          value={value}
-          totalJudgmentAward={totalJudgmentAward}
-          anyStageSettled={anyStageSettled}
-          setTotalPaidCategory={setTotalPaidCategory}
-        />
+        {activeStep === "review" && (
+          <TotalJudgmentAwardSection
+            value={value}
+            totalJudgmentAward={totalJudgmentAward}
+            anyStageSettled={anyStageSettled}
+            setTotalPaidCategory={setTotalPaidCategory}
+          />
+        )}
       </fieldset>
+
+      {/* Step navigation — Save/Cancel remain in the modal footer */}
+      <div className="flex items-center justify-between border-t border-slate-100 pt-4">
+        <button
+          type="button"
+          onClick={goBack}
+          disabled={isFirstStep}
+          className={`inline-flex items-center gap-1.5 rounded-lg border px-3.5 py-2 text-xs font-medium transition ${
+            isFirstStep
+              ? "cursor-not-allowed border-slate-100 text-slate-300"
+              : "border-slate-200 text-slate-600 hover:bg-slate-50"
+          }`}
+        >
+          <ArrowLeft size={14} />
+          Back
+        </button>
+
+        {!isLastStep && (
+          <button
+            type="button"
+            onClick={goNext}
+            disabled={!isCurrentStepComplete}
+            title={!isCurrentStepComplete ? "Complete this stage's required fields to continue." : undefined}
+            className={`inline-flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-xs font-medium transition ${
+              isCurrentStepComplete
+                ? "bg-[#12331F] text-white hover:bg-[#1B4A2C]"
+                : "cursor-not-allowed bg-slate-200 text-slate-400"
+            }`}
+          >
+            Next
+            <ArrowRight size={14} />
+          </button>
+        )}
+      </div>
 
       {showCloseConfirm && (
         <ConfirmDialog
