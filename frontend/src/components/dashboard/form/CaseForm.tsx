@@ -1,6 +1,5 @@
 import { Ban, Lock, Unlock, ArrowLeft, ArrowRight } from "lucide-react";
-import { useState } from "react";
-
+import { useEffect, useState } from "react";
 import type {
   CaseDraft,
   LaInfo,
@@ -204,21 +203,34 @@ export function CaseForm({
   const [activeStep, setActiveStep] = useState<WizardStep>(computeInitialStep);
   const [maxReachedIndex, setMaxReachedIndex] = useState<number>(STEP_ORDER.indexOf(activeStep));
 
+  // Clamp maxReachedIndex back down whenever a later stage's data gets reset
+  // (e.g. SEnA remarks or an earlier stage's progress flips back to
+  // "Not Settled"/"Others", cascading a reset through LA/NLRC/CA/SC).
+  // Without this, visibleStageSteps keeps showing stale steps the header
+  // already reset out from under, since maxReachedIndex only ever grows
+  // via goToStep and nothing else ever pulls it back down.
+  useEffect(() => {
+    const highestVisibleIndex = STEP_ORDER.reduce(
+      (acc, step, index) => (isStepVisible(step) ? index : acc),
+      0
+    );
+
+    if (highestVisibleIndex < maxReachedIndex) {
+      setMaxReachedIndex(highestVisibleIndex);
+
+      if (STEP_ORDER.indexOf(activeStep) > highestVisibleIndex) {
+        setActiveStep(STEP_ORDER[highestVisibleIndex]);
+      }
+    }
+  }, [laVisible, nlrcVisible, caVisible, scVisible]);
   const isClosed = !!value.closed;
   const isSettled = !!value.totalPaid?.category;
   const isFieldsetLocked = isClosed || (isSettled && activeStep === "review");
 
-  // Only steps the user can actually fill right now — locked/future
-  // stages are omitted entirely rather than shown grayed out. A step
-  // that was already reached stays visible even if its gate condition
-  // would now say otherwise, so navigating back still works.
-  const visibleStageSteps = stageSteps.filter(
-    (s) => isStepVisible(s.key as WizardStep) || STEP_ORDER.indexOf(s.key as WizardStep) <= maxReachedIndex
-  );
+  const visibleStageSteps = stageSteps.filter((s) => isStepVisible(s.key as WizardStep));
 
   function canGoToStep(step: WizardStep): boolean {
-    const index = STEP_ORDER.indexOf(step);
-    return index <= maxReachedIndex || isStepVisible(step);
+    return isStepVisible(step);
   }
 
   function goToStep(step: WizardStep) {
