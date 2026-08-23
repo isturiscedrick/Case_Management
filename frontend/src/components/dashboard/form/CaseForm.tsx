@@ -174,7 +174,7 @@ export function CaseForm({
     if (step === "nlrc") return nlrcVisible;
     if (step === "ca") return caVisible;
     if (step === "sc") return scVisible;
-    return anyStageSettled; // review
+    return anyStageSettled; 
   }
 
   function computeInitialStep(): WizardStep {
