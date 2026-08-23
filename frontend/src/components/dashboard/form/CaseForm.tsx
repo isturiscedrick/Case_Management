@@ -325,7 +325,7 @@ export function CaseForm({
       return scStageComplete && progressComplete(value.caseProgress.sc, value.caseProgress.scSpecification);
     }
 
-    return true; // review
+    return true; 
   }
 
   const isCurrentStepComplete = isCurrentStageFullyFilled();
