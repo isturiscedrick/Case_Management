@@ -423,6 +423,7 @@ export default function CasesPage() {
       {/* EDIT CASE MODAL */}
       {modal === "edit" && activeCase && (
         <CaseFormModal
+          key={activeCase.id}
           mode="edit"
           activeCase={activeCase}
           draft={draft}

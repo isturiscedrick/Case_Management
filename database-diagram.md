@@ -1,6 +1,6 @@
 # Case Management Database Diagram
 
-This ERD is grounded directly in the frontend's actual data model — `types/case.ts`, `constants/caseOptions.ts`, `context/CasesContext.tsx`, and `data/historyEvents.ts` — rather than a general-purpose case-tracking schema. It treats users, companies, and complainants as API-fed reference data coming from your supervisor's service, while keeping the local database focused on cases, per-stage decisions, joins, and case activity history.
+This ERD is grounded directly in the frontend's actual data model — `types/case.ts`, `constants/caseOptions.ts`, `context/CasesContext.tsx`, and `data/historyEvents.ts` — rather than a general-purpose case-tracking schema. It treats companies and complainants as API-fed reference data coming from your supervisor's service, while keeping the local database focused on cases, per-stage decisions, joins, case activity history, and now a first-class `users` table with roles.
 
 ```mermaid
 erDiagram
@@ -24,7 +24,9 @@ erDiagram
 
   USERS {
     bigint user_id PK
-    varchar username UK
+    varchar full_name
+    user_role role
+    timestamp created_at
   }
 
   COMPLAINANTS {
@@ -57,6 +59,8 @@ erDiagram
     varchar remark_specification
     decimal total_paid_amount
     total_paid_category total_paid_category
+    boolean closed
+    date closed_date
     bigint created_by_user_id FK
     varchar created_by_username
     timestamp created_at
@@ -117,20 +121,28 @@ erDiagram
 - `judgment_award_mode`: `amount`, `to_be_computed` — an award is either a numeric amount (with `judgment_award_amount_specification` as its basis note) or the literal `"To be computed"` (with `judgment_award_computed_specification` as its basis note); never both
 - `total_paid_category` (`CaseItem.totalPaid.category`): `Judgment-Award-L`, `Judgment-Award-W`, `Settlement`
 - `case_history_action` (`HistoryEntry.action`): `created`, `updated`, `archived`, `restored`
+- `user_role` (new): `admin`, `handling_personnel` — not yet reflected anywhere in the frontend (there is no role field or role-gated UI today); added ahead of real auth so `users` doesn't need a breaking migration once login differentiates roles.
 
 ## Design Notes
 
-- `companies_reference`, `users`, and `complainants` are API-fed reference data, not local manual master tables.
+- `companies_reference` and `complainants` are API-fed reference data, not local manual master tables. `users` is now a locally-owned table (see below) rather than API-fed, since role needs to live somewhere authoritative for this app.
 - `company_name`, `created_by_username`, `updated_by_username`, and `case_history.company`/`case_history.case_no` are intentional snapshots for history, matching the pattern already used for reference-fed data elsewhere.
 - `case_complainants` and `case_causes` are both join tables, since a case can have multiple complainants **and** multiple causes of action (`CaseDraft.complainants: string[]` and `CaseDraft.cause: string[]`).
-- `decisions` stores at most one row per `(case_id, level)` — LA, NLRC, CA, SC — since the frontend models each stage as a single keyed object (`la`, `nlrc`, `ca`, `sc`), never an array. Enforce with a unique constraint on `(case_id, level)`.
+- `decisions` stores at most one row per `(case_id, level)` — LA, NLRC, CA, SC — since the frontend models each stage as a single keyed object (`la`, `nlrc`, `ca`, `sc`), never an array. Enforced with a unique constraint on `(case_id, level)`.
 - SEnA has no `decisions` row of its own — its fields (`company`, `status`, `case_title`, `case_no`, `venue`, `handling_personnel`, `cause`, `filing_date`, `remarks`) live directly on `cases`, matching how `CaseDraft` structures them.
 - `total_paid_amount` / `total_paid_category` live on `cases`, not `decisions` — this is a case-level summary derived from whichever stage has the most recent judgment award (SC, then CA, NLRC, LA), computed by `getTotalJudgmentAward()`, not a per-stage value.
+- `closed` / `closed_date` are new on `cases`, mapping directly to `CaseItem.closed` / `CaseItem.closedDate`. This is a standalone lock flag set via "Close Case" in `CaseForm.tsx` (`setTop("closed", true)`) — it takes priority over stage/remarks progress in `getCaseStatusSummary()` and is independent of `total_paid_category`/settlement state.
 - `case_history` is scoped specifically to case lifecycle events (create/update/archive/restore), matching exactly what `CasesContext.tsx` logs and what the `/system/history` page displays — it is not a generic polymorphic audit log. If the app later needs to audit non-case entities, that would be a separate, more general table.
-- The API is the source of reference identity for users, companies, and complainants; the current frontend placeholder (`CURRENT_USER = "Current User"`) means `created_by_username`/`performed_by_username` will be constant until real auth is wired in.
-- The database is the source of truth for case history, decisions, and case activity.
+- `users` now carries `role` (`admin` | `handling_personnel`). The current frontend placeholder (`CURRENT_USER = "Current User"`) means `created_by_username`/`performed_by_username`/`updated_by_username` will resolve to a single seed user until real auth is wired in — see the seed note below. Once auth exists, `created_by_user_id`/`performed_by_user_id`/`updated_by_user_id` should resolve to the actual logged-in user instead of always falling back to the seed row.
+- The database is the source of truth for case history, decisions, and case activity. The API is the source of reference identity for companies and complainants.
+
+## Seed Data
+
+- Default seed user (matches the frontend's current `CURRENT_USER` placeholder in `constants/caseOptions.ts`): `user_id=1`, `full_name='Current User'`, `role='admin'`.
+- Every `created_by_user_id` / `performed_by_user_id` / `updated_by_user_id` should point at this row until real login differentiates users.
 
 ## Recommended Interpretation
 
 - `company_id` as a proper FK (rather than the plain string the frontend prototype currently uses for `CaseDraft.company`) is the intended normalized end-state, consistent with treating companies as API-fed reference data — not a literal 1:1 mirror of today's frontend, which just picks from a local string array.
-- The diagram is intentionally practical: it matches the app's actual field-level structure today, not a hypothetical full production schema.
+- `role` on `users` is forward-looking: nothing in the frontend today reads or sets a role, but adding it now avoids an awkward later migration once auth and role-gated permissions (e.g. restricting who can close a case or edit SEnA) are implemented.
+- The diagram is intentionally practical: it matches the app's actual field-level structure today (plus this near-term `users`/`closed` extension), not a hypothetical full production schema.

@@ -1,6 +1,5 @@
 import { Ban, Lock, Unlock, ArrowLeft, ArrowRight } from "lucide-react";
-import { useState } from "react";
-
+import { useEffect, useState } from "react";
 import type {
   CaseDraft,
   LaInfo,
@@ -26,9 +25,6 @@ import { getStageGates, isStageFilled } from "@/lib/caseValidation";
 import { getTotalJudgmentAward } from "@/lib/caseHelpers";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 
-// Wizard steps. "review" is the existing Total Judgment Award section,
-// which was previously always rendered unconditionally below SC — it's
-// now its own step instead of always being on-screen.
 type WizardStep = "sena" | "la" | "nlrc" | "ca" | "sc" | "review";
 const STEP_ORDER: WizardStep[] = ["sena", "la", "nlrc", "ca", "sc", "review"];
 
@@ -65,13 +61,6 @@ export function CaseForm({
 }) {
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
 
-  // Central guard: whenever the draft changes, if no stage is settled
-  // anymore, the Total Judgment Award category must not remain set.
-  // This catches every path that can un-settle a stage (SEnA remarks,
-  // LA/NLRC/CA/SC progress dropdowns, or any future one) without each
-  // section's onChange needing its own bespoke reset logic. All setters
-  // in this file, and every onChange passed down to a stage section,
-  // route through this instead of calling the raw onChange prop directly.
   const guardedOnChange = (next: CaseDraft) => {
     const nextAnyStageSettled =
       next.remarks === "Settled" ||
@@ -136,7 +125,6 @@ export function CaseForm({
     });
   };
 
-  // --- Unchanged gating logic (same source of truth as before) ----------
   const {
     senaFilled,
     laEnabled,
@@ -171,7 +159,6 @@ export function CaseForm({
     !(restrictLaProgressOnly && !canProceedPastLa) &&
     !(restrictNlrcProgressOnly && !canProceedPastNlrc) &&
     !(restrictCaProgressOnly && !canProceedPastCa);
-  // -----------------------------------------------------------------------
 
   const stageSteps: StageStep[] = [
     { key: "sena", label: "SENA", status: senaFilled ? "done" : "current" },
@@ -181,44 +168,46 @@ export function CaseForm({
     { key: "sc", label: "SC", status: !scVisible ? "locked" : "current" },
   ];
 
-  // A step is reachable if its underlying section is currently visible
-  // (same booleans used for inline rendering before), or "review" which
-  // was always rendered regardless of stage completion previously.
   function isStepVisible(step: WizardStep): boolean {
     if (step === "sena") return true;
     if (step === "la") return laVisible;
     if (step === "nlrc") return nlrcVisible;
     if (step === "ca") return caVisible;
     if (step === "sc") return scVisible;
-    return true; // review
+    return anyStageSettled; // review
   }
 
-  // Default to the first not-yet-done visible step, so re-opening a
-  // partially filled case lands the user where they left off.
   function computeInitialStep(): WizardStep {
     const firstIncomplete = stageSteps.find((s) => s.status !== "done" && s.status !== "locked");
     if (firstIncomplete) return firstIncomplete.key as WizardStep;
-    return "review";
+    return anyStageSettled ? "review" : "sena";
   }
 
   const [activeStep, setActiveStep] = useState<WizardStep>(computeInitialStep);
   const [maxReachedIndex, setMaxReachedIndex] = useState<number>(STEP_ORDER.indexOf(activeStep));
 
+  useEffect(() => {
+    const highestVisibleIndex = STEP_ORDER.reduce(
+      (acc, step, index) => (isStepVisible(step) ? index : acc),
+      0
+    );
+
+    if (highestVisibleIndex < maxReachedIndex) {
+      setMaxReachedIndex(highestVisibleIndex);
+
+      if (STEP_ORDER.indexOf(activeStep) > highestVisibleIndex) {
+        setActiveStep(STEP_ORDER[highestVisibleIndex]);
+      }
+    }
+  }, [laVisible, nlrcVisible, caVisible, scVisible, anyStageSettled]);
   const isClosed = !!value.closed;
   const isSettled = !!value.totalPaid?.category;
   const isFieldsetLocked = isClosed || (isSettled && activeStep === "review");
 
-  // Only steps the user can actually fill right now — locked/future
-  // stages are omitted entirely rather than shown grayed out. A step
-  // that was already reached stays visible even if its gate condition
-  // would now say otherwise, so navigating back still works.
-  const visibleStageSteps = stageSteps.filter(
-    (s) => isStepVisible(s.key as WizardStep) || STEP_ORDER.indexOf(s.key as WizardStep) <= maxReachedIndex
-  );
+  const visibleStageSteps = stageSteps.filter((s) => isStepVisible(s.key as WizardStep));
 
   function canGoToStep(step: WizardStep): boolean {
-    const index = STEP_ORDER.indexOf(step);
-    return index <= maxReachedIndex || isStepVisible(step);
+    return isStepVisible(step);
   }
 
   function goToStep(step: WizardStep) {
@@ -232,11 +221,6 @@ export function CaseForm({
   const isFirstStep = currentIndex === 0;
   const isLastStep = currentIndex === STEP_ORDER.length - 1;
 
-  // Dedicated completeness check for the wizard's Next button only — this
-  // is stricter than Save's validation (getCaseDraftErrors /
-  // isStageFilled in caseValidation.ts), which still treats Remarks and
-  // Progress as optional. That Save-time rule is untouched; this function
-  // adds nothing to it and lives only here, gating navigation, not saving.
   function isCurrentStageFullyFilled(): boolean {
     const remarksComplete =
       value.remarks.trim() !== "" &&
@@ -341,7 +325,7 @@ export function CaseForm({
       return scStageComplete && progressComplete(value.caseProgress.sc, value.caseProgress.scSpecification);
     }
 
-    return true; // review — no further gate before Save
+    return true; // review
   }
 
   const isCurrentStepComplete = isCurrentStageFullyFilled();
@@ -359,9 +343,6 @@ export function CaseForm({
 
   function goNext() {
     if (isLastStep) return;
-    // Skip forward past any steps that aren't visible yet (mirrors the
-    // previous conditional-rendering behavior — a hidden section was
-    // simply not shown, never a dead stop).
     for (let i = currentIndex + 1; i < STEP_ORDER.length; i++) {
       const candidate = STEP_ORDER[i];
       if (isStepVisible(candidate) || i === STEP_ORDER.length - 1) {
@@ -522,7 +503,6 @@ export function CaseForm({
         )}
       </fieldset>
 
-      {/* Step navigation — Save/Cancel remain in the modal footer */}
       <div className="flex items-center justify-between border-t border-slate-100 pt-4">
         <button
           type="button"
