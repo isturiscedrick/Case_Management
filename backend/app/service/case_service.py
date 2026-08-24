@@ -1,9 +1,12 @@
 from typing import Optional, List
 from fastapi import HTTPException, status
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.crud import case as case_crud
+from app.crud import decision as decision_crud
 from app.manager import case_workflow_manager
+from app.manager.case_workflow_manager import STAGE_LEVEL_MAP
 from app.schemas.case import CaseCreate, CaseUpdate, CaseListParams
 from app.service.case_validation_service import validate_case_payload, determine_reset_stages
 from app.models.case import Case
@@ -27,14 +30,23 @@ def list_cases(db: Session, params: CaseListParams) -> List[Case]:
 def create_case(db: Session, payload: CaseCreate, current_user: User) -> Case:
     validate_case_payload(payload)
 
+    # Pre-check is a fast-path UX nicety, not the source of truth — a
+    # concurrent request can still slip past it, so the actual guarantee
+    # comes from catching the DB's unique constraint below.
     existing = case_crud.get_case_by_case_no(db, payload.case_no)
     if existing:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f'Case No. "{payload.case_no}" already exists.')
 
-    return case_workflow_manager.create_case(
-        db, payload, created_by_user_id=current_user.user_id, created_by_username=current_user.full_name,
-    )
-
+    try:
+        return case_workflow_manager.create_case(
+            db, payload, created_by_user_id=current_user.user_id, created_by_username=current_user.full_name,
+        )
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f'Case No. "{payload.case_no}" already exists.',
+        )
 
 def update_case(db: Session, case_id: int, payload: CaseUpdate, current_user: User) -> Case:
     case = get_case_or_404(db, case_id)
@@ -49,13 +61,24 @@ def update_case(db: Session, case_id: int, payload: CaseUpdate, current_user: Us
         if collision and collision.case_id != case_id:
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f'Case No. "{payload.case_no}" already exists.')
 
-    reset_stages = determine_reset_stages(None, payload)
+    db_has_data = {
+        stage_key: decision_crud.decision_has_data(db, case_id, level)
+        for stage_key, level in STAGE_LEVEL_MAP.items()
+    }
+    reset_stages = determine_reset_stages(payload, db_has_data=db_has_data)
 
-    return case_workflow_manager.update_case(
-        db, case, payload,
-        updated_by_user_id=current_user.user_id, updated_by_username=current_user.full_name,
-        reset_stages=reset_stages,
-    )
+    try:
+        return case_workflow_manager.update_case(
+            db, case, payload,
+            updated_by_user_id=current_user.user_id, updated_by_username=current_user.full_name,
+            reset_stages=reset_stages,
+        )
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f'Case No. "{payload.case_no}" already exists.',
+        )
 
 
 def toggle_archive(db: Session, case_id: int, current_user: User) -> Case:

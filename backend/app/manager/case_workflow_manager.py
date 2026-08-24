@@ -38,7 +38,11 @@ def _upsert_stage(db: Session, case_id: int, stage_key: str, payload) -> None:
     if payload is None:
         return
     level = STAGE_LEVEL_MAP[stage_key]
-    fields = payload.model_dump(exclude_unset=True)
+    # Full dump (not exclude_unset) so that fields the client leaves as
+    # their default (None / cleared) actually overwrite stale DB values —
+    # e.g. progress_specification must be nulled out when progress moves
+    # off "Not Settled"/"Others", mirroring the frontend's explicit resets.
+    fields = payload.model_dump()
     decision_crud.upsert_decision(db, case_id, level, **fields)
 
 

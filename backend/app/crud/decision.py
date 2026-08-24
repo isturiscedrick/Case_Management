@@ -21,6 +21,23 @@ def upsert_decision(db: Session, case_id: int, level: DecisionLevel, **fields) -
     return decision
 
 
+def decision_has_data(db: Session, case_id: int, level: DecisionLevel) -> bool:
+    decision = get_decision(db, case_id, level)
+    if not decision:
+        return False
+    return any([
+        decision.date is not None,
+        decision.status is not None,
+        decision.judgment_award_amount is not None,
+        (decision.judgment_award_amount_specification or "").strip() != "",
+        (decision.judgment_award_computed_specification or "").strip() != "",
+        decision.remarks is not None,
+        (decision.remarks_specification or "").strip() != "",
+        decision.progress is not None,
+        (decision.progress_specification or "").strip() != "",
+    ])
+
+
 def clear_decision(db: Session, case_id: int, level: DecisionLevel) -> None:
     decision = get_decision(db, case_id, level)
     if not decision:
