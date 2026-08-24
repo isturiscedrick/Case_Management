@@ -21,6 +21,24 @@ def upsert_decision(db: Session, case_id: int, level: DecisionLevel, **fields) -
     return decision
 
 
+def get_decision_as_stage_dict(db: Session, case_id: int, level: DecisionLevel) -> Optional[dict]:
+    decision = get_decision(db, case_id, level)
+    if not decision:
+        return None
+    return {
+        "date": decision.date,
+        "status": decision.status,
+        "judgment_award_mode": decision.judgment_award_mode,
+        "judgment_award_amount": decision.judgment_award_amount,
+        "judgment_award_amount_specification": decision.judgment_award_amount_specification,
+        "judgment_award_computed_specification": decision.judgment_award_computed_specification,
+        "remarks": decision.remarks,
+        "remarks_specification": decision.remarks_specification,
+        "progress": decision.progress,
+        "progress_specification": decision.progress_specification,
+    }
+
+
 def decision_has_data(db: Session, case_id: int, level: DecisionLevel) -> bool:
     decision = get_decision(db, case_id, level)
     if not decision:

@@ -102,6 +102,23 @@ def validate_case_payload(payload: CaseStagePayload) -> None:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=errors)
 
 
+def determine_locked_stage_edits(
+    existing_payload_stages: dict[str, Optional[DecisionIn]],
+) -> list[str]:
+    """
+    Mirrors the frontend's restrict*DetailsEditing flags (computed in
+    openEdit, dashboard/page.tsx): once a stage's required fields are
+    already filled in the DB, its Date/Status/Judgment Award/Remarks
+    become read-only — only that stage's Progress can still change,
+    exactly like the frontend's disabled fieldsets.
+    """
+    locked: list[str] = []
+    for stage_key, existing_stage in existing_payload_stages.items():
+        if _stage_is_filled(existing_stage):
+            locked.append(stage_key)
+    return locked
+
+
 def determine_reset_stages(
     new_payload: CaseStagePayload,
     *,

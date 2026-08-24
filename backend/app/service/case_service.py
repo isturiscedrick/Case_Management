@@ -8,7 +8,12 @@ from app.crud import decision as decision_crud
 from app.manager import case_workflow_manager
 from app.manager.case_workflow_manager import STAGE_LEVEL_MAP
 from app.schemas.case import CaseCreate, CaseUpdate, CaseListParams
-from app.service.case_validation_service import validate_case_payload, determine_reset_stages
+from app.schemas.decision import DecisionIn
+from app.service.case_validation_service import (
+    validate_case_payload,
+    determine_reset_stages,
+    determine_locked_stage_edits,
+)
 from app.models.case import Case
 from app.models.user import User
 
@@ -66,6 +71,35 @@ def update_case(db: Session, case_id: int, payload: CaseUpdate, current_user: Us
         for stage_key, level in STAGE_LEVEL_MAP.items()
     }
     reset_stages = determine_reset_stages(payload, db_has_data=db_has_data)
+
+    # Server-side mirror of the frontend's per-stage disabled fieldsets:
+    # once a stage was already filled, its details can't be silently
+    # rewritten by a non-UI client — only Progress may still change.
+    existing_stage_dicts = {
+        stage_key: decision_crud.get_decision_as_stage_dict(db, case_id, level)
+        for stage_key, level in STAGE_LEVEL_MAP.items()
+    }
+    existing_stages_typed = {
+        k: DecisionIn(**v) if v else None for k, v in existing_stage_dicts.items()
+    }
+    locked_stages = determine_locked_stage_edits(existing_stages_typed)
+
+    for stage_key in locked_stages:
+        incoming_stage = getattr(payload, stage_key)
+        existing_stage = existing_stages_typed[stage_key]
+        if incoming_stage is None:
+            continue
+        detail_fields = (
+            "date", "status", "judgment_award_mode", "judgment_award_amount",
+            "judgment_award_amount_specification", "judgment_award_computed_specification",
+            "remarks", "remarks_specification",
+        )
+        for field in detail_fields:
+            if getattr(incoming_stage, field) != getattr(existing_stage, field):
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail=f'{stage_key.upper()} details are locked once filled — only Progress can still be updated.',
+                )
 
     try:
         return case_workflow_manager.update_case(
