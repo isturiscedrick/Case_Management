@@ -1,7 +1,7 @@
 from typing import Optional
 from fastapi import HTTPException, status
 
-from app.models.enums import StageProgress
+from app.models.enums import StageProgress, TribunalRemarks
 from app.schemas.case import CaseStagePayload
 from app.schemas.decision import DecisionIn
 
@@ -90,6 +90,15 @@ def validate_case_payload(payload: CaseStagePayload) -> None:
         progress_error = _progress_specify_ok(stage)
         if progress_error:
             errors.append(f"{label}: {progress_error}")
+
+        if (
+            key == "la"
+            and stage is not None
+            and stage.remarks == TribunalRemarks.Motion_for_Reconsideration
+        ):
+            errors.append(
+                '"Motion for Reconsideration" is not a valid Remarks option for LA.'
+            )
 
     any_settled = payload.remarks == StageProgress.Settled or any(
         getattr(payload, key) is not None and getattr(payload, key).progress == StageProgress.Settled

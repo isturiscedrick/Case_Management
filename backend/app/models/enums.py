@@ -37,6 +37,7 @@ class TribunalRemarks(str, enum.Enum):
     Appealed_by_Respondent = "Appealed by Respondent"
     Appealed_by_Complainant = "Appealed by Complainant"
     Not_Appealed = "Not Appealed"
+    Motion_for_Reconsideration = "Motion for Reconsideration"
     Other = "Other"
 
 
