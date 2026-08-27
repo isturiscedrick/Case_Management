@@ -292,16 +292,6 @@ export default function AnalyticsPage() {
             <p className="text-lg font-semibold text-[#12331F]">{cases.length}</p>
           </div>
         </div>
-
-        <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-50 text-emerald-700">
-            <BarChart3 size={18} />
-          </div>
-          <div>
-            <p className="text-[11px] uppercase tracking-wide text-slate-400">Total Judgment Awards Paid</p>
-            <p className="text-lg font-semibold text-[#12331F]">{formatCurrency(String(grandTotal))}</p>
-          </div>
-        </div>
       </div>
 
       {/* STATUS BREAKDOWN PER STAGE */}
@@ -371,6 +361,17 @@ export default function AnalyticsPage() {
 
       <div>
         <h2 className="mb-2 text-sm font-semibold text-[#12331F]">Award Outcome Breakdown</h2>
+        {/* TOTAL JUDGMENT AWARDS PAID */}
+      <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:max-w-sm">
+        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-50 text-emerald-700">
+          <BarChart3 size={18} />
+        </div>
+        <div>
+          <p className="text-[11px] uppercase tracking-wide text-slate-400">Total Judgment Awards Paid</p>
+          <p className="text-lg font-semibold text-[#12331F]">{formatCurrency(String(grandTotal))}</p>
+        </div>
+      </div>
+        <br></br>
         <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto]">
           {/* Category cards + bars */}
           <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
