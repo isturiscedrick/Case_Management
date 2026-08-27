@@ -90,6 +90,16 @@ export const STAGE_REMARKS_OPTIONS = [
   "Other",
 ] as const;
 
+// Used by NLRC, CA, and SC only — LA is the first stage, so "Motion for
+// Reconsideration" doesn't apply there.
+export const APPEAL_STAGE_REMARKS_OPTIONS = [
+  "Appealed by Respondent",
+  "Appealed by Complainant",
+  "Not Appealed",
+  "Motion for Reconsideration",
+  "Other",
+] as const;
+
 export const TOTAL_PAID_CATEGORY_OPTIONS = [
   "Judgment-Award-L",
   "Judgment-Award-W",

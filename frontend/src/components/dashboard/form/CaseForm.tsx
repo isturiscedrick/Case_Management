@@ -160,11 +160,15 @@ export function CaseForm({
     !(restrictNlrcProgressOnly && !canProceedPastNlrc) &&
     !(restrictCaProgressOnly && !canProceedPastCa);
 
+  const laProgressSet = value.caseProgress.la !== "";
+  const nlrcProgressSet = value.caseProgress.nlrc !== "";
+  const caProgressSet = value.caseProgress.ca !== "";
+
   const stageSteps: StageStep[] = [
     { key: "sena", label: "SENA", status: senaFilled ? "done" : "current" },
-    { key: "la", label: "LA", status: !laVisible ? "locked" : laFilled ? "done" : "current" },
-    { key: "nlrc", label: "NLRC", status: !nlrcVisible ? "locked" : nlrcFilled ? "done" : "current" },
-    { key: "ca", label: "CA", status: !caVisible ? "locked" : caFilled ? "done" : "current" },
+    { key: "la", label: "LA", status: !laVisible ? "locked" : laFilled && laProgressSet ? "done" : "current" },
+    { key: "nlrc", label: "NLRC", status: !nlrcVisible ? "locked" : nlrcFilled && nlrcProgressSet ? "done" : "current" },
+    { key: "ca", label: "CA", status: !caVisible ? "locked" : caFilled && caProgressSet ? "done" : "current" },
     { key: "sc", label: "SC", status: !scVisible ? "locked" : "current" },
   ];
 
