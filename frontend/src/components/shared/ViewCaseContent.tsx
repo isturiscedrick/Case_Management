@@ -1,6 +1,6 @@
 import { Landmark, User } from "lucide-react";
 import type { CaseItem } from "@/types/case";
-import { formatDate, formatCurrency, getTotalJudgmentAward } from "@/lib/caseHelpers";
+import { formatDate, formatCurrency, formatTotalPaidCategory, getTotalJudgmentAward } from "@/lib/caseHelpers";
 import { isStageFilled } from "@/lib/caseValidation";
 import { DetailRow } from "@/components/shared/DetailRow";
 import { StatusBadge } from "./StatusBadge";
@@ -177,7 +177,7 @@ export function ViewCaseContent({ item }: { item: CaseItem }) {
         </h3>
         <div className="max-w-sm space-y-3">
           <DetailRow label="Amount" value={formatCurrency(totalJudgmentAward)} />
-          <DetailRow label="Category" value={item.totalPaid?.category || "-"} />
+          <DetailRow label="Category" value={formatTotalPaidCategory(item.totalPaid?.category)} />
         </div>
       </div>
 

@@ -1,7 +1,7 @@
 import { Archive, ArchiveRestore, Eye, RefreshCw } from "lucide-react";
 
 import type { CaseItem } from "@/types/case";
-import { formatCurrency, formatDate, getCaseStatusSummary } from "@/lib/caseHelpers";
+import { formatCurrency, formatDate, formatTotalPaidCategory, getCaseStatusSummary } from "@/lib/caseHelpers";
 import { formatProgress } from "@/components/shared/caseTableHelpers";
 import { CaseStatusSummaryBadge } from "@/components/dashboard/CaseStatusSummaryBadge";
 
@@ -163,7 +163,7 @@ export function CaseTableRow({
         {item.totalPaid ? formatCurrency(item.totalPaid.amount) : "-"}
       </td>
       <td className="border-r border-slate-200 bg-emerald-50/30 p-2 text-slate-600">
-        {item.totalPaid?.category || "-"}
+        {formatTotalPaidCategory(item.totalPaid?.category)}
       </td>
 
       {/* ACTIONS */}

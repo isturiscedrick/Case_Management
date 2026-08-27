@@ -50,3 +50,12 @@ export function getCaseStatusSummary(item: CaseItem): CaseStatusSummary {
   if (values.includes("Not Settled") || values.includes("Others")) return "Not Settled";
   return "Pending";
 }
+// Friendly display label for a Total Paid category value. Keeps the raw
+// TotalPaidCategory values ("Judgment-Award-W" / "Judgment-Award-L") intact
+// everywhere they're used as keys/filters — this only affects what's shown.
+export function formatTotalPaidCategory(category: string | undefined): string {
+  if (category === "Judgment-Award-W") return "Judgment (In Favor)";
+  if (category === "Judgment-Award-L") return "Judgment (Not In Favor)";
+  if (category === "Settlement") return "Settlement";
+  return category || "-";
+}
