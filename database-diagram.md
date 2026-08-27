@@ -117,9 +117,10 @@ erDiagram
 - `stage_progress` (`CaseItem.caseProgress.{la,nlrc,ca,sc}` **and** `CaseItem.remarks` — same three values in both, so one enum covers both): `Settled`, `Not Settled`, `Others` (unset state is `NULL`, not a 4th value — the frontend uses `""` for "not yet chosen")
 - `decision_level`: `labor_arbiter`, `national_labor_relations_commission`, `court_of_appeals`, `supreme_court`
 - `tribunal_decision_status` (`LaInfo/NlrcInfo/CaInfo/ScInfo.status`): `Valid Dismissal`, `Illegal Dismissal`, `Convicted`, `Acquitted`, `Dismissed`, `Affirmed`, `Pending`, `Closed`, `Execution`
-- `tribunal_remarks` (`LaInfo/NlrcInfo/CaInfo/ScInfo.remarks`): `Appealed by Respondent`, `Appealed by Complainant`, `Not Appealed`, `Other`
+- `tribunal_remarks` (`LaInfo/NlrcInfo/CaInfo/ScInfo.remarks`): `Appealed by Respondent`, `Appealed by Complainant`, `Not Appealed`, `Motion for Reconsideration`, `Other`. `Motion for Reconsideration` is backend-valid for all four stages (single shared MySQL enum, migration `a1c9e4f7b2d3`), but the frontend only exposes it as a selectable option on NLRC/CA/SC — LA keeps the original 4-option list. Backend validation (`case_validation_service.py`) explicitly rejects it if submitted for LA.
 - `judgment_award_mode`: `amount`, `to_be_computed` — an award is either a numeric amount (with `judgment_award_amount_specification` as its basis note) or the literal `"To be computed"` (with `judgment_award_computed_specification` as its basis note); never both
 - `total_paid_category` (`CaseItem.totalPaid.category`): `Judgment-Award-L`, `Judgment-Award-W`, `Settlement`
+  - Display labels only (values unchanged): the frontend renders `Judgment-Award-W` as "Judgment (In Favor)" and `Judgment-Award-L` as "Judgment (Not In Favor)" everywhere shown to the user (form dropdown, Analytics, dashboard table, View Case modal), via `formatTotalPaidCategory()` in `caseHelpers.ts`. Stored/filtered values remain `Judgment-Award-W` / `Judgment-Award-L`.
 - `case_history_action` (`HistoryEntry.action`): `created`, `updated`, `archived`, `restored`
 - `user_role` (new): `admin`, `handling_personnel` — not yet reflected anywhere in the frontend (there is no role field or role-gated UI today); added ahead of real auth so `users` doesn't need a breaking migration once login differentiates roles.
 
