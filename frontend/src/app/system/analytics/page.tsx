@@ -39,8 +39,8 @@ const BUCKET_STYLES: Record<StatusBucket, { dot: string; bar: string; text: stri
 const CATEGORY_ORDER: TotalPaidCategory[] = ["Judgment-Award-W", "Judgment-Award-L", "Settlement"];
 
 const CATEGORY_META: Record<TotalPaidCategory, { label: string; dot: string; hex: string; text: string }> = {
-  "Judgment-Award-W": { label: "Judgment Award (Won)", dot: "bg-emerald-500", hex: "#10b981", text: "text-emerald-700" },
-  "Judgment-Award-L": { label: "Judgment Award (Lost)", dot: "bg-rose-500", hex: "#f43f5e", text: "text-rose-700" },
+  "Judgment-Award-W": { label: "Judgment (In Favor)", dot: "bg-emerald-500", hex: "#10b981", text: "text-emerald-700" },
+  "Judgment-Award-L": { label: "Judgment (Not In Favor)", dot: "bg-rose-500", hex: "#f43f5e", text: "text-rose-700" },
   Settlement: { label: "Settlement", dot: "bg-amber-500", hex: "#f59e0b", text: "text-amber-700" },
 };
 

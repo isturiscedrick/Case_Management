@@ -54,11 +54,11 @@ export function TotalJudgmentAwardSection({
             <option value="">Select Category</option>
 
             <option value="Judgment-Award-L">
-              Judgment-Award-L
+              Judgment (Not In Favor)
             </option>
 
             <option value="Judgment-Award-W">
-              Judgment-Award-W
+              Judgment (In Favor)
             </option>
 
             <option value="Settlement">
