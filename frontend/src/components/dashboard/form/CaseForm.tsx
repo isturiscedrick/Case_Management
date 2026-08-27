@@ -182,11 +182,39 @@ export function CaseForm({
   }
 
   function computeInitialStep(): WizardStep {
-    const firstIncomplete = stageSteps.find((s) => s.status !== "done" && s.status !== "locked");
-    if (firstIncomplete) return firstIncomplete.key as WizardStep;
-    return anyStageSettled ? "review" : "sena";
+    const visibleSteps = stageSteps.filter((s) => s.status !== "locked");
+
+    // Land on the LAST visible stage that has any data — never auto-advance
+    // into a stage that only became eligible because a prior stage's
+    // Progress was set. The user must click Next themselves to move into
+    // a new stage; completing one stage should not silently open the next.
+    for (let i = visibleSteps.length - 1; i >= 0; i--) {
+      const step = visibleSteps[i];
+      if (step.key === "sena") return "sena";
+
+      const hasData = stepHasAnyData(step.key as Exclude<WizardStep, "sena" | "review">);
+      if (hasData) return step.key as WizardStep;
+    }
+
+    return "sena";
   }
 
+  function stepHasAnyData(key: "la" | "nlrc" | "ca" | "sc"): boolean {
+    const stage = value[key];
+    const progress = value.caseProgress[key];
+    const progressSpec = value.caseProgress[`${key}Specification` as const];
+    return (
+      stage.date.trim() !== "" ||
+      stage.status.trim() !== "" ||
+      stage.judgmentAward.trim() !== "" ||
+      (stage.judgmentAwardSpecification ?? "").trim() !== "" ||
+      (stage.judgmentAwardComputedSpecification ?? "").trim() !== "" ||
+      stage.remarks.trim() !== "" ||
+      (stage.remarksSpecification ?? "").trim() !== "" ||
+      progress.trim() !== "" ||
+      (progressSpec ?? "").trim() !== ""
+    );
+  }
   const [activeStep, setActiveStep] = useState<WizardStep>(computeInitialStep);
   const [maxReachedIndex, setMaxReachedIndex] = useState<number>(STEP_ORDER.indexOf(activeStep));
 
