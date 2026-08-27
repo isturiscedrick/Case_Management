@@ -17,6 +17,18 @@ STAGE_LEVEL_MAP = {
     "sc": DecisionLevel.supreme_court,
 }
 
+# Mirrors getTotalJudgmentAward() in caseHelpers.ts: latest stage wins,
+# checked SC -> CA -> NLRC -> LA, first one with an amount set.
+_TOTAL_AWARD_STAGE_ORDER = ("sc", "ca", "nlrc", "la")
+
+
+def _compute_total_paid_amount(payload: CaseStagePayload):
+    for stage_key in _TOTAL_AWARD_STAGE_ORDER:
+        stage = getattr(payload, stage_key)
+        if stage is not None and stage.judgment_award_amount is not None:
+            return stage.judgment_award_amount
+    return None
+
 
 def _sync_complainants(db: Session, case_id: int, names: list[str]) -> None:
     case_crud.clear_complainant_links(db, case_id)
@@ -38,7 +50,11 @@ def _upsert_stage(db: Session, case_id: int, stage_key: str, payload) -> None:
     if payload is None:
         return
     level = STAGE_LEVEL_MAP[stage_key]
-    fields = payload.model_dump(exclude_unset=True)
+    # Full dump (not exclude_unset) so that fields the client leaves as
+    # their default (None / cleared) actually overwrite stale DB values —
+    # e.g. progress_specification must be nulled out when progress moves
+    # off "Not Settled"/"Others", mirroring the frontend's explicit resets.
+    fields = payload.model_dump()
     decision_crud.upsert_decision(db, case_id, level, **fields)
 
 
@@ -64,6 +80,7 @@ def create_case(
             filing_date=payload.filing_date,
             remarks=payload.remarks,
             remark_specification=payload.remark_specification,
+            total_paid_amount=_compute_total_paid_amount(payload),
             total_paid_category=payload.total_paid_category,
             created_by_user_id=created_by_user_id,
             created_by_username=created_by_username,
@@ -112,6 +129,7 @@ def update_case(
             filing_date=payload.filing_date,
             remarks=payload.remarks,
             remark_specification=payload.remark_specification,
+            total_paid_amount=_compute_total_paid_amount(payload),
             total_paid_category=payload.total_paid_category,
             updated_by_user_id=updated_by_user_id,
             updated_by_username=updated_by_username,

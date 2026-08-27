@@ -7,7 +7,7 @@ import type {
 
 import {
   PROGRESS_OPTIONS,
-  STAGE_REMARKS_OPTIONS,
+  APPEAL_STAGE_REMARKS_OPTIONS,
   STAGE_STATUS_OPTIONS,
 } from "@/constants/caseOptions";
 
@@ -175,11 +175,11 @@ export function ScSection({
               >
                 <option value="">Select Remarks</option>
 
-                {STAGE_REMARKS_OPTIONS.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
-                  </option>
-                ))}
+                {APPEAL_STAGE_REMARKS_OPTIONS.map((option) => (
+  <option key={option} value={option}>
+    {option}
+  </option>
+))}
               </select>
             </Field>
 

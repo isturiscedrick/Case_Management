@@ -6,7 +6,7 @@ import type {
 
 import {
   PROGRESS_OPTIONS,
-  STAGE_REMARKS_OPTIONS,
+  APPEAL_STAGE_REMARKS_OPTIONS,
   STAGE_STATUS_OPTIONS,
 } from "@/constants/caseOptions";
 
@@ -156,7 +156,7 @@ export function NlrcSection({
 
 
             <JudgmentAwardField
-              label="ment Award"
+              label="Judgement Award"
               value={value.nlrc.judgmentAward}
               onChange={(v) =>
                 setNlrc("judgmentAward", v)
@@ -214,16 +214,16 @@ export function NlrcSection({
                     Select Remarks
                   </option>
 
-                  {STAGE_REMARKS_OPTIONS.map(
-                    (option) => (
-                      <option
-                        key={option}
-                        value={option}
-                      >
-                        {option}
-                      </option>
-                    ),
-                  )}
+                  {APPEAL_STAGE_REMARKS_OPTIONS.map(
+  (option) => (
+    <option
+      key={option}
+      value={option}
+    >
+      {option}
+    </option>
+  ),
+)}
                 </select>
               </Field>
             </fieldset>

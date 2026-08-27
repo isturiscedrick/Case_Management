@@ -102,7 +102,38 @@ def validate_case_payload(payload: CaseStagePayload) -> None:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=errors)
 
 
-def determine_reset_stages(existing_payload: Optional[CaseStagePayload], new_payload: CaseStagePayload) -> list[str]:
+def determine_locked_stage_edits(
+    existing_payload_stages: dict[str, Optional[DecisionIn]],
+) -> list[str]:
+    """
+    Mirrors the frontend's restrict*DetailsEditing flags (computed in
+    openEdit, dashboard/page.tsx): once a stage's required fields are
+    already filled in the DB, its Date/Status/Judgment Award/Remarks
+    become read-only — only that stage's Progress can still change,
+    exactly like the frontend's disabled fieldsets.
+    """
+    locked: list[str] = []
+    for stage_key, existing_stage in existing_payload_stages.items():
+        if _stage_is_filled(existing_stage):
+            locked.append(stage_key)
+    return locked
+
+
+def determine_reset_stages(
+    new_payload: CaseStagePayload,
+    *,
+    db_has_data: dict[str, bool],
+) -> list[str]:
+    """
+    Decide which downstream stages must be cleared.
+
+    db_has_data maps stage key -> whether that stage currently has any
+    saved data in the DB (independent of what's in new_payload). A
+    downstream stage is reset if EITHER the DB or the incoming payload
+    has data for it, and the upstream stage's progress no longer allows
+    proceeding — otherwise a partial payload that omits downstream data
+    could leave stale rows behind unreset.
+    """
     stage_order = ["la", "nlrc", "ca", "sc"]
     reset: list[str] = []
 
@@ -112,8 +143,9 @@ def determine_reset_stages(existing_payload: Optional[CaseStagePayload], new_pay
         downstream = getattr(new_payload, downstream_key)
 
         progress = stage.progress if stage else None
-        downstream_has_data = _stage_is_started(downstream)
         moved_away = progress not in (StageProgress.Not_Settled, StageProgress.Others)
+
+        downstream_has_data = _stage_is_started(downstream) or db_has_data.get(downstream_key, False)
 
         if downstream_has_data and moved_away:
             reset.append(downstream_key)

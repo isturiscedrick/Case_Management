@@ -14,6 +14,10 @@ class CaseStagePayload(BaseModel):
     case_no: str
     complainants: List[str]
     venue: str
+    # total_paid_amount is intentionally NOT accepted from the client —
+    # it is derived server-side in case_workflow_manager from the stage
+    # data itself, mirroring getTotalJudgmentAward() in caseHelpers.ts,
+    # so a client can never desync the amount from the actual stages.
 
     handling_personnel: Optional[str] = None
     handling_personnel_specification: Optional[str] = None
