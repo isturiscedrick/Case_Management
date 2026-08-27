@@ -481,7 +481,7 @@ export default function AnalyticsPage() {
           <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
             <div className="flex items-center gap-1.5 self-start text-[11px] uppercase tracking-wide text-slate-400">
               <PieChartIcon size={13} />
-              By case count
+              Total No. of Cases
             </div>
             <div className="relative h-36 w-36">
               <div className="h-36 w-36 rounded-full" style={{ background: companyPieGradient }} />
