@@ -1,3 +1,4 @@
+from typing import List
 from sqlalchemy.orm import Session
 
 from app.models.reference import CompanyReference, Complainant, CauseOfAction
@@ -30,6 +31,8 @@ def get_or_create_company(
     db.flush()
     return company
 
+def list_companies(db: Session) -> List[CompanyReference]:
+    return db.query(CompanyReference).order_by(CompanyReference.company_name).all()
 
 def get_or_create_complainant(db: Session, name: str) -> Complainant:
     complainant = db.query(Complainant).filter(Complainant.complainant_name == name).first()

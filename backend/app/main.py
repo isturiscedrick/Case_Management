@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
 from app.core.database import engine
-from app.router import auth_router, case_router, history_router
+from app.router import auth_router, case_router, company_router, history_router
 
 app = FastAPI(title="Case Management API")
 
@@ -17,6 +17,7 @@ app.add_middleware(
 
 app.include_router(auth_router.router)
 app.include_router(case_router.router)
+app.include_router(company_router.router)
 app.include_router(history_router.router)
 
 

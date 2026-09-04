@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 // Types
 import type { CaseDraft, CaseItem, ModalType, StageProgress, EditRestrictions } from "@/types/case";
@@ -11,6 +11,7 @@ import { CURRENT_USER, EMPTY_CASE } from "@/constants/caseOptions";
 // Data
 import { initialCompanies } from "@/data/initialCases";
 import { useCases } from "@/context/CasesContext";
+import { fetchCompanies } from "@/lib/api";
 
 import { cloneDraft, getCaseStatusSummary, getTotalJudgmentAward, type CaseStatusSummary } from "@/lib/caseHelpers";
 import { getCaseDraftErrors, getStageGates } from "@/lib/caseValidation";
@@ -34,7 +35,27 @@ export default function CasesPage() {
   ======================================================= */
 
   const { cases, addCase, updateCase, toggleArchive } = useCases();
-  const [companies] = useState<string[]>(initialCompanies);
+  // Falls back to the bundled initialCompanies list (kept in sync with the
+  // same seed CSV) if the API call fails, e.g. backend not running locally.
+  const [companies, setCompanies] = useState<string[]>(initialCompanies);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    fetchCompanies()
+      .then((data) => {
+        if (cancelled) return;
+        const names = data.map((c) => c.company_name);
+        if (names.length > 0) setCompanies(names);
+      })
+      .catch((err) => {
+        console.error("Failed to fetch companies, using fallback list:", err);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   /* =======================================================
      FILTER STATE
