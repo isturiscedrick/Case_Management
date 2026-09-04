@@ -18,6 +18,8 @@ erDiagram
   COMPANIES_REFERENCE {
     bigint company_id PK
     varchar company_name
+    varchar company_group
+    varchar company_group2
     timestamp created_at
     varchar remarks
   }
@@ -126,7 +128,7 @@ erDiagram
 
 ## Design Notes
 
-- `companies_reference` and `complainants` are API-fed reference data, not local manual master tables. `users` is now a locally-owned table (see below) rather than API-fed, since role needs to live somewhere authoritative for this app.
+- `complainants` is API-fed reference data, not a local manual master table. `companies_reference` was originally intended as API-fed too, but as of the `company_group`/`company_group2` addition it is instead a locally-owned master list, seeded and kept in sync from a supervisor-provided CSV (`backend/seed_data/company_list.csv`) via `backend/seed_companies.py`, which upserts by `company_name` and is safe to re-run whenever a new CSV drop arrives (see `crud/reference.py::get_or_create_company`). `users` is likewise a locally-owned table (see below) rather than API-fed, since role needs to live somewhere authoritative for this app.
 - `company_name`, `created_by_username`, `updated_by_username`, and `case_history.company`/`case_history.case_no` are intentional snapshots for history, matching the pattern already used for reference-fed data elsewhere.
 - `case_complainants` and `case_causes` are both join tables, since a case can have multiple complainants **and** multiple causes of action (`CaseDraft.complainants: string[]` and `CaseDraft.cause: string[]`).
 - `decisions` stores at most one row per `(case_id, level)` — LA, NLRC, CA, SC — since the frontend models each stage as a single keyed object (`la`, `nlrc`, `ca`, `sc`), never an array. Enforced with a unique constraint on `(case_id, level)`.
@@ -144,6 +146,6 @@ erDiagram
 
 ## Recommended Interpretation
 
-- `company_id` as a proper FK (rather than the plain string the frontend prototype currently uses for `CaseDraft.company`) is the intended normalized end-state, consistent with treating companies as API-fed reference data — not a literal 1:1 mirror of today's frontend, which just picks from a local string array.
+- `company_id` as a proper FK (rather than the plain string the frontend prototype currently uses for `CaseDraft.company`) is the intended normalized end-state, consistent with treating `companies_reference` as the locally-seeded source of truth for company names and their group/group2 classification — not a literal 1:1 mirror of today's frontend, which just picks from a local string array (`initialCompanies` in `data/initialCases.ts`, itself sourced from the same CSV).
 - `role` on `users` is forward-looking: nothing in the frontend today reads or sets a role, but adding it now avoids an awkward later migration once auth and role-gated permissions (e.g. restricting who can close a case or edit SEnA) are implemented.
 - The diagram is intentionally practical: it matches the app's actual field-level structure today (plus this near-term `users`/`closed` extension), not a hypothetical full production schema.

@@ -121,9 +121,13 @@ Mirrors the frontend's `types/case.ts` closely — see `database-diagram.md`
   have multiple complainants and multiple causes.
 - **`case_history`** is a case-lifecycle-specific audit log (`created`,
   `updated`, `archived`, `restored`) — not a generic polymorphic log.
-- **`companies_reference`** / **`complainants`** / **`cause_of_actions`** are
-  get-or-create reference tables (see `crud/reference.py`), auto-populated as
-  cases are created.
+- **`complainants`** / **`cause_of_actions`** are get-or-create reference
+  tables (see `crud/reference.py`), auto-populated as cases are created.
+- **`companies_reference`** is also get-or-create, but its authoritative
+  source is a supervisor-provided CSV rather than case creation — seeded via
+  `python seed_companies.py` (`backend/seed_data/company_list.csv`), which
+  also carries `company_group`/`company_group2` classification columns not
+  present on the other reference tables.
 - **`users`** carries `role` (`admin`, `handling_personnel`, `viewer`) —
   ahead of full role-gated permissions (currently only `register` enforces
   `admin`).

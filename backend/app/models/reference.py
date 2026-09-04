@@ -8,6 +8,8 @@ class CompanyReference(Base):
 
     company_id = Column(BigInteger, primary_key=True, autoincrement=True)
     company_name = Column(String(255), nullable=False, unique=True)
+    company_group = Column(String(255), nullable=True)
+    company_group2 = Column(String(255), nullable=True)
     created_at = Column(DateTime, server_default=func.now())
     remarks = Column(String(255), nullable=True)
 

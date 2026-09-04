@@ -3,11 +3,29 @@ from sqlalchemy.orm import Session
 from app.models.reference import CompanyReference, Complainant, CauseOfAction
 
 
-def get_or_create_company(db: Session, company_name: str) -> CompanyReference:
+def get_or_create_company(
+    db: Session,
+    company_name: str,
+    *,
+    company_group: str | None = None,
+    company_group2: str | None = None,
+) -> CompanyReference:
     company = db.query(CompanyReference).filter(CompanyReference.company_name == company_name).first()
     if company:
+        # Supervisor's list is authoritative for group data — keep it in
+        # sync on every seed run, but don't clobber groups with None when
+        # this is called from case creation (which doesn't pass groups).
+        if company_group is not None:
+            company.company_group = company_group
+        if company_group2 is not None:
+            company.company_group2 = company_group2
+        db.flush()
         return company
-    company = CompanyReference(company_name=company_name)
+    company = CompanyReference(
+        company_name=company_name,
+        company_group=company_group,
+        company_group2=company_group2,
+    )
     db.add(company)
     db.flush()
     return company
