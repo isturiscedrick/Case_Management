@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { LayoutDashboard, History, Archive, BarChart3, Scale, ChevronRight, ChevronsLeft, User } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { LayoutDashboard, History, Archive, BarChart3, Scale, ChevronRight, ChevronsLeft, LogOut, User } from "lucide-react";
 import { CURRENT_USER } from "@/constants/caseOptions";
+import { clearSessionToken } from "@/lib/api";
 const NAV_ITEMS = [
   { href: "/system/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/system/analytics", label: "Analytics", icon: BarChart3 },
@@ -15,6 +16,12 @@ const NAV_ITEMS = [
 export default function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
+
+  function handleLogout() {
+    clearSessionToken();
+    router.push("/login");
+  }
 
   return (
     <aside
@@ -123,6 +130,19 @@ export default function Sidebar() {
             </div>
           )}
         </div>
+
+        <button
+          type="button"
+          onClick={handleLogout}
+          title={collapsed ? "Log out" : undefined}
+          aria-label="Log out"
+          className={`mt-3 flex items-center rounded-lg border border-transparent text-sm font-medium text-white/60 transition hover:border-white/10 hover:bg-white/5 hover:text-white ${
+            collapsed ? "mx-auto h-10 w-10 justify-center" : "w-full gap-3 px-4 py-2.5"
+          }`}
+        >
+          <LogOut className="h-4 w-4 shrink-0" />
+          {!collapsed && <span>Log out</span>}
+        </button>
       </div>
     </aside>
   );
