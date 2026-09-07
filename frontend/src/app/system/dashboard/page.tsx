@@ -243,6 +243,15 @@ export default function CasesPage() {
     const nlrcProgressIsPending = gates.nlrcFilled && item.caseProgress.nlrc === "";
     const caProgressIsPending = gates.caFilled && item.caseProgress.ca === "";
 
+    // "Motion for Reconsideration" (NLRC/CA only — LA doesn't offer this
+    // remark option) is an exception to the normal lock-once-filled rule:
+    // the stage's Remarks and Progress must stay editable even after the
+    // case is saved, since an MR can still be resolved/withdrawn later.
+    // Date/Status/Judgment Award (the "details" fieldset) still lock as
+    // usual — only the Remarks+Progress fieldset gets the exception.
+    const nlrcHasMotionForReconsideration = item.nlrc.remarks === "Motion for Reconsideration";
+    const caHasMotionForReconsideration = item.ca.remarks === "Motion for Reconsideration";
+
     setActiveCase(item);
     setDraft(cloneDraft(item));
 
@@ -258,12 +267,16 @@ export default function CasesPage() {
     /* NLRC */
     setRestrictNlrcDetailsEditing(gates.nlrcFilled);
     setRestrictNlrcProgressOnly(nlrcProgressIsPending);
-    setRestrictNlrcProgressEditing(gates.nlrcFilled && !nlrcProgressIsPending);
+    setRestrictNlrcProgressEditing(
+      gates.nlrcFilled && !nlrcProgressIsPending && !nlrcHasMotionForReconsideration
+    );
 
     /* CA */
     setRestrictCaDetailsEditing(gates.caFilled);
     setRestrictCaProgressOnly(caProgressIsPending);
-    setRestrictCaProgressEditing(gates.caFilled && !caProgressIsPending);
+    setRestrictCaProgressEditing(
+      gates.caFilled && !caProgressIsPending && !caHasMotionForReconsideration
+    );
 
     setModal("edit");
   };
