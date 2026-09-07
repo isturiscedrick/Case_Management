@@ -1,8 +1,15 @@
-// Minimal API client for endpoints that don't require auth yet. Once real
-// login/session handling exists, this is the place to attach the bearer
-// token to requests.
+// Minimal API client. Auth uses a plain (non-httpOnly) "session" cookie
+// holding the JWT access token — simple, but readable by JS, which is a
+// known tradeoff until a proper backend-for-frontend proxy exists. Every
+// authenticated call should go through authHeaders()/authFetch() below.
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+const SESSION_COOKIE_NAME = "session";
+// Mirrors settings.ACCESS_TOKEN_EXPIRE_MINUTES default (60) in
+// backend/app/core/config.py. If that default changes, update this too —
+// it only controls how long the browser keeps the cookie, not the token's
+// actual validity (the backend still rejects an expired JWT regardless).
+const SESSION_COOKIE_MAX_AGE_SECONDS = 60 * 60;
 
 export interface CompanyOut {
   company_id: number;
@@ -21,4 +28,66 @@ export async function fetchCompanies(): Promise<CompanyOut[]> {
   }
 
   return res.json();
+}
+
+// ---------------------------------------------------------------------
+// Auth
+// ---------------------------------------------------------------------
+
+export interface LoginResponse {
+  access_token: string;
+  refresh_token: string;
+  token_type: string;
+}
+
+export class LoginError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "LoginError";
+  }
+}
+
+export async function login(username: string, password: string): Promise<LoginResponse> {
+  const res = await fetch(`${API_BASE_URL}/api/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username, password }),
+  });
+
+  if (!res.ok) {
+    if (res.status === 401) {
+      throw new LoginError("Incorrect username or password.");
+    }
+    if (res.status === 403) {
+      throw new LoginError("This account has been deactivated.");
+    }
+    throw new LoginError("Unable to sign in right now. Please try again.");
+  }
+
+  return res.json();
+}
+
+export function setSessionToken(token: string) {
+  // Not httpOnly — this cookie is only a signal for app/page.tsx's
+  // server-side redirect check and for reading the token back out on the
+  // client to build Authorization headers. It is never sent to the
+  // FastAPI backend as a cookie; the backend only ever sees it via the
+  // Bearer header built in authHeaders().
+  document.cookie = `${SESSION_COOKIE_NAME}=${encodeURIComponent(token)}; path=/; max-age=${SESSION_COOKIE_MAX_AGE_SECONDS}; SameSite=Lax`;
+}
+
+export function clearSessionToken() {
+  document.cookie = `${SESSION_COOKIE_NAME}=; path=/; max-age=0`;
+}
+
+export function getSessionToken(): string | null {
+  if (typeof document === "undefined") return null; // SSR guard
+  const match = document.cookie.match(new RegExp(`(?:^|; )${SESSION_COOKIE_NAME}=([^;]*)`));
+  return match ? decodeURIComponent(match[1]) : null;
+}
+
+// Used by later phases (case/history fetches) to attach the bearer token.
+export function authHeaders(): HeadersInit {
+  const token = getSessionToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
 }

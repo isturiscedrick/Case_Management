@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Scale, Eye, EyeOff } from "lucide-react";
+import { Scale, Eye, EyeOff, Loader2 } from "lucide-react";
+import { login, setSessionToken, LoginError } from "@/lib/api";
 
 const CASE_STAGES = [
   { code: "LA", label: "Labor Arbiter" },
@@ -13,20 +14,31 @@ const CASE_STAGES = [
 
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    router.push("/system/dashboard");
+    setError(null);
+    setIsSubmitting(true);
+
+    try {
+      const { access_token } = await login(username, password);
+      setSessionToken(access_token);
+      router.push("/system/dashboard");
+    } catch (err) {
+      setError(err instanceof LoginError ? err.message : "Something went wrong. Please try again.");
+      setIsSubmitting(false);
+    }
   }
 
   return (
     <div className="flex min-h-screen bg-[#F5F1E3]">
       {/* LEFT — brand / case journey panel */}
       <div className="relative hidden w-[42%] flex-col justify-between overflow-hidden bg-[#12331F] px-12 py-12 text-white lg:flex">
-        {/* subtle texture */}
         <div
           className="pointer-events-none absolute inset-0 opacity-[0.04]"
           style={{
@@ -61,7 +73,6 @@ export default function LoginPage() {
             nothing falls through the cracks.
           </p>
 
-          {/* signature element: the real case journey, as a vertical stepper */}
           <div className="mt-10 space-y-0">
             {CASE_STAGES.map((stage, i) => (
               <div key={stage.code} className="flex gap-4">
@@ -101,19 +112,25 @@ export default function LoginPage() {
             Enter your credentials to access the case dashboard.
           </p>
 
+          {error && (
+            <div className="mt-4 rounded-lg border border-rose-200 bg-rose-50 px-3.5 py-2.5 text-sm text-rose-700">
+              {error}
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="mt-8 space-y-4">
             <div>
-              <label htmlFor="email" className="mb-1.5 block text-xs font-medium text-slate-600">
-                Email address
+              <label htmlFor="username" className="mb-1.5 block text-xs font-medium text-slate-600">
+                Username
               </label>
               <input
-                id="email"
-                type="email"
+                id="username"
+                type="text"
                 required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@company.com"
-                className="w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-800 ou#12331Ftline-none transition placeholder:text-slate-400 focus:border-[] focus:ring-2 focus:ring-[#12331F]/10"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="admin"
+                className="w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#12331F] focus:ring-2 focus:ring-[#12331F]/10"
               />
             </div>
 
@@ -122,9 +139,6 @@ export default function LoginPage() {
                 <label htmlFor="password" className="block text-xs font-medium text-slate-600">
                   Password
                 </label>
-                <a href="#" className="text-xs font-medium text-[#B08D57] hover:underline">
-                  Forgot password?
-                </a>
               </div>
               <div className="relative">
                 <input
@@ -134,7 +148,7 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full rounded-lg border bor#12331Fder-slate-200 bg-white px-3.5 py-2.5 pr-10 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#12331F] focus:ring-2 focus:ring-[#12331F]/10"
+                  className="w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2.5 pr-10 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#12331F] focus:ring-2 focus:ring-[#12331F]/10"
                 />
                 <button
                   type="button"
@@ -149,9 +163,11 @@ export default function LoginPage() {
 
             <button
               type="submit"
-              className="w-full rounded-lg bg-[#12331F] px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-[#1B4A2C] active:bg-[#12331F]"
+              disabled={isSubmitting}
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#12331F] px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-[#1B4A2C] active:bg-[#12331F] disabled:cursor-not-allowed disabled:opacity-60"
             >
-              Sign in
+              {isSubmitting && <Loader2 size={15} className="animate-spin" />}
+              {isSubmitting ? "Signing in..." : "Sign in"}
             </button>
           </form>
 
