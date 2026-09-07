@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { LayoutDashboard, History, Archive, BarChart3, Scale, ChevronRight, ChevronsLeft, LogOut, User } from "lucide-react";
 import { CURRENT_USER } from "@/constants/caseOptions";
 import { clearSessionToken } from "@/lib/api";
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 const NAV_ITEMS = [
   { href: "/system/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/system/analytics", label: "Analytics", icon: BarChart3 },
@@ -15,6 +16,7 @@ const NAV_ITEMS = [
 
 export default function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
+  const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
 
@@ -133,7 +135,7 @@ export default function Sidebar() {
 
         <button
           type="button"
-          onClick={handleLogout}
+          onClick={() => setShowLogoutDialog(true)}
           title={collapsed ? "Log out" : undefined}
           aria-label="Log out"
           className={`mt-3 flex items-center rounded-lg border border-transparent text-sm font-medium text-white/60 transition hover:border-white/10 hover:bg-white/5 hover:text-white ${
@@ -144,6 +146,16 @@ export default function Sidebar() {
           {!collapsed && <span>Log out</span>}
         </button>
       </div>
+
+      {showLogoutDialog && (
+        <ConfirmDialog
+          title="Log out"
+          message="Are you sure you want to log out of CMI Case Management?"
+          confirmLabel="Log out"
+          onConfirm={handleLogout}
+          onCancel={() => setShowLogoutDialog(false)}
+        />
+      )}
     </aside>
   );
 }
