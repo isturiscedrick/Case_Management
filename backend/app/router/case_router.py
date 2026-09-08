@@ -15,8 +15,8 @@ router = APIRouter(prefix="/api/cases", tags=["cases"])
 # personnel, matching the ERD's forward-looking role note.
 CAN_WRITE = require_role(UserRole.admin, UserRole.handling_personnel)
 # Closing/unclosing a case is the sole hard lock mechanism (see CaseForm.tsx
-# "Close Case"), so it's restricted further to admin only.
-CAN_CLOSE = require_role(UserRole.admin)
+# "Close Case"), available to admins and handling personnel.
+CAN_CLOSE = require_role(UserRole.admin, UserRole.handling_personnel)
 
 
 @router.get("", response_model=List[CaseOut])
