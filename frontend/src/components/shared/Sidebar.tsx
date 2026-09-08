@@ -174,7 +174,7 @@ export default function Sidebar() {
           aria-label="Open profile"
           className={`flex cursor-pointer items-center rounded-lg text-left transition hover:bg-white/5 focus-visible:bg-white/5 ${collapsed ? "" : "w-full gap-2.5 p-1"}`}
         >
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white/10 text-white">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-[#B08D57]/70 bg-[#0d2919] text-white shadow-sm">
             {currentUser?.profile_picture ? (
               <img src={currentUser.profile_picture} alt="" className="h-full w-full object-cover" />
             ) : (

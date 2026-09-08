@@ -104,10 +104,12 @@ export default function ProfilePage() {
           {message && <div className={`mb-5 rounded-lg border px-3 py-2.5 text-sm ${message.type === "success" ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-rose-200 bg-rose-50 text-rose-700"}`}>{message.text}</div>}
           {approvedReset && <div className="mb-5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-sm text-emerald-700">Your password reset request was approved. Enter a new password below; your current password is not required.</div>}
 
-          <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
-            <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-full border-4 border-[#F5F1E3] bg-[#12331F] text-white">
-              {profilePicture ? <img src={profilePicture} alt="Profile preview" className="h-full w-full object-cover" /> : <User className="absolute inset-0 m-auto h-9 w-9" />}
-              <label htmlFor="profile-picture" className="absolute bottom-0 right-0 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-[#B08D57] text-[#12331F] shadow-sm" title="Change profile picture">
+          <div className="flex flex-col gap-5 rounded-xl border border-[#ded7c5] bg-[#faf8f1] p-4 sm:flex-row sm:items-center">
+            <div className="relative h-28 w-28 shrink-0 rounded-full border-4 border-white bg-[#12331F] p-1 text-white shadow-[0_0_0_3px_#ded7c5,0_8px_20px_rgba(18,51,31,0.14)]">
+              <div className="h-full w-full overflow-hidden rounded-full">
+                {profilePicture ? <img src={profilePicture} alt="Profile preview" className="h-full w-full object-cover" /> : <User className="absolute inset-0 m-auto h-10 w-10" />}
+              </div>
+              <label htmlFor="profile-picture" className="absolute bottom-0 right-0 flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border-2 border-white bg-[#B08D57] text-[#12331F] shadow-md transition hover:scale-105 hover:bg-[#c19b64] focus-within:ring-2 focus-within:ring-[#12331F] focus-within:ring-offset-2" title="Change profile picture">
                 <Camera className="h-4 w-4" />
               </label>
               <input id="profile-picture" type="file" accept="image/*" className="sr-only" onChange={handlePictureChange} />
