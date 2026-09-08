@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { ClipboardList, Search } from "lucide-react";
-import { fetchCurrentUser, fetchMyHistory, fetchMyNotifications, UnauthorizedError, type HistoryOut, type PasswordResetNotification } from "@/lib/api";
+import { fetchCurrentUser, fetchDecidedNotifications, fetchMyHistory, fetchMyNotifications, UnauthorizedError, type HistoryOut, type PasswordResetNotification } from "@/lib/api";
 
 export default function ActivityPage() {
   const [items, setItems] = useState<PasswordResetNotification[]>([]);
@@ -11,12 +11,15 @@ export default function ActivityPage() {
   const [actionFilter, setActionFilter] = useState("All");
   const [statusFilter, setStatusFilter] = useState("All");
   const [loading, setLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     async function load() {
       try {
-        await fetchCurrentUser();
-        const [notifications, history] = await Promise.all([fetchMyNotifications(), fetchMyHistory()]);
+        const user = await fetchCurrentUser();
+        const admin = user.role === "admin";
+        setIsAdmin(admin);
+        const [notifications, history] = await Promise.all([admin ? fetchDecidedNotifications() : fetchMyNotifications(), fetchMyHistory()]);
         setItems(notifications);
         setCaseActions(history);
       } catch (error) {
@@ -44,8 +47,8 @@ export default function ActivityPage() {
     <div className="min-h-full bg-[#F5F1E3] p-4 sm:p-6">
       <div className="mx-auto max-w-3xl">
         <p className="text-xs font-medium uppercase tracking-wide text-[#B08D57]">Account</p>
-        <h1 className="mt-1 font-serif text-2xl font-medium text-[#12331F]">Activity</h1>
-        <p className="mt-1 text-sm text-slate-500">Track your password reset requests and account activity.</p>
+        <h1 className="mt-1 font-serif text-2xl font-medium text-[#12331F]">My Activity</h1>
+        <p className="mt-1 text-sm text-slate-500">{isAdmin ? "Review decisions made on password reset requests." : "Only actions and account events performed by you are shown here."}</p>
 
         <div className="mt-5 flex flex-col gap-2 rounded-xl border border-slate-200 bg-white p-3 shadow-sm sm:flex-row">
           <div className="relative flex-1"><Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" /><input aria-label="Search activity" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search activity, case number, company, or user" className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm text-slate-700 outline-none focus:border-[#12331F] focus:bg-white focus:ring-2 focus:ring-[#12331F]/10" /></div>
@@ -60,7 +63,7 @@ export default function ActivityPage() {
         <section className="mt-5 rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
           <div className="mb-4 flex items-center gap-3 border-b border-slate-100 pb-4">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#12331F] text-[#B08D57]"><ClipboardList className="h-4 w-4" /></div>
-            <div><h2 className="text-sm font-semibold text-[#12331F]">Password reset requests</h2><p className="mt-1 text-xs text-slate-500">Requests sent to an administrator appear here.</p></div>
+            <div><h2 className="text-sm font-semibold text-[#12331F]">{isAdmin ? "Request decisions" : "Password reset requests"}</h2><p className="mt-1 text-xs text-slate-500">{isAdmin ? "Approved and declined requests appear here." : "Requests sent to an administrator appear here."}</p></div>
           </div>
           {loading ? <p className="text-sm text-slate-400">Loading activity...</p> : filteredNotifications.length === 0 ? <p className="text-sm text-slate-400">No password reset activity matches your filters.</p> : (
             <div className="space-y-2">

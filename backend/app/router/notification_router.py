@@ -26,6 +26,14 @@ def pending_notifications(
     return notification_crud.list_pending(db)
 
 
+@router.get("/decided", response_model=list[NotificationOut])
+def decided_notifications(
+    db: Session = Depends(get_db),
+    _admin=Depends(require_role(UserRole.admin)),
+):
+    return notification_crud.list_decided(db)
+
+
 def _decide_notification(notification_id: int, decision: str, db: Session):
     notification = notification_crud.update_status(db, notification_id, decision)
     if not notification:

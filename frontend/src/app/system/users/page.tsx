@@ -1,8 +1,9 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
-import { Bell, User, UserPlus } from "lucide-react";
-import { fetchCurrentUser, fetchPendingNotifications, fetchUsers, registerUser, resetUserPassword, UnauthorizedError, type CurrentUser, type PasswordResetNotification, type UserRole } from "@/lib/api";
+import { Bell, Trash2, User, UserPlus } from "lucide-react";
+import { deleteUser, fetchCurrentUser, fetchPendingNotifications, fetchUsers, registerUser, resetUserPassword, UnauthorizedError, updateUserRole, type CurrentUser, type PasswordResetNotification, type UserRole } from "@/lib/api";
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 
 const ROLE_OPTIONS: Array<{ value: UserRole; label: string }> = [
   { value: "handling_personnel", label: "Handling Personnel" },
@@ -22,11 +23,20 @@ export default function UsersPage() {
   const [resetUserId, setResetUserId] = useState<number | null>(null);
   const [resetPassword, setResetPassword] = useState("");
   const [notifications, setNotifications] = useState<PasswordResetNotification[]>([]);
+  const [deletingUser, setDeletingUser] = useState<CurrentUser | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<number | null>(null);
+  const [confirmAction, setConfirmAction] = useState<
+    | { type: "create" }
+    | { type: "reset"; userId: number }
+    | { type: "role"; userId: number; nextRole: UserRole }
+    | null
+  >(null);
 
   useEffect(() => {
     fetchCurrentUser()
       .then(async (user) => {
         const isAdmin = user.role === "admin";
+        setCurrentUserId(user.user_id);
         setAuthorized(isAdmin);
         if (isAdmin) {
           const [existingUsers, pendingNotifications] = await Promise.all([fetchUsers(), fetchPendingNotifications()]);
@@ -42,6 +52,10 @@ export default function UsersPage() {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setConfirmAction({ type: "create" });
+  }
+
+  async function createUser() {
     setMessage(null);
     setIsSubmitting(true);
 
@@ -68,15 +82,60 @@ export default function UsersPage() {
   async function handleResetPassword(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (resetUserId === null) return;
+    setConfirmAction({ type: "reset", userId: resetUserId });
+  }
+
+  async function resetUserPasswordForAccount(userId: number) {
     setMessage(null);
     try {
-      await resetUserPassword(resetUserId, resetPassword);
-      setNotifications((current) => current.filter((notification) => notification.user_id !== resetUserId));
+      await resetUserPassword(userId, resetPassword);
+      setNotifications((current) => current.filter((notification) => notification.user_id !== userId));
       setResetUserId(null);
       setResetPassword("");
       setMessage({ type: "success", text: "Password reset successfully." });
     } catch (error) {
       setMessage({ type: "error", text: error instanceof Error ? error.message : "Unable to reset password." });
+    }
+  }
+
+  async function handleRoleChange(userId: number, nextRole: UserRole) {
+    setConfirmAction({ type: "role", userId, nextRole });
+  }
+
+  async function updateRole(userId: number, nextRole: UserRole) {
+    try {
+      const updatedUser = await updateUserRole(userId, nextRole);
+      setUsers((currentUsers) => currentUsers.map((user) => user.user_id === userId ? updatedUser : user));
+      setMessage({ type: "success", text: "User role updated successfully." });
+    } catch (error) {
+      setMessage({ type: "error", text: error instanceof Error ? error.message : "Unable to update user role." });
+    }
+  }
+
+  function getUser(userId: number) {
+    return users.find((user) => user.user_id === userId);
+  }
+
+  function confirmPendingAction() {
+    if (!confirmAction) return;
+    const action = confirmAction;
+    setConfirmAction(null);
+    if (action.type === "create") void createUser();
+    if (action.type === "reset") void resetUserPasswordForAccount(action.userId);
+    if (action.type === "role") void updateRole(action.userId, action.nextRole);
+  }
+
+  async function handleDeleteUser() {
+    if (!deletingUser) return;
+    try {
+      await deleteUser(deletingUser.user_id);
+      setUsers((currentUsers) => currentUsers.filter((user) => user.user_id !== deletingUser.user_id));
+      setNotifications((current) => current.filter((notification) => notification.user_id !== deletingUser.user_id));
+      setMessage({ type: "success", text: "User deleted successfully." });
+    } catch (error) {
+      setMessage({ type: "error", text: error instanceof Error ? error.message : "Unable to delete user." });
+    } finally {
+      setDeletingUser(null);
     }
   }
 
@@ -196,6 +255,7 @@ export default function UsersPage() {
                   <th className="px-3 py-2 font-semibold">Username</th>
                   <th className="px-3 py-2 font-semibold">Role</th>
                   <th className="px-3 py-2 font-semibold">Password</th>
+                  <th className="px-3 py-2 font-semibold">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -213,10 +273,15 @@ export default function UsersPage() {
                     <td className="px-3 py-3 font-medium text-slate-700">{user.full_name}</td>
                     <td className="px-3 py-3 text-slate-500">{user.username}</td>
                     <td className="px-3 py-3 text-slate-500">
-                      {user.role === "handling_personnel" ? "Handling Personnel" : user.role === "admin" ? "Admin" : "Viewer"}
+                      <select value={user.role} disabled={user.user_id === currentUserId} onChange={(event) => handleRoleChange(user.user_id, event.target.value as UserRole)} aria-label={`Role for ${user.full_name}`} className="rounded-lg border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs text-slate-700 outline-none focus:border-[#12331F] focus:bg-white disabled:cursor-not-allowed disabled:opacity-60">
+                        {ROLE_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                      </select>
                     </td>
                     <td className="px-3 py-3">
                       <button type="button" onClick={() => { setResetUserId(user.user_id); setResetPassword(""); }} className="text-xs font-medium text-[#12331F] underline hover:text-[#B08D57]">Reset password</button>
+                    </td>
+                    <td className="px-3 py-3">
+                      <button type="button" disabled={user.user_id === currentUserId} onClick={() => setDeletingUser(user)} aria-label={`Delete ${user.full_name}`} title={user.user_id === currentUserId ? "You cannot delete your own account" : "Delete user"} className="rounded-lg p-2 text-rose-600 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-30"><Trash2 className="h-4 w-4" /></button>
                     </td>
                   </tr>
                 ))}
@@ -228,6 +293,43 @@ export default function UsersPage() {
         </div>
         </div>
       </div>
+      {deletingUser && (
+        <ConfirmDialog
+          title="Delete user"
+          message={`Delete ${deletingUser.full_name}? Their account and notifications will be removed, while case records will be preserved.`}
+          confirmLabel="Delete user"
+          onConfirm={handleDeleteUser}
+          onCancel={() => setDeletingUser(null)}
+          confirmPhrase={deletingUser.username}
+        />
+      )}
+      {confirmAction?.type === "create" && (
+        <ConfirmDialog
+          title="Create user"
+          message={`Create ${fullName.trim()} (${username.trim()}) with the ${ROLE_OPTIONS.find((option) => option.value === role)?.label ?? role} role?`}
+          confirmLabel="Create user"
+          onConfirm={confirmPendingAction}
+          onCancel={() => setConfirmAction(null)}
+        />
+      )}
+      {confirmAction?.type === "reset" && (
+        <ConfirmDialog
+          title="Reset password"
+          message={`Set a new temporary password for ${getUser(confirmAction.userId)?.full_name ?? "this user"}?`}
+          confirmLabel="Reset password"
+          onConfirm={confirmPendingAction}
+          onCancel={() => setConfirmAction(null)}
+        />
+      )}
+      {confirmAction?.type === "role" && (
+        <ConfirmDialog
+          title="Update user role"
+          message={`Change ${getUser(confirmAction.userId)?.full_name ?? "this user"} to the ${ROLE_OPTIONS.find((option) => option.value === confirmAction.nextRole)?.label ?? confirmAction.nextRole} role?`}
+          confirmLabel="Update role"
+          onConfirm={confirmPendingAction}
+          onCancel={() => setConfirmAction(null)}
+        />
+      )}
     </div>
   );
 }

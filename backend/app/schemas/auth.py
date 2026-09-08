@@ -44,3 +44,7 @@ class UserProfileUpdate(BaseModel):
 
 class UserPasswordReset(BaseModel):
     password: str
+
+
+class UserRoleUpdate(BaseModel):
+    role: UserRole

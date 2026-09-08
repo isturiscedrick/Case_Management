@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.security import decode_token, create_access_token
-from app.schemas.auth import LoginRequest, TokenResponse, RefreshRequest, UserOut, UserCreate, UserPasswordReset, UserProfileUpdate
+from app.schemas.auth import LoginRequest, TokenResponse, RefreshRequest, UserOut, UserCreate, UserPasswordReset, UserProfileUpdate, UserRoleUpdate
 from app.service import auth_service
 from app.service.deps import get_current_user, require_role
 from app.models.enums import UserRole
@@ -76,6 +76,25 @@ def reset_user_password(
     _admin=Depends(require_role(UserRole.admin)),
 ):
     auth_service.reset_password(db, user_id, payload)
+
+
+@router.put("/users/{user_id}/role", response_model=UserOut)
+def update_user_role(
+    user_id: int,
+    payload: UserRoleUpdate,
+    db: Session = Depends(get_db),
+    current_user=Depends(require_role(UserRole.admin)),
+):
+    return auth_service.update_user_role(db, user_id, payload, current_user)
+
+
+@router.delete("/users/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_user(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_user=Depends(require_role(UserRole.admin)),
+):
+    auth_service.delete_user(db, user_id, current_user)
 
 
 @router.post("/register", response_model=UserOut, status_code=status.HTTP_201_CREATED)

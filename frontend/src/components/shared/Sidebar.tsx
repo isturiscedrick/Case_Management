@@ -8,7 +8,7 @@ import { clearSessionToken, fetchCurrentUser, fetchMyNotifications, fetchPending
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 const NAV_ITEMS = [
   { href: "/system/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/system/activity", label: "Activity", icon: ClipboardList, nonAdminOnly: true },
+  { href: "/system/activity", label: "Activity", icon: ClipboardList },
   { href: "/system/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/system/history", label: "History", icon: History },
   { href: "/system/archive", label: "Archive", icon: Archive },
@@ -107,8 +107,7 @@ export default function Sidebar() {
           </p>
         )}
         {NAV_ITEMS.filter((item) =>
-          (!item.adminOnly || currentUser?.role === "admin") &&
-          (!item.nonAdminOnly || currentUser?.role !== "admin")
+          (!item.adminOnly || currentUser?.role === "admin")
         ).map((item) => {
           const Icon = item.icon;
           const active = pathname === item.href;

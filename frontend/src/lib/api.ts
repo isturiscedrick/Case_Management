@@ -164,7 +164,7 @@ export async function fetchHistory(): Promise<HistoryOut[]> {
   return res.json();
 }
 
-async function authMutation(path: string, method: "POST" | "PUT", body?: unknown): Promise<Response> {
+async function authMutation(path: string, method: "DELETE" | "POST" | "PUT", body?: unknown): Promise<Response> {
   const res = await fetch(`${API_BASE_URL}${path}`, {
     method,
     cache: "no-store",
@@ -269,6 +269,11 @@ export async function fetchPendingNotifications(): Promise<PasswordResetNotifica
   return res.json();
 }
 
+export async function fetchDecidedNotifications(): Promise<PasswordResetNotification[]> {
+  const res = await authFetch("/api/notifications/decided");
+  return res.json();
+}
+
 export async function fetchMyNotifications(): Promise<PasswordResetNotification[]> {
   const res = await authFetch("/api/notifications/me");
   return res.json();
@@ -287,4 +292,13 @@ export async function fetchMyHistory(): Promise<HistoryOut[]> {
 export async function fetchCaseHistory(caseId: number): Promise<HistoryOut[]> {
   const res = await authFetch(`/api/history/case/${caseId}`);
   return res.json();
+}
+
+export async function updateUserRole(userId: number, role: UserRole): Promise<CurrentUser> {
+  const res = await authMutation(`/api/auth/users/${userId}/role`, "PUT", { role });
+  return res.json();
+}
+
+export async function deleteUser(userId: number): Promise<void> {
+  await authMutation(`/api/auth/users/${userId}`, "DELETE");
 }
