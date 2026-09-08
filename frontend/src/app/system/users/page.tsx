@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
-import { Bell, UserPlus } from "lucide-react";
+import { Bell, User, UserPlus } from "lucide-react";
 import { fetchCurrentUser, fetchPendingNotifications, fetchUsers, registerUser, resetUserPassword, UnauthorizedError, type CurrentUser, type PasswordResetNotification, type UserRole } from "@/lib/api";
 
 const ROLE_OPTIONS: Array<{ value: UserRole; label: string }> = [
@@ -155,6 +155,7 @@ export default function UsersPage() {
             <table className="min-w-full text-left text-sm">
               <thead className="border-b border-slate-100 text-[11px] uppercase tracking-wide text-slate-400">
                 <tr>
+                  <th className="px-3 py-2 font-semibold">Profile</th>
                   <th className="px-3 py-2 font-semibold">Full name</th>
                   <th className="px-3 py-2 font-semibold">Username</th>
                   <th className="px-3 py-2 font-semibold">Role</th>
@@ -164,6 +165,15 @@ export default function UsersPage() {
               <tbody className="divide-y divide-slate-100">
                 {users.map((user) => (
                   <tr key={user.user_id}>
+                    <td className="px-3 py-3">
+                      <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border-2 border-[#B08D57]/70 bg-[#12331F] text-white shadow-sm">
+                        {user.profile_picture ? (
+                          <img src={user.profile_picture} alt={`${user.full_name} profile`} className="h-full w-full object-cover" />
+                        ) : (
+                          <User className="h-4 w-4" />
+                        )}
+                      </div>
+                    </td>
                     <td className="px-3 py-3 font-medium text-slate-700">{user.full_name}</td>
                     <td className="px-3 py-3 text-slate-500">{user.username}</td>
                     <td className="px-3 py-3 text-slate-500">
