@@ -8,9 +8,10 @@ import { clearSessionToken, fetchCurrentUser, fetchMyNotifications, fetchPending
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 const NAV_ITEMS = [
   { href: "/system/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/system/activity", label: "Activity", icon: ClipboardList, nonAdminOnly: true },
   { href: "/system/analytics", label: "Analytics", icon: BarChart3 },
-  { href: "/system/archive", label: "Archive", icon: Archive },
   { href: "/system/history", label: "History", icon: History },
+  { href: "/system/archive", label: "Archive", icon: Archive },
   { href: "/system/notifications", label: "Notifications", icon: Bell },
   { href: "/system/users", label: "Users", icon: UserPlus, adminOnly: true },
 ];
@@ -105,17 +106,10 @@ export default function Sidebar() {
             Main Menu
           </p>
         )}
-        {currentUser?.role !== "admin" && (
-          <Link
-            href="/system/activity"
-            title={collapsed ? "Activity" : undefined}
-            className={`mb-1.5 flex items-center rounded-lg border text-sm font-medium transition ${pathname === "/system/activity" ? "border-[#B08D57]/30 bg-[#B08D57]/15 text-[#B08D57]" : "border-transparent text-white/60 hover:border-white/10 hover:bg-white/5 hover:text-white"} ${collapsed ? "mx-auto h-10 w-10 justify-center" : "gap-3 px-4 py-2.5"}`}
-          >
-            <ClipboardList className="h-4 w-4 shrink-0" />
-            {!collapsed && <span>Activity</span>}
-          </Link>
-        )}
-        {NAV_ITEMS.filter((item) => !item.adminOnly || currentUser?.role === "admin").map((item) => {
+        {NAV_ITEMS.filter((item) =>
+          (!item.adminOnly || currentUser?.role === "admin") &&
+          (!item.nonAdminOnly || currentUser?.role !== "admin")
+        ).map((item) => {
           const Icon = item.icon;
           const active = pathname === item.href;
           return (
