@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 
 import type { CaseItem } from "@/types/case";
 import type { HistoryEntry } from "@/data/historyEvents";
-import { fetchCases, fetchHistory, UnauthorizedError } from "@/lib/api";
+import { createCase, fetchCases, fetchHistory, setCaseClosed, toggleArchiveCase, UnauthorizedError, updateCase as updateCaseApi } from "@/lib/api";
 import { mapCaseOutToCaseItem } from "@/lib/caseMapper";
 
 type CasesContextValue = {
@@ -15,9 +15,10 @@ type CasesContextValue = {
   isLoading: boolean;
   loadError: string | null;
   refetch: () => void;
-  addCase: (newCase: CaseItem) => void;
-  updateCase: (updatedCase: CaseItem) => void;
-  toggleArchive: (id: number) => void;
+  addCase: (newCase: CaseItem) => Promise<void>;
+  updateCase: (updatedCase: CaseItem) => Promise<void>;
+  toggleArchive: (id: number) => Promise<void>;
+  setCaseClosed: (id: number, closed: boolean) => Promise<void>;
 };
 
 const CasesContext = createContext<CasesContextValue | null>(null);
@@ -84,26 +85,29 @@ export function CasesProvider({ children }: { children: ReactNode }) {
     };
   }, [reloadToken, router]);
 
-  // TEMPORARY (Phase 2 is read-only): these still mutate local state only.
-  // Phase 3/4/5 will replace these bodies with real POST/PUT/toggle-archive
-  // calls followed by a refetch(), instead of optimistic local edits.
-  const addCase = useCallback((newCase: CaseItem) => {
-    setCases((prev) => [...prev, newCase]);
+  const addCase = useCallback(async (newCase: CaseItem) => {
+    const saved = await createCase(newCase);
+    setCases((prev) => [...prev, mapCaseOutToCaseItem(saved)]);
   }, []);
 
-  const updateCase = useCallback((updatedCase: CaseItem) => {
-    setCases((prev) => prev.map((item) => (item.id === updatedCase.id ? updatedCase : item)));
+  const updateCase = useCallback(async (updatedCase: CaseItem) => {
+    const saved = await updateCaseApi(updatedCase.id, updatedCase);
+    setCases((prev) => prev.map((item) => (item.id === updatedCase.id ? mapCaseOutToCaseItem(saved) : item)));
   }, []);
 
-  const toggleArchive = useCallback((id: number) => {
-    setCases((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, archived: !item.archived } : item))
-    );
+  const toggleArchive = useCallback(async (id: number) => {
+    const saved = await toggleArchiveCase(id);
+    setCases((prev) => prev.map((item) => (item.id === id ? mapCaseOutToCaseItem(saved) : item)));
+  }, []);
+
+  const closeCase = useCallback(async (id: number, closed: boolean) => {
+    const saved = await setCaseClosed(id, closed);
+    setCases((prev) => prev.map((item) => (item.id === id ? mapCaseOutToCaseItem(saved) : item)));
   }, []);
 
   const value = useMemo(
-    () => ({ cases, historyLog, isLoading, loadError, refetch, addCase, updateCase, toggleArchive }),
-    [cases, historyLog, isLoading, loadError, refetch, addCase, updateCase, toggleArchive]
+    () => ({ cases, historyLog, isLoading, loadError, refetch, addCase, updateCase, toggleArchive, setCaseClosed: closeCase }),
+    [cases, historyLog, isLoading, loadError, refetch, addCase, updateCase, toggleArchive, closeCase]
   );
 
   return <CasesContext.Provider value={value}>{children}</CasesContext.Provider>;

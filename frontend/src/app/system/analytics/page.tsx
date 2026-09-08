@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 
 import type { CaseItem, TotalPaidCategory } from "@/types/case";
-import { initialCases } from "@/data/initialCases";
+import { useCases } from "@/context/CasesContext";
 import { formatCurrency } from "@/lib/caseHelpers";
 import { STAGE_STYLES, type StageKey } from "@/components/dashboard/form/shared/SectionHeader";
 import { SummaryCards } from "@/components/shared/SummaryCards";
@@ -116,18 +116,19 @@ function isWithinRange(dateStr: string | undefined, start: string, end: string) 
 }
 
 export default function AnalyticsPage() {
+  const { cases: allCases } = useCases();
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
 
   const cases = useMemo(
     () =>
-      initialCases.filter((c) => {
+      allCases.filter((c) => {
         if (c.archived) return false;
         const referenceDate = c.filingDate || c.date;
         if (!isWithinRange(referenceDate, startDate, endDate)) return false;
         return true;
       }),
-    [startDate, endDate]
+    [allCases, startDate, endDate]
   );
 
   // Stage -> bucket -> count

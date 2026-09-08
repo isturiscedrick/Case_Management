@@ -1,4 +1,4 @@
-import type { CaseItem, LaInfo, NlrcInfo, CaInfo, ScInfo, CaseProgress, StageProgress, CaseStatus } from "@/types/case";
+import type { CaseDraft, CaseItem, LaInfo, NlrcInfo, CaInfo, ScInfo, CaseProgress, StageProgress, CaseStatus } from "@/types/case";
 
 // Shape of what the backend actually returns from GET /api/cases and
 // GET /api/cases/{id} — mirrors CaseOut/DecisionOut in
@@ -153,5 +153,83 @@ export function mapCaseOutToCaseItem(out: CaseOut): CaseItem {
     closedDate: out.closed_date ?? "",
 
     archived: out.archived,
+  };
+}
+
+export interface DecisionPayload {
+  date: string | null;
+  status: string | null;
+  judgment_award_mode: "amount" | "to_be_computed" | null;
+  judgment_award_amount: string | null;
+  judgment_award_amount_specification: string | null;
+  judgment_award_computed_specification: string | null;
+  remarks: string | null;
+  remarks_specification: string | null;
+  progress: string | null;
+  progress_specification: string | null;
+}
+
+export interface CasePayload {
+  company: string;
+  status: CaseStatus;
+  case_title: string;
+  case_no: string;
+  complainants: string[];
+  venue: string;
+  handling_personnel: string | null;
+  handling_personnel_specification: string | null;
+  cause: string[];
+  cause_specification: string | null;
+  filing_date: string | null;
+  remarks: string | null;
+  remark_specification: string | null;
+  la: DecisionPayload | null;
+  nlrc: DecisionPayload | null;
+  ca: DecisionPayload | null;
+  sc: DecisionPayload | null;
+  total_paid_category: string | null;
+}
+
+function mapDecision(stage: CaseDraft["la"], progress: StageProgress, progressSpecification?: string): DecisionPayload | null {
+  const hasData = Object.values(stage).some((value) => value !== "");
+  if (!hasData) return null;
+
+  const isComputed = stage.judgmentAward === "To be computed";
+  const hasAmount = stage.judgmentAward !== "" && !isComputed;
+
+  return {
+    date: stage.date || null,
+    status: stage.status || null,
+    judgment_award_mode: isComputed ? "to_be_computed" : hasAmount ? "amount" : null,
+    judgment_award_amount: hasAmount ? stage.judgmentAward : null,
+    judgment_award_amount_specification: hasAmount ? stage.judgmentAwardSpecification || null : null,
+    judgment_award_computed_specification: isComputed ? stage.judgmentAwardComputedSpecification || null : null,
+    remarks: stage.remarks || null,
+    remarks_specification: stage.remarksSpecification || null,
+    progress: progress || null,
+    progress_specification: progressSpecification || null,
+  };
+}
+
+export function mapCaseDraftToPayload(draft: CaseDraft): CasePayload {
+  return {
+    company: draft.company,
+    status: draft.status,
+    case_title: draft.caseTitle,
+    case_no: draft.caseNo,
+    complainants: draft.complainants.filter((value) => value.trim()),
+    venue: draft.venue,
+    handling_personnel: draft.handlingPersonnel || null,
+    handling_personnel_specification: draft.handlingPersonnelSpecification || null,
+    cause: draft.cause,
+    cause_specification: draft.causeSpecification || null,
+    filing_date: draft.filingDate || null,
+    remarks: draft.remarks || null,
+    remark_specification: draft.remarkSpecification || null,
+    la: mapDecision(draft.la, draft.caseProgress.la, draft.caseProgress.laSpecification),
+    nlrc: mapDecision(draft.nlrc, draft.caseProgress.nlrc, draft.caseProgress.nlrcSpecification),
+    ca: mapDecision(draft.ca, draft.caseProgress.ca, draft.caseProgress.caSpecification),
+    sc: mapDecision(draft.sc, draft.caseProgress.sc, draft.caseProgress.scSpecification),
+    total_paid_category: draft.totalPaid.category || null,
   };
 }

@@ -34,7 +34,7 @@ export default function CasesPage() {
      CASE DATA
   ======================================================= */
 
-  const { cases, addCase, updateCase, toggleArchive, isLoading, loadError, refetch } = useCases();  // Falls back to the bundled initialCompanies list (kept in sync with the
+  const { cases, addCase, updateCase, toggleArchive, setCaseClosed, isLoading, loadError, refetch } = useCases();  // Falls back to the bundled initialCompanies list (kept in sync with the
   // same seed CSV) if the API call fails, e.g. backend not running locally.
   const [companies, setCompanies] = useState<string[]>(initialCompanies);
 
@@ -317,7 +317,7 @@ export default function CasesPage() {
      SAVE CASE
   ======================================================= */
 
-  const saveCreate = () => {
+  const saveCreate = async () => {
     const nextId = Math.max(0, ...cases.map((item) => item.id)) + 1;
     const today = new Date().toISOString().slice(0, 10);
 
@@ -333,13 +333,16 @@ export default function CasesPage() {
       },
     };
 
-    addCase(newCase);
-
-    setConfirmSave(null);
-    closeModal();
+    try {
+      await addCase(newCase);
+      setConfirmSave(null);
+      closeModal();
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "Unable to create the case.");
+    }
   };
 
-  const saveEdit = () => {
+  const saveEdit = async () => {
     if (!activeCase) {
       return;
     }
@@ -356,13 +359,19 @@ export default function CasesPage() {
       },
     };
 
-    updateCase(updatedCase);
-
-    setConfirmSave(null);
-    closeModal();
+    try {
+      await updateCase(updatedCase);
+      if (!!updatedCase.closed !== !!activeCase.closed) {
+        await setCaseClosed(updatedCase.id, !!updatedCase.closed);
+      }
+      setConfirmSave(null);
+      closeModal();
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "Unable to save the case.");
+    }
   };
 
-  const confirmSaveAction = () => {
+  const confirmSaveAction = async () => {
     if (confirmSave === "create") {
       saveCreate();
       return;
@@ -381,14 +390,17 @@ export default function CasesPage() {
     setConfirmArchiveItem(item);
   };
 
-  const confirmToggleArchive = () => {
+  const confirmToggleArchive = async () => {
     if (!confirmArchiveItem) {
       return;
     }
 
-    toggleArchive(confirmArchiveItem.id);
-
-    setConfirmArchiveItem(null);
+    try {
+      await toggleArchive(confirmArchiveItem.id);
+      setConfirmArchiveItem(null);
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "Unable to update the archive status.");
+    }
   };
 
   /* =======================================================

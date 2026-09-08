@@ -40,12 +40,16 @@ export default function ArchivePage() {
 
   const requestRestore = (item: CaseItem) => setRestoreItem(item);
 
-  const confirmRestore = () => {
+  const confirmRestore = async () => {
     if (!restoreItem) return;
     // Flip the archived flag through the shared context so the dashboard's
     // active list picks up the restore immediately.
-    toggleArchive(restoreItem.id);
-    setRestoreItem(null);
+    try {
+      await toggleArchive(restoreItem.id);
+      setRestoreItem(null);
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "Unable to restore the case.");
+    }
   };
 
   return (

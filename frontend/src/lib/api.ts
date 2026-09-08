@@ -95,7 +95,8 @@ export function authHeaders(): HeadersInit {
 // Cases / History (read-only for now — Phase 2)
 // ---------------------------------------------------------------------
 
-import type { CaseOut } from "./caseMapper";
+import type { CaseDraft } from "@/types/case";
+import { mapCaseDraftToPayload, type CaseOut } from "./caseMapper";
 
 export class UnauthorizedError extends Error {
   constructor() {
@@ -138,5 +139,42 @@ export interface HistoryOut {
 
 export async function fetchHistory(): Promise<HistoryOut[]> {
   const res = await authFetch(`/api/history?page_size=500`);
+  return res.json();
+}
+
+async function authMutation(path: string, method: "POST" | "PUT", body?: unknown): Promise<Response> {
+  const res = await fetch(`${API_BASE_URL}${path}`, {
+    method,
+    cache: "no-store",
+    headers: { "Content-Type": "application/json", ...authHeaders() },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+
+  if (res.status === 401) throw new UnauthorizedError();
+  if (!res.ok) {
+    const detail = await res.json().catch(() => null);
+    throw new Error(detail?.detail ?? `Request failed: ${res.status}`);
+  }
+  return res;
+}
+
+export async function createCase(draft: CaseDraft): Promise<CaseOut> {
+  const res = await authMutation("/api/cases", "POST", mapCaseDraftToPayload(draft));
+  return res.json();
+}
+
+export async function updateCase(id: number, draft: CaseDraft): Promise<CaseOut> {
+  const res = await authMutation(`/api/cases/${id}`, "PUT", mapCaseDraftToPayload(draft));
+  return res.json();
+}
+
+export async function toggleArchiveCase(id: number): Promise<CaseOut> {
+  const res = await authMutation(`/api/cases/${id}/toggle-archive`, "POST");
+  return res.json();
+}
+
+export async function setCaseClosed(id: number, closed: boolean): Promise<CaseOut> {
+  const path = closed ? `/api/cases/${id}/close` : `/api/cases/${id}/unclose`;
+  const res = await authMutation(path, "POST");
   return res.json();
 }
