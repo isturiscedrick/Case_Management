@@ -74,7 +74,7 @@ def update_case(db: Session, case_id: int, payload: CaseUpdate, current_user: Us
 
     # Server-side mirror of the frontend's per-stage disabled fieldsets:
     # once a stage was already filled, its details can't be silently
-    # rewritten by a non-UI client — only Progress may still change.
+    # rewritten by a non-UI client — only Remarks and Progress may still change.
     existing_stage_dicts = {
         stage_key: decision_crud.get_decision_as_stage_dict(db, case_id, level)
         for stage_key, level in STAGE_LEVEL_MAP.items()
@@ -92,13 +92,12 @@ def update_case(db: Session, case_id: int, payload: CaseUpdate, current_user: Us
         detail_fields = (
             "date", "status", "judgment_award_mode", "judgment_award_amount",
             "judgment_award_amount_specification", "judgment_award_computed_specification",
-            "remarks", "remarks_specification",
         )
         for field in detail_fields:
             if getattr(incoming_stage, field) != getattr(existing_stage, field):
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
-                    detail=f'{stage_key.upper()} details are locked once filled — only Progress can still be updated.',
+                    detail=f'{stage_key.upper()} details are locked once filled — Remarks and Progress can still be updated.',
                 )
 
     try:

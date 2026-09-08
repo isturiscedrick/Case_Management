@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date as date_type
 from decimal import Decimal
 from typing import Optional
 from pydantic import BaseModel, ConfigDict
@@ -10,7 +10,7 @@ from app.models.enums import (
 
 
 class DecisionBase(BaseModel):
-    date: Optional[date] = None
+    date: Optional[date_type] = None
     status: Optional[TribunalDecisionStatus] = None
     judgment_award_mode: Optional[JudgmentAwardMode] = None
     judgment_award_amount: Optional[Decimal] = None

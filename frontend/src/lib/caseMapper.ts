@@ -191,7 +191,10 @@ export interface CasePayload {
 }
 
 function mapDecision(stage: CaseDraft["la"], progress: StageProgress, progressSpecification?: string): DecisionPayload | null {
-  const hasData = Object.values(stage).some((value) => value !== "");
+  const hasData =
+    Object.values(stage).some((value) => value !== "") ||
+    progress !== "" ||
+    (progressSpecification ?? "") !== "";
   if (!hasData) return null;
 
   const isComputed = stage.judgmentAward === "To be computed";

@@ -105,6 +105,28 @@ export class UnauthorizedError extends Error {
   }
 }
 
+function formatApiError(detail: unknown, statusCode: number): string {
+  if (typeof detail === "string" && detail.trim()) return detail;
+
+  if (Array.isArray(detail)) {
+    const messages = detail.map((item) => {
+      if (typeof item === "string") return item;
+      if (item && typeof item === "object" && "msg" in item) {
+        const location = "loc" in item && Array.isArray(item.loc) ? ` (${item.loc.join(" > ")})` : "";
+        return `${String(item.msg)}${location}`;
+      }
+      return JSON.stringify(item);
+    });
+    return messages.join("\n");
+  }
+
+  if (detail && typeof detail === "object" && "msg" in detail) {
+    return String(detail.msg);
+  }
+
+  return `Request failed: ${statusCode}`;
+}
+
 async function authFetch(path: string): Promise<Response> {
   const res = await fetch(`${API_BASE_URL}${path}`, {
     cache: "no-store",
@@ -153,7 +175,7 @@ async function authMutation(path: string, method: "POST" | "PUT", body?: unknown
   if (res.status === 401) throw new UnauthorizedError();
   if (!res.ok) {
     const detail = await res.json().catch(() => null);
-    throw new Error(detail?.detail ?? `Request failed: ${res.status}`);
+    throw new Error(formatApiError(detail?.detail, res.status));
   }
   return res;
 }

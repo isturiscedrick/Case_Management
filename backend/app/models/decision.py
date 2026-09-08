@@ -27,7 +27,13 @@ class Decision(Base):
     judgment_award_amount_specification = Column(String(500), nullable=True)
     judgment_award_computed_specification = Column(String(500), nullable=True)
 
-    remarks = Column(SAEnum(TribunalRemarks), nullable=True)
+    remarks = Column(
+        SAEnum(
+            TribunalRemarks,
+            values_callable=lambda enum_type: [member.value for member in enum_type],
+        ),
+        nullable=True,
+    )
     remarks_specification = Column(String(500), nullable=True)
 
     progress = Column(SAEnum(StageProgress), nullable=True)
