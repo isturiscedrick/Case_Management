@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.security import decode_token, create_access_token
-from app.schemas.auth import LoginRequest, TokenResponse, RefreshRequest, UserOut, UserCreate
+from app.schemas.auth import LoginRequest, TokenResponse, RefreshRequest, UserOut, UserCreate, UserProfileUpdate
 from app.service import auth_service
 from app.service.deps import get_current_user, require_role
 from app.models.enums import UserRole
@@ -41,6 +41,15 @@ def users(
     _admin=Depends(require_role(UserRole.admin)),
 ):
     return auth_service.list_users(db)
+
+
+@router.put("/me", response_model=UserOut)
+def update_me(
+    payload: UserProfileUpdate,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    return auth_service.update_profile(db, current_user, payload)
 
 
 @router.post("/register", response_model=UserOut, status_code=status.HTTP_201_CREATED)

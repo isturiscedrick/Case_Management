@@ -23,6 +23,7 @@ class UserOut(BaseModel):
     user_id: int
     username: str
     full_name: str
+    profile_picture: str | None = None
     role: UserRole
 
 
@@ -31,3 +32,10 @@ class UserCreate(BaseModel):
     full_name: str
     password: str
     role: UserRole = UserRole.handling_personnel
+
+
+class UserProfileUpdate(BaseModel):
+    username: str
+    full_name: str
+    password: str | None = None
+    profile_picture: str | None = None

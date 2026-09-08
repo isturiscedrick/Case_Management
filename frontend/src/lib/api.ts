@@ -205,6 +205,7 @@ export interface CurrentUser {
   user_id: number;
   username: string;
   full_name: string;
+  profile_picture: string | null;
   role: "admin" | "handling_personnel" | "viewer";
 }
 
@@ -229,5 +230,17 @@ export interface UserCreatePayload {
 
 export async function registerUser(payload: UserCreatePayload): Promise<CurrentUser> {
   const res = await authMutation("/api/auth/register", "POST", payload);
+  return res.json();
+}
+
+export interface UserProfileUpdate {
+  username: string;
+  full_name: string;
+  password?: string;
+  profile_picture: string | null;
+}
+
+export async function updateCurrentUser(payload: UserProfileUpdate): Promise<CurrentUser> {
+  const res = await authMutation("/api/auth/me", "PUT", payload);
   return res.json();
 }

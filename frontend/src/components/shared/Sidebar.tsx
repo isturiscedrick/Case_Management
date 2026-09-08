@@ -24,16 +24,22 @@ export default function Sidebar() {
   useEffect(() => {
     let cancelled = false;
 
-    fetchCurrentUser()
-      .then((user) => {
-        if (!cancelled) setCurrentUser(user);
-      })
-      .catch((error) => {
-        if (!cancelled && error instanceof UnauthorizedError) router.push("/login");
-      });
+    const loadCurrentUser = () => {
+      fetchCurrentUser()
+        .then((user) => {
+          if (!cancelled) setCurrentUser(user);
+        })
+        .catch((error) => {
+          if (!cancelled && error instanceof UnauthorizedError) router.push("/login");
+        });
+    };
+
+    loadCurrentUser();
+    window.addEventListener("profile-updated", loadCurrentUser);
 
     return () => {
       cancelled = true;
+      window.removeEventListener("profile-updated", loadCurrentUser);
     };
   }, [router]);
 
@@ -135,11 +141,21 @@ export default function Sidebar() {
         }`}
       >
         <div
-          className={`flex items-center ${collapsed ? "" : "gap-2.5"}`}
           title={collapsed ? currentUser?.full_name : undefined}
+          onClick={() => router.push("/system/profile")}
+          role="link"
+          tabIndex={0}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" || event.key === " ") router.push("/system/profile");
+          }}
+          className={`flex cursor-pointer items-center ${collapsed ? "" : "gap-2.5"}`}
         >
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/10 text-white">
-            <User className="h-4 w-4" />
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white/10 text-white">
+            {currentUser?.profile_picture ? (
+              <img src={currentUser.profile_picture} alt="" className="h-full w-full object-cover" />
+            ) : (
+              <User className="h-4 w-4" />
+            )}
           </div>
 
           {!collapsed && (

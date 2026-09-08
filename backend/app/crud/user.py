@@ -16,6 +16,13 @@ def list_users(db: Session) -> List[User]:
     return db.query(User).order_by(User.full_name.asc(), User.username.asc()).all()
 
 
+def update_user(db: Session, user: User, **fields) -> User:
+    for key, value in fields.items():
+        setattr(user, key, value)
+    db.flush()
+    return user
+
+
 def create_user(db: Session, *, username: str, full_name: str, hashed_password: str, role) -> User:
     user = User(
         username=username,

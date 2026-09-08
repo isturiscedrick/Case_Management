@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from app.manager import auth_manager
 from app.crud import user as user_crud
 from app.core.security import hash_password
-from app.schemas.auth import LoginRequest, UserCreate, TokenResponse
+from app.schemas.auth import LoginRequest, UserCreate, UserProfileUpdate, TokenResponse
 
 
 def login(db: Session, payload: LoginRequest) -> TokenResponse:
@@ -32,3 +32,22 @@ def register(db: Session, payload: UserCreate):
 
 def list_users(db: Session):
     return user_crud.list_users(db)
+
+
+def update_profile(db: Session, user, payload: UserProfileUpdate):
+    existing = user_crud.get_user_by_username(db, payload.username)
+    if existing and existing.user_id != user.user_id:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Username already taken.")
+
+    fields = {
+        "username": payload.username.strip(),
+        "full_name": payload.full_name.strip(),
+        "profile_picture": payload.profile_picture,
+    }
+    if payload.password:
+        fields["hashed_password"] = hash_password(payload.password)
+
+    user_crud.update_user(db, user, **fields)
+    db.commit()
+    db.refresh(user)
+    return user
