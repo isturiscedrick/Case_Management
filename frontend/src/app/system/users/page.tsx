@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
-import { Bell, Eye, EyeOff, Trash2, User, UserPlus } from "lucide-react";
+import { Bell, Check, Eye, EyeOff, Pencil, Trash2, User, UserPlus, X } from "lucide-react";
 import { deleteUser, fetchCurrentUser, fetchPendingNotifications, fetchUsers, registerUser, resetUserPassword, UnauthorizedError, updateUserRole, type CurrentUser, type PasswordResetNotification, type UserRole } from "@/lib/api";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 
@@ -17,6 +17,7 @@ export default function UsersPage() {
   const [fullName, setFullName] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [showCreatePassword, setShowCreatePassword] = useState(false);
   const [role, setRole] = useState<UserRole>("handling_personnel");
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -27,10 +28,14 @@ export default function UsersPage() {
   const [notifications, setNotifications] = useState<PasswordResetNotification[]>([]);
   const [deletingUser, setDeletingUser] = useState<CurrentUser | null>(null);
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
+  const [editingUserId, setEditingUserId] = useState<number | null>(null);
+  const [draftRole, setDraftRole] = useState<UserRole | null>(null);
   const [confirmAction, setConfirmAction] = useState<
     | { type: "create" }
     | { type: "reset"; userId: number }
-    | { type: "role"; userId: number; nextRole: UserRole }
+    | { type: "edit"; userId: number }
+    | { type: "saveRole"; userId: number; nextRole: UserRole }
+    | { type: "cancelEdit"; userId: number }
     | null
   >(null);
 
@@ -71,6 +76,7 @@ export default function UsersPage() {
       setFullName("");
       setUsername("");
       setPassword("");
+      setShowCreatePassword(false);
       setRole("handling_personnel");
       setUsers((currentUsers) => [...currentUsers, createdUser].sort((a, b) => a.full_name.localeCompare(b.full_name)));
       setMessage({ type: "success", text: "User created successfully." });
@@ -104,8 +110,33 @@ export default function UsersPage() {
     }
   }
 
-  async function handleRoleChange(userId: number, nextRole: UserRole) {
-    setConfirmAction({ type: "role", userId, nextRole });
+  function startEditing(userId: number) {
+    setConfirmAction({ type: "edit", userId });
+  }
+
+  function beginEditing(userId: number) {
+    const user = getUser(userId);
+    if (!user) return;
+    setEditingUserId(userId);
+    setDraftRole(user.role);
+  }
+
+  function handleRoleChange(nextRole: UserRole) {
+    setDraftRole(nextRole);
+  }
+
+  function requestSaveRole(userId: number) {
+    if (!draftRole || draftRole === getUser(userId)?.role) return;
+    setConfirmAction({ type: "saveRole", userId, nextRole: draftRole });
+  }
+
+  function requestCancelEdit(userId: number) {
+    setConfirmAction({ type: "cancelEdit", userId });
+  }
+
+  function cancelEditing() {
+    setEditingUserId(null);
+    setDraftRole(null);
   }
 
   async function updateRole(userId: number, nextRole: UserRole) {
@@ -128,7 +159,12 @@ export default function UsersPage() {
     setConfirmAction(null);
     if (action.type === "create") void createUser();
     if (action.type === "reset") void resetUserPasswordForAccount(action.userId);
-    if (action.type === "role") void updateRole(action.userId, action.nextRole);
+    if (action.type === "edit") beginEditing(action.userId);
+    if (action.type === "saveRole") {
+      void updateRole(action.userId, action.nextRole);
+      cancelEditing();
+    }
+    if (action.type === "cancelEdit") cancelEditing();
   }
 
   async function handleDeleteUser() {
@@ -192,7 +228,12 @@ export default function UsersPage() {
             </label>
             <label className="text-xs font-medium text-slate-600">
               Temporary password
-              <input required minLength={6} type="password" value={password} onChange={(event) => setPassword(event.target.value)} className="mt-1.5 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-normal text-slate-700 outline-none focus:border-[#12331F] focus:bg-white focus:ring-2 focus:ring-[#12331F]/10" />
+              <span className="relative mt-1.5 block">
+                <input required minLength={6} type={showCreatePassword ? "text" : "password"} value={password} onChange={(event) => setPassword(event.target.value)} className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 pr-11 text-sm font-normal text-slate-700 outline-none focus:border-[#12331F] focus:bg-white focus:ring-2 focus:ring-[#12331F]/10" />
+                <button type="button" onClick={() => setShowCreatePassword((visible) => !visible)} aria-label={showCreatePassword ? "Hide temporary password" : "Show temporary password"} className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#12331F]/20">
+                  {showCreatePassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </span>
             </label>
             <label className="text-xs font-medium text-slate-600">
               Role
@@ -291,7 +332,7 @@ export default function UsersPage() {
                     <td className="px-3 py-3 font-medium text-slate-700">{user.full_name}</td>
                     <td className="px-3 py-3 text-slate-500">{user.username}</td>
                     <td className="px-3 py-3 text-slate-500">
-                      <select value={user.role} disabled={user.user_id === currentUserId} onChange={(event) => handleRoleChange(user.user_id, event.target.value as UserRole)} aria-label={`Role for ${user.full_name}`} className="rounded-lg border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs text-slate-700 outline-none focus:border-[#12331F] focus:bg-white disabled:cursor-not-allowed disabled:opacity-60">
+                      <select value={editingUserId === user.user_id ? draftRole ?? user.role : user.role} disabled={editingUserId !== user.user_id || user.user_id === currentUserId} onChange={(event) => handleRoleChange(event.target.value as UserRole)} aria-label={`Role for ${user.full_name}`} className="rounded-lg border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs text-slate-700 outline-none focus:border-[#12331F] focus:bg-white disabled:cursor-not-allowed disabled:opacity-60">
                         {ROLE_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
                       </select>
                     </td>
@@ -299,7 +340,17 @@ export default function UsersPage() {
                       <button type="button" onClick={() => { setResetUserId(user.user_id); setResetPassword(""); }} className="text-xs font-medium text-[#12331F] underline hover:text-[#B08D57]">Reset password</button>
                     </td>
                     <td className="px-3 py-3">
-                      <button type="button" disabled={user.user_id === currentUserId} onClick={() => setDeletingUser(user)} aria-label={`Delete ${user.full_name}`} title={user.user_id === currentUserId ? "You cannot delete your own account" : "Delete user"} className="rounded-lg p-2 text-rose-600 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-30"><Trash2 className="h-4 w-4" /></button>
+                      <div className="flex items-center gap-1">
+                        {user.user_id !== currentUserId && (editingUserId === user.user_id ? (
+                          <>
+                            {draftRole && draftRole !== user.role && <button type="button" onClick={() => requestSaveRole(user.user_id)} aria-label={`Save changes for ${user.full_name}`} title="Save changes" className="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-emerald-700 transition hover:bg-emerald-50"><Check className="h-4 w-4" />Save changes</button>}
+                            <button type="button" onClick={() => requestCancelEdit(user.user_id)} aria-label={`Cancel editing ${user.full_name}`} title="Cancel editing" className="rounded-lg p-2 text-slate-500 transition hover:bg-slate-100"><X className="h-4 w-4" /></button>
+                          </>
+                        ) : (
+                          <button type="button" onClick={() => startEditing(user.user_id)} aria-label={`Edit ${user.full_name}`} title="Edit user" className="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-[#12331F] transition hover:bg-emerald-50"><Pencil className="h-4 w-4" />Edit</button>
+                        ))}
+                        <button type="button" disabled={user.user_id === currentUserId} onClick={() => setDeletingUser(user)} aria-label={`Delete ${user.full_name}`} title={user.user_id === currentUserId ? "You cannot delete your own account" : "Delete user"} className="rounded-lg p-2 text-rose-600 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-30"><Trash2 className="h-4 w-4" /></button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -339,11 +390,29 @@ export default function UsersPage() {
           onCancel={() => setConfirmAction(null)}
         />
       )}
-      {confirmAction?.type === "role" && (
+      {confirmAction?.type === "edit" && (
+        <ConfirmDialog
+          title="Edit user"
+          message={`Edit the role for ${getUser(confirmAction.userId)?.full_name ?? "this user"}?`}
+          confirmLabel="Edit user"
+          onConfirm={confirmPendingAction}
+          onCancel={() => setConfirmAction(null)}
+        />
+      )}
+      {confirmAction?.type === "saveRole" && (
         <ConfirmDialog
           title="Update user role"
-          message={`Change ${getUser(confirmAction.userId)?.full_name ?? "this user"} to the ${ROLE_OPTIONS.find((option) => option.value === confirmAction.nextRole)?.label ?? confirmAction.nextRole} role?`}
+          message={`Save the ${ROLE_OPTIONS.find((option) => option.value === confirmAction.nextRole)?.label ?? confirmAction.nextRole} role for ${getUser(confirmAction.userId)?.full_name ?? "this user"}?`}
           confirmLabel="Update role"
+          onConfirm={confirmPendingAction}
+          onCancel={() => setConfirmAction(null)}
+        />
+      )}
+      {confirmAction?.type === "cancelEdit" && (
+        <ConfirmDialog
+          title="Discard changes"
+          message={`Discard unsaved role changes for ${getUser(confirmAction.userId)?.full_name ?? "this user"}?`}
+          confirmLabel="Discard changes"
           onConfirm={confirmPendingAction}
           onCancel={() => setConfirmAction(null)}
         />
