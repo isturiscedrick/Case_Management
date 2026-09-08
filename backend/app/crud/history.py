@@ -22,9 +22,11 @@ def create_history_entry(
 
 def list_history(
     db: Session, *, search: Optional[str] = None, action: Optional[CaseHistoryAction] = None,
-    page: int = 1, page_size: int = 50,
+    page: int = 1, page_size: int = 50, performed_by_user_id: Optional[int] = None,
 ) -> List[CaseHistory]:
     query = db.query(CaseHistory)
+    if performed_by_user_id is not None:
+        query = query.filter(CaseHistory.performed_by_user_id == performed_by_user_id)
     if action:
         query = query.filter(CaseHistory.action == action)
     if search:

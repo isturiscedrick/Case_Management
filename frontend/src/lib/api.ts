@@ -236,11 +236,50 @@ export async function registerUser(payload: UserCreatePayload): Promise<CurrentU
 export interface UserProfileUpdate {
   username: string;
   full_name: string;
+  current_password?: string;
   password?: string;
   profile_picture: string | null;
 }
 
 export async function updateCurrentUser(payload: UserProfileUpdate): Promise<CurrentUser> {
   const res = await authMutation("/api/auth/me", "PUT", payload);
+  return res.json();
+}
+
+export async function resetUserPassword(userId: number, password: string): Promise<void> {
+  await authMutation(`/api/auth/users/${userId}/password`, "PUT", { password });
+}
+
+export interface PasswordResetNotification {
+  notification_id: number;
+  user_id: number;
+  notification_type: string;
+  message: string;
+  status: string;
+  created_at: string | null;
+  resolved_at: string | null;
+}
+
+export async function requestPasswordReset(): Promise<void> {
+  await authMutation("/api/auth/me/password-reset-request", "POST");
+}
+
+export async function fetchPendingNotifications(): Promise<PasswordResetNotification[]> {
+  const res = await authFetch("/api/notifications/pending");
+  return res.json();
+}
+
+export async function fetchMyNotifications(): Promise<PasswordResetNotification[]> {
+  const res = await authFetch("/api/notifications/me");
+  return res.json();
+}
+
+export async function decideNotification(id: number, decision: "approve" | "decline"): Promise<PasswordResetNotification> {
+  const res = await authMutation(`/api/notifications/${id}/${decision}`, "POST");
+  return res.json();
+}
+
+export async function fetchMyHistory(): Promise<HistoryOut[]> {
+  const res = await authFetch("/api/history/me?page_size=100");
   return res.json();
 }

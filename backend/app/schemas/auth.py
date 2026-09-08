@@ -37,5 +37,10 @@ class UserCreate(BaseModel):
 class UserProfileUpdate(BaseModel):
     username: str
     full_name: str
+    current_password: str | None = None
     password: str | None = None
     profile_picture: str | None = None
+
+
+class UserPasswordReset(BaseModel):
+    password: str

@@ -3,3 +3,4 @@ from app.models.reference import CompanyReference, Complainant, CauseOfAction  #
 from app.models.case import Case, CaseComplainant, CaseCause  # noqa: F401
 from app.models.decision import Decision  # noqa: F401
 from app.models.history import CaseHistory  # noqa: F401
+from app.models.notification import Notification  # noqa: F401

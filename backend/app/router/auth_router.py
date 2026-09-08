@@ -4,10 +4,11 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.security import decode_token, create_access_token
-from app.schemas.auth import LoginRequest, TokenResponse, RefreshRequest, UserOut, UserCreate, UserProfileUpdate
+from app.schemas.auth import LoginRequest, TokenResponse, RefreshRequest, UserOut, UserCreate, UserPasswordReset, UserProfileUpdate
 from app.service import auth_service
 from app.service.deps import get_current_user, require_role
 from app.models.enums import UserRole
+from app.crud import notification as notification_crud
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -50,6 +51,31 @@ def update_me(
     current_user=Depends(get_current_user),
 ):
     return auth_service.update_profile(db, current_user, payload)
+
+
+@router.post("/me/password-reset-request", status_code=status.HTTP_201_CREATED)
+def request_password_reset(
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    if current_user.role == UserRole.admin:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Admins do not need to request password resets.")
+    notification = notification_crud.create_password_reset_request(
+        db, current_user.user_id, f"{current_user.full_name} ({current_user.username}) requested a password reset."
+    )
+    db.commit()
+    db.refresh(notification)
+    return {"message": "Password reset request sent to an administrator."}
+
+
+@router.put("/users/{user_id}/password", status_code=status.HTTP_204_NO_CONTENT)
+def reset_user_password(
+    user_id: int,
+    payload: UserPasswordReset,
+    db: Session = Depends(get_db),
+    _admin=Depends(require_role(UserRole.admin)),
+):
+    auth_service.reset_password(db, user_id, payload)
 
 
 @router.post("/register", response_model=UserOut, status_code=status.HTTP_201_CREATED)

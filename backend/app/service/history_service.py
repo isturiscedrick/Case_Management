@@ -8,6 +8,6 @@ from app.models.enums import CaseHistoryAction
 
 def get_history(
     db: Session, *, search: Optional[str] = None, action: Optional[CaseHistoryAction] = None,
-    page: int = 1, page_size: int = 50,
+    page: int = 1, page_size: int = 50, performed_by_user_id: Optional[int] = None,
 ) -> List[CaseHistory]:
-    return history_manager.get_history(db, search=search, action=action, page=page, page_size=page_size)
+    return history_manager.get_history(db, search=search, action=action, page=page, page_size=page_size, performed_by_user_id=performed_by_user_id)

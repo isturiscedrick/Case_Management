@@ -21,3 +21,13 @@ def list_history(
     _current_user=Depends(get_current_user),
 ):
     return history_service.get_history(db, search=search, action=action, page=page, page_size=page_size)
+
+
+@router.get("/me", response_model=List[CaseHistoryOut])
+def my_history(
+    page: int = 1,
+    page_size: int = 100,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    return history_service.get_history(db, page=page, page_size=page_size, performed_by_user_id=current_user.user_id)

@@ -3,14 +3,15 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, History, Archive, BarChart3, Scale, ChevronRight, ChevronsLeft, LogOut, User, UserPlus } from "lucide-react";
-import { clearSessionToken, fetchCurrentUser, UnauthorizedError, type CurrentUser } from "@/lib/api";
+import { Bell, ClipboardList, LayoutDashboard, History, Archive, BarChart3, Scale, ChevronRight, ChevronsLeft, LogOut, User, UserPlus } from "lucide-react";
+import { clearSessionToken, decideNotification, fetchCurrentUser, fetchMyNotifications, fetchPendingNotifications, UnauthorizedError, type CurrentUser, type PasswordResetNotification } from "@/lib/api";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 const NAV_ITEMS = [
   { href: "/system/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/system/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/system/archive", label: "Archive", icon: Archive },
   { href: "/system/history", label: "History", icon: History },
+  { href: "/system/notifications", label: "Notifications", icon: Bell },
   { href: "/system/users", label: "Users", icon: UserPlus, adminOnly: true },
 ];
 
@@ -18,6 +19,9 @@ export default function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
+  const [notifications, setNotifications] = useState<PasswordResetNotification[]>([]);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [notificationAction, setNotificationAction] = useState<number | null>(null);
   const pathname = usePathname();
   const router = useRouter();
 
@@ -37,15 +41,35 @@ export default function Sidebar() {
     loadCurrentUser();
     window.addEventListener("profile-updated", loadCurrentUser);
 
+    const loadNotifications = () => {
+      const notificationRequest = currentUser?.role === "admin" ? fetchPendingNotifications() : fetchMyNotifications();
+      notificationRequest.then((items) => {
+        if (!cancelled) setNotifications(items);
+      }).catch(() => undefined);
+    };
+    loadNotifications();
+    const notificationTimer = window.setInterval(loadNotifications, 30000);
+
     return () => {
       cancelled = true;
       window.removeEventListener("profile-updated", loadCurrentUser);
+      window.clearInterval(notificationTimer);
     };
-  }, [router]);
+  }, [router, currentUser?.role]);
 
   function handleLogout() {
     clearSessionToken();
     router.push("/login");
+  }
+
+  async function handleNotificationDecision(id: number, decision: "approve" | "decline") {
+    setNotificationAction(id);
+    try {
+      await decideNotification(id, decision);
+      setNotifications((items) => items.filter((item) => item.notification_id !== id));
+    } finally {
+      setNotificationAction(null);
+    }
   }
 
   return (
@@ -93,6 +117,61 @@ export default function Sidebar() {
             Main Menu
           </p>
         )}
+        {currentUser?.role !== "admin" && (
+          <Link
+            href="/system/activity"
+            title={collapsed ? "Activity" : undefined}
+            className={`mb-1.5 flex items-center rounded-lg border border-transparent text-sm font-medium text-white/60 transition hover:border-white/10 hover:bg-white/5 hover:text-white ${collapsed ? "mx-auto h-10 w-10 justify-center" : "gap-3 px-4 py-2.5"}`}
+          >
+            <ClipboardList className="h-4 w-4 shrink-0" />
+            {!collapsed && <span>Activity</span>}
+          </Link>
+        )}
+        {currentUser?.role === "admin" && <div className="relative">
+          <button
+            type="button"
+            onClick={() => setShowNotifications((current) => !current)}
+            title={collapsed ? "Notifications" : undefined}
+            aria-label="Notifications"
+            className={`group flex w-full items-center rounded-lg border border-transparent text-sm font-medium text-white/60 transition hover:border-white/10 hover:bg-white/5 hover:text-white ${
+              collapsed ? "mx-auto h-10 w-10 justify-center" : "gap-3 px-4 py-2.5"
+            }`}
+          >
+            <span className="relative">
+              <Bell className="h-4 w-4 shrink-0" />
+              {notifications.some((notification) => notification.status === "pending") && (
+                <span className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-rose-400 ring-2 ring-[#12331F]" />
+              )}
+            </span>
+            {!collapsed && <span>Notifications</span>}
+          </button>
+          {showNotifications && (
+            <div className={`absolute top-12 z-20 w-72 rounded-xl border border-slate-200 bg-white p-3 text-slate-700 shadow-xl ${collapsed ? "left-14" : "left-0"}`}>
+              <div className="mb-2 flex items-center justify-between border-b border-slate-100 pb-2">
+                <p className="text-xs font-semibold text-[#12331F]">Notifications</p>
+                <span className="text-[10px] text-slate-400">{notifications.length}</span>
+              </div>
+              {notifications.length === 0 ? (
+                <p className="py-3 text-xs text-slate-400">No notifications.</p>
+              ) : (
+                <div className="max-h-56 space-y-2 overflow-y-auto">
+                  {notifications.map((notification) => (
+                    <div key={notification.notification_id} className="rounded-lg bg-slate-50 p-2.5">
+                      <p className="text-xs leading-4 text-slate-600">{notification.message}</p>
+                      <div className="mt-2 flex items-center justify-between gap-2">
+                        <span className="text-[10px] font-medium text-amber-600">Pending</span>
+                        <div className="flex gap-1.5">
+                          <button type="button" disabled={notificationAction === notification.notification_id} onClick={() => handleNotificationDecision(notification.notification_id, "decline")} className="rounded-md border border-rose-200 px-2 py-1 text-[10px] font-medium text-rose-600 hover:bg-rose-50">Decline</button>
+                          <button type="button" disabled={notificationAction === notification.notification_id} onClick={() => handleNotificationDecision(notification.notification_id, "approve")} className="rounded-md bg-[#12331F] px-2 py-1 text-[10px] font-medium text-white hover:bg-[#1B4A2C]">Approve</button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>}
         {NAV_ITEMS.filter((item) => !item.adminOnly || currentUser?.role === "admin").map((item) => {
           const Icon = item.icon;
           const active = pathname === item.href;

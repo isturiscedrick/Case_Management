@@ -1,8 +1,8 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
-import { UserPlus } from "lucide-react";
-import { fetchCurrentUser, fetchUsers, registerUser, UnauthorizedError, type CurrentUser, type UserRole } from "@/lib/api";
+import { Bell, UserPlus } from "lucide-react";
+import { fetchCurrentUser, fetchPendingNotifications, fetchUsers, registerUser, resetUserPassword, UnauthorizedError, type CurrentUser, type PasswordResetNotification, type UserRole } from "@/lib/api";
 
 const ROLE_OPTIONS: Array<{ value: UserRole; label: string }> = [
   { value: "handling_personnel", label: "Handling Personnel" },
@@ -19,13 +19,20 @@ export default function UsersPage() {
   const [role, setRole] = useState<UserRole>("handling_personnel");
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [resetUserId, setResetUserId] = useState<number | null>(null);
+  const [resetPassword, setResetPassword] = useState("");
+  const [notifications, setNotifications] = useState<PasswordResetNotification[]>([]);
 
   useEffect(() => {
     fetchCurrentUser()
       .then(async (user) => {
         const isAdmin = user.role === "admin";
         setAuthorized(isAdmin);
-        if (isAdmin) setUsers(await fetchUsers());
+        if (isAdmin) {
+          const [existingUsers, pendingNotifications] = await Promise.all([fetchUsers(), fetchPendingNotifications()]);
+          setUsers(existingUsers);
+          setNotifications(pendingNotifications);
+        }
       })
       .catch((error) => {
         if (error instanceof UnauthorizedError) window.location.href = "/login";
@@ -55,6 +62,21 @@ export default function UsersPage() {
       setMessage({ type: "error", text: error instanceof Error ? error.message : "Unable to create user." });
     } finally {
       setIsSubmitting(false);
+    }
+  }
+
+  async function handleResetPassword(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (resetUserId === null) return;
+    setMessage(null);
+    try {
+      await resetUserPassword(resetUserId, resetPassword);
+      setNotifications((current) => current.filter((notification) => notification.user_id !== resetUserId));
+      setResetUserId(null);
+      setResetPassword("");
+      setMessage({ type: "success", text: "Password reset successfully." });
+    } catch (error) {
+      setMessage({ type: "error", text: error instanceof Error ? error.message : "Unable to reset password." });
     }
   }
 
@@ -136,6 +158,7 @@ export default function UsersPage() {
                   <th className="px-3 py-2 font-semibold">Full name</th>
                   <th className="px-3 py-2 font-semibold">Username</th>
                   <th className="px-3 py-2 font-semibold">Role</th>
+                  <th className="px-3 py-2 font-semibold">Password</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -146,12 +169,48 @@ export default function UsersPage() {
                     <td className="px-3 py-3 text-slate-500">
                       {user.role === "handling_personnel" ? "Handling Personnel" : user.role === "admin" ? "Admin" : "Viewer"}
                     </td>
+                    <td className="px-3 py-3">
+                      <button type="button" onClick={() => { setResetUserId(user.user_id); setResetPassword(""); }} className="text-xs font-medium text-[#12331F] underline hover:text-[#B08D57]">Reset password</button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
         </section>
+
+        <section className="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-5 shadow-sm sm:p-6">
+          <div className="mb-4 flex items-center justify-between border-b border-amber-200 pb-4">
+            <div>
+              <h2 className="text-sm font-semibold text-[#12331F]">Notifications</h2>
+              <p className="mt-1 text-xs text-slate-600">{notifications.length} pending password reset request{notifications.length === 1 ? "" : "s"}</p>
+            </div>
+          </div>
+          {notifications.length === 0 ? (
+            <p className="text-sm text-slate-500">No pending notifications.</p>
+          ) : (
+            <div className="space-y-2">
+              {notifications.map((notification) => (
+                <div key={notification.notification_id} className="flex flex-col gap-3 rounded-lg border border-amber-200 bg-white p-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex items-start gap-2"><Bell className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" /><p className="text-sm text-slate-700">{notification.message}</p></div>
+                  <button type="button" onClick={() => { setResetUserId(notification.user_id); setResetPassword(""); }} className="shrink-0 rounded-lg bg-[#12331F] px-3 py-2 text-xs font-medium text-white hover:bg-[#1B4A2C]">Reset password</button>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+
+        {resetUserId !== null && (
+          <form onSubmit={handleResetPassword} className="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-5 shadow-sm">
+            <h2 className="text-sm font-semibold text-[#12331F]">Reset user password</h2>
+            <p className="mt-1 text-xs text-slate-600">Set a temporary password for the selected user. They should change it from their profile afterward.</p>
+            <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+              <input required minLength={6} type="password" value={resetPassword} onChange={(event) => setResetPassword(event.target.value)} placeholder="Temporary password" className="flex-1 rounded-lg border border-amber-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none focus:border-[#12331F]" />
+              <button type="submit" className="rounded-lg bg-[#12331F] px-4 py-2.5 text-sm font-medium text-white hover:bg-[#1B4A2C]">Reset password</button>
+              <button type="button" onClick={() => setResetUserId(null)} className="rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50">Cancel</button>
+            </div>
+          </form>
+        )}
       </div>
     </div>
   );

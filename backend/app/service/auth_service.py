@@ -4,7 +4,8 @@ from sqlalchemy.orm import Session
 from app.manager import auth_manager
 from app.crud import user as user_crud
 from app.core.security import hash_password
-from app.schemas.auth import LoginRequest, UserCreate, UserProfileUpdate, TokenResponse
+from app.crud import notification as notification_crud
+from app.schemas.auth import LoginRequest, UserCreate, UserPasswordReset, UserProfileUpdate, TokenResponse
 
 
 def login(db: Session, payload: LoginRequest) -> TokenResponse:
@@ -44,10 +45,26 @@ def update_profile(db: Session, user, payload: UserProfileUpdate):
         "full_name": payload.full_name.strip(),
         "profile_picture": payload.profile_picture,
     }
+    approved_reset = bool(user.role.value != "admin" and notification_crud.has_approved_password_reset(db, user.user_id))
+    if payload.password and user.role.value != "admin":
+        if not approved_reset and (not payload.current_password or not verify_password(payload.current_password, user.hashed_password)):
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Current password is required and must be correct to set a new password.")
+
     if payload.password:
         fields["hashed_password"] = hash_password(payload.password)
 
     user_crud.update_user(db, user, **fields)
+    if payload.password and approved_reset:
+        notification_crud.consume_approved_password_reset(db, user.user_id)
     db.commit()
     db.refresh(user)
     return user
+
+
+def reset_password(db: Session, user_id: int, payload: UserPasswordReset):
+    user = user_crud.get_user_by_id(db, user_id)
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found.")
+    user_crud.update_user(db, user, hashed_password=hash_password(payload.password))
+    notification_crud.resolve_for_user(db, user_id)
+    db.commit()
