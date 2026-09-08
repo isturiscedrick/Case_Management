@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
-import { Bell, Trash2, User, UserPlus } from "lucide-react";
+import { Bell, Eye, EyeOff, Trash2, User, UserPlus } from "lucide-react";
 import { deleteUser, fetchCurrentUser, fetchPendingNotifications, fetchUsers, registerUser, resetUserPassword, UnauthorizedError, updateUserRole, type CurrentUser, type PasswordResetNotification, type UserRole } from "@/lib/api";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 
@@ -22,6 +22,8 @@ export default function UsersPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [resetUserId, setResetUserId] = useState<number | null>(null);
   const [resetPassword, setResetPassword] = useState("");
+  const [showResetPassword, setShowResetPassword] = useState(false);
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
   const [notifications, setNotifications] = useState<PasswordResetNotification[]>([]);
   const [deletingUser, setDeletingUser] = useState<CurrentUser | null>(null);
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
@@ -87,14 +89,18 @@ export default function UsersPage() {
 
   async function resetUserPasswordForAccount(userId: number) {
     setMessage(null);
+    setIsResettingPassword(true);
     try {
       await resetUserPassword(userId, resetPassword);
       setNotifications((current) => current.filter((notification) => notification.user_id !== userId));
       setResetUserId(null);
       setResetPassword("");
+      setShowResetPassword(false);
       setMessage({ type: "success", text: "Password reset successfully." });
     } catch (error) {
       setMessage({ type: "error", text: error instanceof Error ? error.message : "Unable to reset password." });
+    } finally {
+      setIsResettingPassword(false);
     }
   }
 
@@ -218,7 +224,7 @@ export default function UsersPage() {
               {notifications.map((notification) => (
                 <div key={notification.notification_id} className="flex flex-col gap-3 rounded-lg border border-amber-200 bg-white p-3 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex items-start gap-2"><Bell className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" /><p className="text-sm text-slate-700">{notification.message}</p></div>
-                  <button type="button" onClick={() => { setResetUserId(notification.user_id); setResetPassword(""); }} className="shrink-0 rounded-lg bg-[#12331F] px-3 py-2 text-xs font-medium text-white hover:bg-[#1B4A2C]">Reset password</button>
+                  <button type="button" onClick={() => { setResetUserId(notification.user_id); setResetPassword(""); setShowResetPassword(false); }} className="shrink-0 rounded-lg bg-[#12331F] px-3 py-2 text-xs font-medium text-white hover:bg-[#1B4A2C]">Reset password</button>
                 </div>
               ))}
             </div>
@@ -227,11 +233,23 @@ export default function UsersPage() {
 
         {resetUserId !== null && (
           <form onSubmit={handleResetPassword} className="rounded-xl border border-amber-200 bg-amber-50 p-4 shadow-sm">
-            <h2 className="text-sm font-semibold text-[#12331F]">Reset user password</h2>
-            <p className="mt-1 text-xs text-slate-600">Set a temporary password for the selected user.</p>
-            <div className="mt-3 space-y-2">
-              <input required minLength={6} type="password" value={resetPassword} onChange={(event) => setResetPassword(event.target.value)} placeholder="Temporary password" className="w-full rounded-lg border border-amber-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none focus:border-[#12331F]" />
-              <div className="flex gap-2"><button type="submit" className="flex-1 rounded-lg bg-[#12331F] px-3 py-2.5 text-xs font-medium text-white hover:bg-[#1B4A2C]">Reset password</button><button type="button" onClick={() => setResetUserId(null)} className="rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-xs font-medium text-slate-600 hover:bg-slate-50">Cancel</button></div>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h2 className="text-sm font-semibold text-[#12331F]">Reset user password</h2>
+                <p className="mt-1 text-xs text-slate-600">Set a temporary password for {getUser(resetUserId)?.full_name ?? "this user"}.</p>
+                {getUser(resetUserId) && <p className="mt-1 text-xs text-slate-500">Username: {getUser(resetUserId)?.username}</p>}
+              </div>
+              <button type="button" onClick={() => { setResetUserId(null); setResetPassword(""); setShowResetPassword(false); }} className="shrink-0 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50">Cancel</button>
+            </div>
+            <div className="mt-4 space-y-2">
+              <label htmlFor="admin-reset-password" className="text-xs font-medium text-slate-600">Temporary password</label>
+              <div className="relative">
+                <input id="admin-reset-password" required minLength={6} type={showResetPassword ? "text" : "password"} value={resetPassword} onChange={(event) => setResetPassword(event.target.value)} placeholder="At least 6 characters" className="w-full rounded-lg border border-amber-200 bg-white px-3 py-2.5 pr-11 text-sm text-slate-700 outline-none focus:border-[#12331F] focus:ring-2 focus:ring-[#12331F]/10" />
+                <button type="button" onClick={() => setShowResetPassword((visible) => !visible)} aria-label={showResetPassword ? "Hide temporary password" : "Show temporary password"} className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#12331F]/20">
+                  {showResetPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+              <button type="submit" disabled={isResettingPassword} className="w-full rounded-lg bg-[#12331F] px-3 py-2.5 text-xs font-medium text-white hover:bg-[#1B4A2C] disabled:cursor-not-allowed disabled:opacity-60">{isResettingPassword ? "Resetting password..." : "Continue to confirmation"}</button>
             </div>
           </form>
         )}
