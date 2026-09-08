@@ -34,8 +34,7 @@ export default function CasesPage() {
      CASE DATA
   ======================================================= */
 
-  const { cases, addCase, updateCase, toggleArchive } = useCases();
-  // Falls back to the bundled initialCompanies list (kept in sync with the
+  const { cases, addCase, updateCase, toggleArchive, isLoading, loadError, refetch } = useCases();  // Falls back to the bundled initialCompanies list (kept in sync with the
   // same seed CSV) if the API call fails, e.g. backend not running locally.
   const [companies, setCompanies] = useState<string[]>(initialCompanies);
 
@@ -398,6 +397,23 @@ export default function CasesPage() {
 
   return (
     <div className="flex h-full min-w-0 flex-col gap-4 overflow-hidden bg-[#F5F1E3] p-4">
+            {loadError && (
+        <div className="flex items-center justify-between rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+          <span>{loadError}</span>
+          <button
+            onClick={refetch}
+            className="rounded-md border border-rose-300 px-3 py-1 text-xs font-medium hover:bg-rose-100"
+          >
+            Retry
+          </button>
+        </div>
+      )}
+
+      {isLoading && cases.length === 0 && !loadError && (
+        <div className="flex items-center justify-center rounded-xl border border-slate-200 bg-white p-16 text-sm text-slate-400 shadow-sm">
+          Loading cases…
+        </div>
+      )}
       <DashboardHeader onCreate={openCreate} />
 
       <SummaryCards cases={activeCases} />

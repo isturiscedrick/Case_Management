@@ -91,3 +91,52 @@ export function authHeaders(): HeadersInit {
   const token = getSessionToken();
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
+// ---------------------------------------------------------------------
+// Cases / History (read-only for now — Phase 2)
+// ---------------------------------------------------------------------
+
+import type { CaseOut } from "./caseMapper";
+
+export class UnauthorizedError extends Error {
+  constructor() {
+    super("Not authenticated.");
+    this.name = "UnauthorizedError";
+  }
+}
+
+async function authFetch(path: string): Promise<Response> {
+  const res = await fetch(`${API_BASE_URL}${path}`, {
+    cache: "no-store",
+    headers: { ...authHeaders() },
+  });
+
+  if (res.status === 401) {
+    throw new UnauthorizedError();
+  }
+  if (!res.ok) {
+    throw new Error(`Request failed: ${res.status}`);
+  }
+
+  return res;
+}
+
+export async function fetchCases(archived: boolean): Promise<CaseOut[]> {
+  const res = await authFetch(`/api/cases?archived=${archived}&page_size=500`);
+  return res.json();
+}
+
+export interface HistoryOut {
+  history_id: number;
+  case_id: number;
+  case_no: string;
+  company: string;
+  action: "created" | "updated" | "archived" | "restored";
+  performed_by_username: string | null;
+  detail: string | null;
+  created_at: string | null;
+}
+
+export async function fetchHistory(): Promise<HistoryOut[]> {
+  const res = await authFetch(`/api/history?page_size=500`);
+  return res.json();
+}
