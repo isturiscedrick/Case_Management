@@ -283,3 +283,8 @@ export async function fetchMyHistory(): Promise<HistoryOut[]> {
   const res = await authFetch("/api/history/me?page_size=100");
   return res.json();
 }
+
+export async function fetchCaseHistory(caseId: number): Promise<HistoryOut[]> {
+  const res = await authFetch(`/api/history/case/${caseId}`);
+  return res.json();
+}

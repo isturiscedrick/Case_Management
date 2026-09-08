@@ -11,3 +11,7 @@ def get_history(
     page: int = 1, page_size: int = 50, performed_by_user_id: Optional[int] = None,
 ) -> List[CaseHistory]:
     return history_manager.get_history(db, search=search, action=action, page=page, page_size=page_size, performed_by_user_id=performed_by_user_id)
+
+
+def get_case_history(db: Session, case_id: int) -> List[CaseHistory]:
+    return history_manager.get_case_history(db, case_id)

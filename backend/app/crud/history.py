@@ -33,3 +33,7 @@ def list_history(
         like = f"%{search}%"
         query = query.filter((CaseHistory.company.ilike(like)) | (CaseHistory.case_no.ilike(like)))
     return query.order_by(CaseHistory.created_at.desc()).offset((page - 1) * page_size).limit(page_size).all()
+
+
+def list_case_history(db: Session, case_id: int) -> List[CaseHistory]:
+    return db.query(CaseHistory).filter(CaseHistory.case_id == case_id).order_by(CaseHistory.created_at.desc()).all()

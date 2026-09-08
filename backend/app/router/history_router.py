@@ -31,3 +31,12 @@ def my_history(
     current_user=Depends(get_current_user),
 ):
     return history_service.get_history(db, page=page, page_size=page_size, performed_by_user_id=current_user.user_id)
+
+
+@router.get("/case/{case_id}", response_model=List[CaseHistoryOut])
+def case_history(
+    case_id: int,
+    db: Session = Depends(get_db),
+    _current_user=Depends(get_current_user),
+):
+    return history_service.get_case_history(db, case_id)

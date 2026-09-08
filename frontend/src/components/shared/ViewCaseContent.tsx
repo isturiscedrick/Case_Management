@@ -1,7 +1,11 @@
-import { Landmark, User } from "lucide-react";
+"use client";
+
+import { useEffect, useState } from "react";
+import { Clock3, Landmark, User } from "lucide-react";
 import type { CaseItem } from "@/types/case";
 import { formatDate, formatCurrency, formatTotalPaidCategory, getTotalJudgmentAward } from "@/lib/caseHelpers";
 import { isStageFilled } from "@/lib/caseValidation";
+import { fetchCaseHistory, type HistoryOut } from "@/lib/api";
 import { DetailRow } from "@/components/shared/DetailRow";
 import { StatusBadge } from "./StatusBadge";
 import { SectionHeader, STAGE_STYLES } from "@/components/dashboard/form/shared/SectionHeader";
@@ -36,7 +40,27 @@ function formatJudgmentAward(info: {
 }
 
 export function ViewCaseContent({ item }: { item: CaseItem }) {
+  const [activity, setActivity] = useState<HistoryOut[]>([]);
+  const [activityLoading, setActivityLoading] = useState(true);
   const totalJudgmentAward = getTotalJudgmentAward(item);
+
+  useEffect(() => {
+    let cancelled = false;
+    setActivityLoading(true);
+    fetchCaseHistory(item.id)
+      .then((entries) => {
+        if (!cancelled) setActivity(entries);
+      })
+      .catch(() => {
+        if (!cancelled) setActivity([]);
+      })
+      .finally(() => {
+        if (!cancelled) setActivityLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [item.id]);
 
   const laEnabled = isStageFilled(item.la);
   const nlrcEnabled = isStageFilled(item.nlrc);
@@ -188,6 +212,39 @@ export function ViewCaseContent({ item }: { item: CaseItem }) {
           {item.createdAt && <> on {formatDate(item.createdAt)}</>}
         </p>
       </div>
+
+      <section className="rounded-xl border border-slate-200 bg-slate-50/70 p-4 sm:p-5">
+        <div className="mb-4 flex items-center gap-2 border-b border-slate-200 pb-3">
+          <Clock3 className="h-4 w-4 text-[#B08D57]" />
+          <div>
+            <h3 className="text-sm font-semibold text-[#12331F]">Case activity</h3>
+            <p className="text-xs text-slate-500">A record of changes made to this case.</p>
+          </div>
+        </div>
+        {activityLoading ? (
+          <p className="text-sm text-slate-400">Loading activity...</p>
+        ) : activity.length === 0 ? (
+          <p className="text-sm text-slate-400">No activity recorded yet.</p>
+        ) : (
+          <div className="relative space-y-4 pl-5 before:absolute before:bottom-2 before:left-[6px] before:top-2 before:w-px before:bg-slate-200">
+            {activity.map((entry) => (
+              <div key={entry.history_id} className="relative">
+                <span className="absolute -left-[21px] top-1.5 h-3 w-3 rounded-full border-2 border-slate-50 bg-[#B08D57]" />
+                <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between sm:gap-4">
+                  <p className="text-sm font-medium capitalize text-slate-700">{entry.action}</p>
+                  <time className="text-xs text-slate-400">
+                    {entry.created_at ? new Date(entry.created_at).toLocaleString() : "-"}
+                  </time>
+                </div>
+                <p className="mt-0.5 text-xs text-slate-500">
+                  By <span className="font-medium text-slate-700">{entry.performed_by_username ?? "-"}</span>
+                  {entry.detail ? ` · ${entry.detail}` : ""}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
     </div>
   );
 }
