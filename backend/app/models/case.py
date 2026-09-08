@@ -53,6 +53,14 @@ class Case(Base):
     cause_links = relationship("CaseCause", back_populates="case", cascade="all, delete-orphan")
     history_entries = relationship("CaseHistory", back_populates="case", cascade="all, delete-orphan")
 
+    @property
+    def complainants(self) -> list[str]:
+        return [link.complainant.complainant_name for link in self.complainant_links]
+
+    @property
+    def causes(self) -> list[str]:
+        return [link.cause_of_action.cause_of_action for link in self.cause_links]
+
 
 class CaseComplainant(Base):
     __tablename__ = "case_complainants"
