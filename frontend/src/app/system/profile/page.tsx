@@ -1,7 +1,7 @@
 "use client";
 
 import { ChangeEvent, FormEvent, useEffect, useState } from "react";
-import { Bell, Camera, KeyRound, Save, User } from "lucide-react";
+import { Bell, Camera, Eye, EyeOff, KeyRound, Save, User } from "lucide-react";
 import { fetchCurrentUser, fetchMyNotifications, requestPasswordReset, UnauthorizedError, updateCurrentUser, type CurrentUser } from "@/lib/api";
 
 export default function ProfilePage() {
@@ -15,6 +15,8 @@ export default function ProfilePage() {
   const [isSaving, setIsSaving] = useState(false);
   const [isRequestingReset, setIsRequestingReset] = useState(false);
   const [approvedReset, setApprovedReset] = useState(false);
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
 
   useEffect(() => {
     fetchCurrentUser()
@@ -116,8 +118,8 @@ export default function ProfilePage() {
           <div className="mt-6 grid gap-4 sm:grid-cols-2">
             <label className="text-xs font-medium text-slate-600">Full name<input required value={fullName} onChange={(event) => setFullName(event.target.value)} className="mt-1.5 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-normal text-slate-700 outline-none focus:border-[#12331F] focus:bg-white focus:ring-2 focus:ring-[#12331F]/10" /></label>
             <label className="text-xs font-medium text-slate-600">Username<input required value={username} onChange={(event) => setUsername(event.target.value)} className="mt-1.5 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-normal text-slate-700 outline-none focus:border-[#12331F] focus:bg-white focus:ring-2 focus:ring-[#12331F]/10" /></label>
-            {!approvedReset && <label className="text-xs font-medium text-slate-600"><span className="inline-flex items-center gap-1.5">Current password <KeyRound className="h-3.5 w-3.5 text-slate-400" /></span><input type="password" value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} placeholder="Required to change password" className="mt-1.5 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-normal text-slate-700 outline-none focus:border-[#12331F] focus:bg-white focus:ring-2 focus:ring-[#12331F]/10" /></label>}
-            <label className="text-xs font-medium text-slate-600"><span className="inline-flex items-center gap-1.5">New password <KeyRound className="h-3.5 w-3.5 text-slate-400" /></span><input minLength={6} type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Leave blank to keep your current password" className="mt-1.5 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-normal text-slate-700 outline-none focus:border-[#12331F] focus:bg-white focus:ring-2 focus:ring-[#12331F]/10" /></label>
+            {!approvedReset && <label className="text-xs font-medium text-slate-600"><span className="inline-flex items-center gap-1.5">Current password <KeyRound className="h-3.5 w-3.5 text-slate-400" /></span><span className="relative mt-1.5 block"><input type={showCurrentPassword ? "text" : "password"} value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} placeholder="Required to change password" className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 pr-10 text-sm font-normal text-slate-700 outline-none focus:border-[#12331F] focus:bg-white focus:ring-2 focus:ring-[#12331F]/10" /><button type="button" onClick={() => setShowCurrentPassword((visible) => !visible)} aria-label={showCurrentPassword ? "Hide current password" : "Show current password"} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">{showCurrentPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button></span></label>}
+            <label className="text-xs font-medium text-slate-600"><span className="inline-flex items-center gap-1.5">New password <KeyRound className="h-3.5 w-3.5 text-slate-400" /></span><span className="relative mt-1.5 block"><input minLength={6} type={showNewPassword ? "text" : "password"} value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Leave blank to keep your current password" className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 pr-10 text-sm font-normal text-slate-700 outline-none focus:border-[#12331F] focus:bg-white focus:ring-2 focus:ring-[#12331F]/10" /><button type="button" onClick={() => setShowNewPassword((visible) => !visible)} aria-label={showNewPassword ? "Hide new password" : "Show new password"} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">{showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button></span></label>
           </div>
 
           <div className="mt-6 flex flex-col gap-3 border-t border-slate-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
