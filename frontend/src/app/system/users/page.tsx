@@ -89,15 +89,17 @@ export default function UsersPage() {
   }
 
   return (
-    <div className="min-h-full bg-[#F5F1E3] p-4 sm:p-6">
-      <div className="mx-auto max-w-3xl">
-        <div className="mb-5">
+    <div className="min-h-full bg-[#F5F1E3] p-4 sm:p-5 lg:h-screen lg:overflow-hidden">
+      <div className="mx-auto flex h-full max-w-7xl flex-col">
+        <div className="mb-4 shrink-0">
           <p className="text-xs font-medium uppercase tracking-wide text-[#B08D57]">Administration</p>
           <h1 className="mt-1 font-serif text-2xl font-medium text-[#12331F]">User Management</h1>
           <p className="mt-1 text-sm text-slate-500">Create accounts and assign their access role.</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+        <div className="grid min-h-0 flex-1 gap-4 lg:grid-cols-[minmax(300px,0.72fr)_minmax(0,1.5fr)]">
+        <div className="min-h-0 space-y-4 overflow-y-auto pr-1">
+        <form onSubmit={handleSubmit} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
           <div className="mb-5 flex items-center gap-3 border-b border-slate-100 pb-4">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#12331F] text-[#B08D57]">
               <UserPlus className="h-4 w-4" />
@@ -135,7 +137,7 @@ export default function UsersPage() {
             </label>
           </div>
 
-          <div className="mt-6 flex justify-end border-t border-slate-100 pt-4">
+          <div className="mt-5 flex justify-end border-t border-slate-100 pt-4">
             <button type="submit" disabled={isSubmitting} className="inline-flex items-center gap-2 rounded-lg bg-[#12331F] px-4 py-2.5 text-sm font-medium text-white transition hover:bg-[#1B4A2C] disabled:cursor-not-allowed disabled:opacity-60">
               <UserPlus className="h-4 w-4" />
               {isSubmitting ? "Creating..." : "Create User"}
@@ -143,7 +145,41 @@ export default function UsersPage() {
           </div>
         </form>
 
-        <section className="mt-5 rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+        <section className="rounded-xl border border-amber-200 bg-amber-50 p-4 shadow-sm sm:p-5">
+          <div className="mb-4 flex items-center justify-between border-b border-amber-200 pb-4">
+            <div>
+              <h2 className="text-sm font-semibold text-[#12331F]">Notifications</h2>
+              <p className="mt-1 text-xs text-slate-600">{notifications.length} pending password reset request{notifications.length === 1 ? "" : "s"}</p>
+            </div>
+          </div>
+          {notifications.length === 0 ? (
+            <p className="text-sm text-slate-500">No pending notifications.</p>
+          ) : (
+            <div className="max-h-[24vh] space-y-2 overflow-y-auto pr-1">
+              {notifications.map((notification) => (
+                <div key={notification.notification_id} className="flex flex-col gap-3 rounded-lg border border-amber-200 bg-white p-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex items-start gap-2"><Bell className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" /><p className="text-sm text-slate-700">{notification.message}</p></div>
+                  <button type="button" onClick={() => { setResetUserId(notification.user_id); setResetPassword(""); }} className="shrink-0 rounded-lg bg-[#12331F] px-3 py-2 text-xs font-medium text-white hover:bg-[#1B4A2C]">Reset password</button>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+
+        {resetUserId !== null && (
+          <form onSubmit={handleResetPassword} className="rounded-xl border border-amber-200 bg-amber-50 p-4 shadow-sm">
+            <h2 className="text-sm font-semibold text-[#12331F]">Reset user password</h2>
+            <p className="mt-1 text-xs text-slate-600">Set a temporary password for the selected user.</p>
+            <div className="mt-3 space-y-2">
+              <input required minLength={6} type="password" value={resetPassword} onChange={(event) => setResetPassword(event.target.value)} placeholder="Temporary password" className="w-full rounded-lg border border-amber-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none focus:border-[#12331F]" />
+              <div className="flex gap-2"><button type="submit" className="flex-1 rounded-lg bg-[#12331F] px-3 py-2.5 text-xs font-medium text-white hover:bg-[#1B4A2C]">Reset password</button><button type="button" onClick={() => setResetUserId(null)} className="rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-xs font-medium text-slate-600 hover:bg-slate-50">Cancel</button></div>
+            </div>
+          </form>
+        )}
+        </div>
+
+        <div className="min-h-0 space-y-4 overflow-y-auto pr-1">
+        <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
           <div className="mb-4 flex items-center justify-between border-b border-slate-100 pb-4">
             <div>
               <h2 className="text-sm font-semibold text-[#12331F]">Existing Users</h2>
@@ -151,7 +187,7 @@ export default function UsersPage() {
             </div>
           </div>
 
-          <div className="overflow-x-auto">
+          <div className="max-h-[42vh] overflow-auto">
             <table className="min-w-full text-left text-sm">
               <thead className="border-b border-slate-100 text-[11px] uppercase tracking-wide text-slate-400">
                 <tr>
@@ -189,38 +225,8 @@ export default function UsersPage() {
           </div>
         </section>
 
-        <section className="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-5 shadow-sm sm:p-6">
-          <div className="mb-4 flex items-center justify-between border-b border-amber-200 pb-4">
-            <div>
-              <h2 className="text-sm font-semibold text-[#12331F]">Notifications</h2>
-              <p className="mt-1 text-xs text-slate-600">{notifications.length} pending password reset request{notifications.length === 1 ? "" : "s"}</p>
-            </div>
-          </div>
-          {notifications.length === 0 ? (
-            <p className="text-sm text-slate-500">No pending notifications.</p>
-          ) : (
-            <div className="space-y-2">
-              {notifications.map((notification) => (
-                <div key={notification.notification_id} className="flex flex-col gap-3 rounded-lg border border-amber-200 bg-white p-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="flex items-start gap-2"><Bell className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" /><p className="text-sm text-slate-700">{notification.message}</p></div>
-                  <button type="button" onClick={() => { setResetUserId(notification.user_id); setResetPassword(""); }} className="shrink-0 rounded-lg bg-[#12331F] px-3 py-2 text-xs font-medium text-white hover:bg-[#1B4A2C]">Reset password</button>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
-
-        {resetUserId !== null && (
-          <form onSubmit={handleResetPassword} className="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-5 shadow-sm">
-            <h2 className="text-sm font-semibold text-[#12331F]">Reset user password</h2>
-            <p className="mt-1 text-xs text-slate-600">Set a temporary password for the selected user. They should change it from their profile afterward.</p>
-            <div className="mt-3 flex flex-col gap-2 sm:flex-row">
-              <input required minLength={6} type="password" value={resetPassword} onChange={(event) => setResetPassword(event.target.value)} placeholder="Temporary password" className="flex-1 rounded-lg border border-amber-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none focus:border-[#12331F]" />
-              <button type="submit" className="rounded-lg bg-[#12331F] px-4 py-2.5 text-sm font-medium text-white hover:bg-[#1B4A2C]">Reset password</button>
-              <button type="button" onClick={() => setResetUserId(null)} className="rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50">Cancel</button>
-            </div>
-          </form>
-        )}
+        </div>
+        </div>
       </div>
     </div>
   );
