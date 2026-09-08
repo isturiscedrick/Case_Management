@@ -2,9 +2,9 @@ import { Plus } from "lucide-react";
 
 export function DashboardHeader({ onCreate }: { onCreate: () => void }) {
   return (
-    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+    <div className="flex flex-col gap-3 rounded-xl border border-[#ded7c5] bg-white/60 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
       <div>
-        <h1 className="font-serif text-lg font-medium tracking-tight text-[#12331F] md:text-xl">
+        <h1 className="font-serif text-xl font-medium tracking-tight text-[#12331F] md:text-2xl">
           Case Management
         </h1>
 
@@ -15,7 +15,7 @@ export function DashboardHeader({ onCreate }: { onCreate: () => void }) {
 
       <button
         onClick={onCreate}
-        className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-[#12331F] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#1B4A2C]"
+        className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg bg-[#12331F] px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-[#1B4A2C] hover:shadow-md"
       >
         <Plus size={15} />
         Create Case

@@ -72,7 +72,7 @@ export function CaseFilters({
   onResetFilters: () => void;
 }) {
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-2.5 shadow-sm">
+    <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm sm:p-4">
       {/* MAIN FILTER ROW */}
       <div className="flex flex-col gap-2 sm:flex-row">
         {/* Search */}
@@ -80,10 +80,11 @@ export function CaseFilters({
           <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
 
           <input
+            aria-label="Search cases"
             value={search}
             onChange={(event) => onSearchChange(event.target.value)}
             placeholder="Search company, case no., complainant, or cause"
-            className="w-full rounded-lg border border-slate-200 bg-slate-50 py-1.5 pl-7 pr-3 text-xs text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-blue-900 focus:bg-white focus:ring-2 focus:ring-blue-950/10"
+            className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-8 pr-3 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#12331F] focus:bg-white focus:ring-2 focus:ring-[#12331F]/10"
           />
         </div>
 
@@ -91,7 +92,7 @@ export function CaseFilters({
         <select
           value={statusFilter}
           onChange={(event) => onStatusFilterChange(event.target.value as "All" | CaseStatusSummary)}
-          className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs text-slate-700 outline-none transition focus:border-slate-400 focus:bg-white"
+          className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-[#12331F] focus:bg-white focus:ring-2 focus:ring-[#12331F]/10"
         >
           {CASE_STATUS_SUMMARY_OPTIONS.map((status) => (
             <option key={status} value={status}>
@@ -104,7 +105,7 @@ export function CaseFilters({
         <select
           value={companyFilter}
           onChange={(event) => onCompanyFilterChange(event.target.value)}
-          className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs text-slate-700 outline-none transition focus:border-slate-400 focus:bg-white"
+          className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-[#12331F] focus:bg-white focus:ring-2 focus:ring-[#12331F]/10"
         >
           {companyOptions.map((company) => (
             <option key={company} value={company}>
@@ -115,6 +116,7 @@ export function CaseFilters({
 
         {/* More Filters */}
         <button
+          type="button"
           onClick={onToggleMoreFilters}
           className={`inline-flex items-center justify-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition ${
             showMoreFilters

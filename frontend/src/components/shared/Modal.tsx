@@ -1,3 +1,4 @@
+import { useEffect, useId, useRef } from "react";
 import { X } from "lucide-react";
 
 export function Modal({
@@ -13,15 +14,30 @@ export function Modal({
   footer?: React.ReactNode;
   wide?: boolean;
 }) {
+  const titleId = useId();
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    closeButtonRef.current?.focus();
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-[3px]" onClick={onClose}>
       <div
-        className={`flex max-h-[90vh] w-full ${wide ? "max-w-3xl" : "max-w-lg"} flex-col overflow-hidden rounded-xl bg-white shadow-xl`}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        className={`flex max-h-[92vh] w-full ${wide ? "max-w-4xl" : "max-w-lg"} flex-col overflow-hidden rounded-2xl border border-white/70 bg-white shadow-2xl`}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
-          <h2 className="font-serif text-base font-medium text-[#12331F]">{title}</h2>
-          <button onClick={onClose} className="rounded-md p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700">
+          <h2 id={titleId} className="font-serif text-lg font-medium text-[#12331F]">{title}</h2>
+          <button ref={closeButtonRef} type="button" onClick={onClose} aria-label="Close dialog" className="rounded-lg p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700">
             <X size={18} />
           </button>
         </div>

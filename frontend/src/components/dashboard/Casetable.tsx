@@ -14,7 +14,7 @@ export function CaseTable({
 }) {
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-      <div className="min-h-0 flex-1 overflow-auto">
+      <div className="min-h-0 flex-1 overflow-auto overscroll-contain">
         <table className="min-w-full table-fixed border-separate border-spacing-0 text-[11px]">
           <colgroup>
             {/* Case Status */}
@@ -70,7 +70,7 @@ export function CaseTable({
             <col className="w-16" />
           </colgroup>
 
-          <thead className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+          <thead className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 shadow-[0_1px_0_rgba(15,23,42,0.08)]">
             <tr>
               <th rowSpan={2} className="sticky left-0 top-0 z-30 border-b border-r border-slate-200 bg-slate-50 p-2 text-left">
                 Case Status

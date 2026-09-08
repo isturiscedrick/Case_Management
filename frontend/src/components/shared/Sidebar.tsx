@@ -109,7 +109,7 @@ export default function Sidebar() {
           <Link
             href="/system/activity"
             title={collapsed ? "Activity" : undefined}
-            className={`mb-1.5 flex items-center rounded-lg border border-transparent text-sm font-medium text-white/60 transition hover:border-white/10 hover:bg-white/5 hover:text-white ${collapsed ? "mx-auto h-10 w-10 justify-center" : "gap-3 px-4 py-2.5"}`}
+            className={`mb-1.5 flex items-center rounded-lg border text-sm font-medium transition ${pathname === "/system/activity" ? "border-[#B08D57]/30 bg-[#B08D57]/15 text-[#B08D57]" : "border-transparent text-white/60 hover:border-white/10 hover:bg-white/5 hover:text-white"} ${collapsed ? "mx-auto h-10 w-10 justify-center" : "gap-3 px-4 py-2.5"}`}
           >
             <ClipboardList className="h-4 w-4 shrink-0" />
             {!collapsed && <span>Activity</span>}
@@ -167,15 +167,12 @@ export default function Sidebar() {
           collapsed ? "flex justify-center px-0" : "px-4"
         }`}
       >
-        <div
+        <button
+          type="button"
           title={collapsed ? currentUser?.full_name : undefined}
           onClick={() => router.push("/system/profile")}
-          role="link"
-          tabIndex={0}
-          onKeyDown={(event) => {
-            if (event.key === "Enter" || event.key === " ") router.push("/system/profile");
-          }}
-          className={`flex cursor-pointer items-center ${collapsed ? "" : "gap-2.5"}`}
+          aria-label="Open profile"
+          className={`flex cursor-pointer items-center rounded-lg text-left transition hover:bg-white/5 focus-visible:bg-white/5 ${collapsed ? "" : "w-full gap-2.5 p-1"}`}
         >
           <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white/10 text-white">
             {currentUser?.profile_picture ? (
@@ -195,7 +192,7 @@ export default function Sidebar() {
               </p>
             </div>
           )}
-        </div>
+        </button>
 
         <button
           type="button"
