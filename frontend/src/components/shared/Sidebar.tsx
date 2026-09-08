@@ -1,11 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { LayoutDashboard, History, Archive, BarChart3, Scale, ChevronRight, ChevronsLeft, LogOut, User } from "lucide-react";
-import { CURRENT_USER } from "@/constants/caseOptions";
-import { clearSessionToken } from "@/lib/api";
+import { clearSessionToken, fetchCurrentUser, UnauthorizedError, type CurrentUser } from "@/lib/api";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 const NAV_ITEMS = [
   { href: "/system/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -17,8 +16,25 @@ const NAV_ITEMS = [
 export default function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
+  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
   const pathname = usePathname();
   const router = useRouter();
+
+  useEffect(() => {
+    let cancelled = false;
+
+    fetchCurrentUser()
+      .then((user) => {
+        if (!cancelled) setCurrentUser(user);
+      })
+      .catch((error) => {
+        if (!cancelled && error instanceof UnauthorizedError) router.push("/login");
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [router]);
 
   function handleLogout() {
     clearSessionToken();
@@ -119,7 +135,7 @@ export default function Sidebar() {
       >
         <div
           className={`flex items-center ${collapsed ? "" : "gap-2.5"}`}
-          title={collapsed ? CURRENT_USER : undefined}
+          title={collapsed ? currentUser?.full_name : undefined}
         >
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/10 text-white">
             <User className="h-4 w-4" />
@@ -127,8 +143,12 @@ export default function Sidebar() {
 
           {!collapsed && (
             <div className="min-w-0">
-              <p className="truncate text-sm font-medium text-white">{CURRENT_USER}</p>
-              <p className="text-xs text-white/40">Logged in</p>
+              <p className="truncate text-sm font-medium text-white">
+                {currentUser?.full_name ?? "Loading user..."}
+              </p>
+              <p className="text-xs text-white/40">
+                {currentUser?.role === "handling_personnel" ? "Handling Personnel" : currentUser?.role ?? ""}
+              </p>
             </div>
           )}
         </div>

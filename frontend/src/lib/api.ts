@@ -200,3 +200,15 @@ export async function setCaseClosed(id: number, closed: boolean): Promise<CaseOu
   const res = await authMutation(path, "POST");
   return res.json();
 }
+
+export interface CurrentUser {
+  user_id: number;
+  username: string;
+  full_name: string;
+  role: "admin" | "handling_personnel" | "viewer";
+}
+
+export async function fetchCurrentUser(): Promise<CurrentUser> {
+  const res = await authFetch("/api/auth/me");
+  return res.json();
+}
