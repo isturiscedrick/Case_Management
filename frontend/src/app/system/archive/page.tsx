@@ -6,6 +6,7 @@ import { Archive, Search } from "lucide-react";
 import type { CaseItem, StageProgress } from "@/types/case";
 import { TABLE_COLUMN_COUNT } from "@/constants/caseOptions";
 import { useCases } from "@/context/CasesContext";
+import { getCaseStatusSummary, type CaseStatusSummary } from "@/lib/caseHelpers";
 
 import { Modal } from "@/components/shared/Modal";
 import { ArchiveConfirmDialog } from "@/components/dashboard/ArchiveConfirmDialog";
@@ -16,6 +17,7 @@ export default function ArchivePage() {
   const { cases, toggleArchive } = useCases();
   const [search, setSearch] = useState("");
   const [progressFilter, setProgressFilter] = useState<"All" | StageProgress>("All");
+  const [statusFilter, setStatusFilter] = useState<"All" | CaseStatusSummary>("All");
 
   const [viewItem, setViewItem] = useState<CaseItem | null>(null);
   const [restoreItem, setRestoreItem] = useState<CaseItem | null>(null);
@@ -27,6 +29,7 @@ export default function ArchivePage() {
     return archivedCases.filter((item) => {
       const matchesProgress =
         progressFilter === "All" || Object.values(item.caseProgress).some((stage) => stage === progressFilter);
+      const matchesStatus = statusFilter === "All" || getCaseStatusSummary(item) === statusFilter;
 
       const matchesSearch =
         item.company.toLowerCase().includes(keyword) ||
@@ -34,9 +37,9 @@ export default function ArchivePage() {
         item.complainants.some((name) => name.toLowerCase().includes(keyword)) ||
         item.cause.some((cause) => cause.toLowerCase().includes(keyword));
 
-      return matchesProgress && matchesSearch;
+      return matchesProgress && matchesStatus && matchesSearch;
     });
-  }, [archivedCases, search, progressFilter]);
+  }, [archivedCases, search, progressFilter, statusFilter]);
 
   const requestRestore = (item: CaseItem) => setRestoreItem(item);
 
@@ -82,6 +85,18 @@ export default function ArchivePage() {
             <option value="Settled">Any stage: Settled</option>
             <option value="Not Settled">Any stage: Not Settled</option>
             <option value="Others">Any stage: Others</option>
+          </select>
+
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value as "All" | CaseStatusSummary)}
+            className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs text-slate-700 outline-none transition focus:border-[#12331F] focus:bg-white focus:ring-2 focus:ring-[#12331F]/10 sm:w-40"
+          >
+            <option value="All">All Case Status</option>
+            <option value="Settled">Settled</option>
+            <option value="Not Settled">Not Settled</option>
+            <option value="Pending">Pending</option>
+            <option value="Closed">Closed</option>
           </select>
         </div>
 

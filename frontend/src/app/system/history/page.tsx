@@ -29,6 +29,8 @@ export default function HistoryPage() {
   const { historyLog: history } = useCases();
   const [search, setSearch] = useState("");
   const [actionFilter, setActionFilter] = useState<"All" | HistoryAction>("All");
+  const [dateStart, setDateStart] = useState("");
+  const [dateEnd, setDateEnd] = useState("");
 
   const filtered = useMemo(() => {
     const keyword = search.toLowerCase();
@@ -39,10 +41,12 @@ export default function HistoryPage() {
           entry.company.toLowerCase().includes(keyword) ||
           entry.caseNo.toLowerCase().includes(keyword) ||
           entry.performedBy.toLowerCase().includes(keyword);
-        return matchesAction && matchesSearch;
+        const eventDate = entry.timestamp.slice(0, 10);
+        const matchesDate = (!dateStart || eventDate >= dateStart) && (!dateEnd || eventDate <= dateEnd);
+        return matchesAction && matchesSearch && matchesDate;
       })
       .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-  }, [history, search, actionFilter]);
+  }, [history, search, actionFilter, dateStart, dateEnd]);
 
   return (
     <div className="flex h-full min-w-0 flex-col gap-4 overflow-hidden bg-[#F5F1E3] p-4">
@@ -76,6 +80,9 @@ export default function HistoryPage() {
               </option>
             ))}
           </select>
+          <input type="date" value={dateStart} onChange={(e) => setDateStart(e.target.value)} aria-label="History start date" className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs text-slate-700 outline-none focus:border-[#12331F] focus:bg-white" />
+          <span className="text-xs text-slate-400">to</span>
+          <input type="date" value={dateEnd} onChange={(e) => setDateEnd(e.target.value)} aria-label="History end date" className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs text-slate-700 outline-none focus:border-[#12331F] focus:bg-white" />
         </div>
 
         <p className="mt-2 text-[11px] text-slate-400">
