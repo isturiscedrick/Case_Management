@@ -35,6 +35,14 @@ def me(current_user=Depends(get_current_user)):
     return current_user
 
 
+@router.get("/users", response_model=list[UserOut])
+def users(
+    db: Session = Depends(get_db),
+    _admin=Depends(require_role(UserRole.admin)),
+):
+    return auth_service.list_users(db)
+
+
 @router.post("/register", response_model=UserOut, status_code=status.HTTP_201_CREATED)
 def register(
     payload: UserCreate,

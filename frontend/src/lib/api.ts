@@ -212,3 +212,22 @@ export async function fetchCurrentUser(): Promise<CurrentUser> {
   const res = await authFetch("/api/auth/me");
   return res.json();
 }
+
+export async function fetchUsers(): Promise<CurrentUser[]> {
+  const res = await authFetch("/api/auth/users");
+  return res.json();
+}
+
+export type UserRole = CurrentUser["role"];
+
+export interface UserCreatePayload {
+  username: string;
+  full_name: string;
+  password: string;
+  role: UserRole;
+}
+
+export async function registerUser(payload: UserCreatePayload): Promise<CurrentUser> {
+  const res = await authMutation("/api/auth/register", "POST", payload);
+  return res.json();
+}

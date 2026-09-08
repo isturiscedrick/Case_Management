@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, History, Archive, BarChart3, Scale, ChevronRight, ChevronsLeft, LogOut, User } from "lucide-react";
+import { LayoutDashboard, History, Archive, BarChart3, Scale, ChevronRight, ChevronsLeft, LogOut, User, UserPlus } from "lucide-react";
 import { clearSessionToken, fetchCurrentUser, UnauthorizedError, type CurrentUser } from "@/lib/api";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 const NAV_ITEMS = [
@@ -11,6 +11,7 @@ const NAV_ITEMS = [
   { href: "/system/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/system/archive", label: "Archive", icon: Archive },
   { href: "/system/history", label: "History", icon: History },
+  { href: "/system/users", label: "Users", icon: UserPlus, adminOnly: true },
 ];
 
 export default function Sidebar() {
@@ -86,7 +87,7 @@ export default function Sidebar() {
             Main Menu
           </p>
         )}
-        {NAV_ITEMS.map((item) => {
+        {NAV_ITEMS.filter((item) => !item.adminOnly || currentUser?.role === "admin").map((item) => {
           const Icon = item.icon;
           const active = pathname === item.href;
           return (

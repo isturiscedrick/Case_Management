@@ -28,3 +28,7 @@ def register(db: Session, payload: UserCreate):
     db.commit()
     db.refresh(user)
     return user
+
+
+def list_users(db: Session):
+    return user_crud.list_users(db)
