@@ -229,6 +229,8 @@ export default function ArchivePage() {
               <colgroup>
                 {/* Case Status */}
                 <col className="w-20" />
+                {/* Case ID */}
+                <col className="w-14" />
                 {/* Last Updated */}
                 <col className="w-16" />
 
@@ -284,6 +286,9 @@ export default function ArchivePage() {
                 <tr>
                   <th rowSpan={2} className="sticky left-0 top-0 z-30 border-b border-r border-slate-200 bg-slate-50 p-2 text-left">
                     Case Status
+                  </th>
+                  <th rowSpan={2} className="sticky top-0 z-20 border-b border-r border-slate-200 bg-slate-50 p-2 text-left">
+                    ID
                   </th>
                   <th rowSpan={2} className="sticky top-0 z-20 border-b border-r border-slate-200 bg-slate-50 p-2 text-left">
                     Last Updated

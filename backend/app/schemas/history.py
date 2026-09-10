@@ -14,5 +14,6 @@ class CaseHistoryOut(BaseModel):
     company: str
     action: CaseHistoryAction
     performed_by_username: Optional[str]
+    performed_by_profile_picture: Optional[str] = None
     detail: Optional[str]
     created_at: Optional[datetime]

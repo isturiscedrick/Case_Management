@@ -264,7 +264,16 @@ export default function UsersPage() {
             <div className="max-h-[24vh] space-y-2 overflow-y-auto pr-1">
               {notifications.map((notification) => (
                 <div key={notification.notification_id} className="flex flex-col gap-3 rounded-lg border border-amber-200 bg-white p-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="flex items-start gap-2"><Bell className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" /><p className="text-sm text-slate-700">{notification.message}</p></div>
+                  <div className="flex items-start gap-2">
+                    <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[#B08D57]/40 bg-[#12331F] text-white">
+                      {notification.user_profile_picture ? (
+                        <img src={notification.user_profile_picture} alt="" className="h-full w-full object-cover" />
+                      ) : (
+                        <User className="h-3.5 w-3.5" />
+                      )}
+                    </div>
+                    <p className="text-sm text-slate-700">{notification.message}</p>
+                  </div>
                   <button type="button" onClick={() => { setResetUserId(notification.user_id); setResetPassword(""); setShowResetPassword(false); }} className="shrink-0 rounded-lg bg-[#12331F] px-3 py-2 text-xs font-medium text-white hover:bg-[#1B4A2C]">Reset password</button>
                 </div>
               ))}

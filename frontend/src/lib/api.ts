@@ -155,6 +155,7 @@ export interface HistoryOut {
   company: string;
   action: "created" | "updated" | "archived" | "restored";
   performed_by_username: string | null;
+  performed_by_profile_picture: string | null;
   detail: string | null;
   created_at: string | null;
 }
@@ -249,13 +250,14 @@ export async function updateCurrentUser(payload: UserProfileUpdate): Promise<Cur
 export async function resetUserPassword(userId: number, password: string): Promise<void> {
   await authMutation(`/api/auth/users/${userId}/password`, "PUT", { password });
 }
-
 export interface PasswordResetNotification {
   notification_id: number;
   user_id: number;
   notification_type: string;
   message: string;
   status: string;
+  user_full_name: string | null;
+  user_profile_picture: string | null;
   created_at: string | null;
   resolved_at: string | null;
 }

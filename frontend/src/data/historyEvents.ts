@@ -6,6 +6,7 @@ export interface HistoryEntry {
   company: string;
   action: HistoryAction;
   performedBy: string;
+  performedByProfilePicture?: string | null;
   timestamp: string; // ISO string
   detail?: string;
 }

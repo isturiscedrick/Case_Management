@@ -23,3 +23,11 @@ class CaseHistory(Base):
     created_at = Column(DateTime, server_default=func.now())
 
     case = relationship("Case", back_populates="history_entries")
+    performed_by_user = relationship("User", foreign_keys=[performed_by_user_id], viewonly=True)
+
+    @property
+    def performed_by_profile_picture(self) -> str | None:
+        # Snapshot fields (performed_by_username) survive user deletion —
+        # this live relationship doesn't, so it's None once the user is
+        # deleted (see crud/user.py::delete_user, which nulls this FK).
+        return self.performed_by_user.profile_picture if self.performed_by_user else None

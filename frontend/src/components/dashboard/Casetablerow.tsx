@@ -56,6 +56,9 @@ export function CaseTableRow({
         <CaseStatusSummaryBadge status={getCaseStatusSummary(item)} />
       </td>
 
+      {/* Case ID */}
+      <td className="border-r border-slate-100 p-2 font-mono text-[11px] text-slate-500">{item.id}</td>
+
       {/* Last Updated */}
       <td className="border-r border-slate-100 p-2 text-slate-600">{formatDate(item.date)}</td>
 

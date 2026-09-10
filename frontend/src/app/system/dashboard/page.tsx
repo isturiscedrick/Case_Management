@@ -426,7 +426,7 @@ export default function CasesPage() {
           Loading cases…
         </div>
       )}
-      <DashboardHeader onCreate={openCreate} />
+      <DashboardHeader onCreate={openCreate} onRefresh={refetch} isRefreshing={isLoading} />
 
       <SummaryCards cases={activeCases} />
 

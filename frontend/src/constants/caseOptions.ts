@@ -118,7 +118,7 @@ export const STAGE_STATUS_OPTIONS = [
   "Execution",
 ] as const;
 
-export const TABLE_COLUMN_COUNT = 35;
+export const TABLE_COLUMN_COUNT = 36;
 
 // Placeholder for the logged-in user. Wire this to your auth store
 // (e.g. useAuthStore) once available so "Created By" reflects the real user.

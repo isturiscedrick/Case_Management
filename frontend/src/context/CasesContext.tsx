@@ -30,6 +30,7 @@ function mapHistory(out: Awaited<ReturnType<typeof fetchHistory>>[number]): Hist
     company: out.company,
     action: out.action,
     performedBy: out.performed_by_username ?? "-",
+    performedByProfilePicture: out.performed_by_profile_picture,
     timestamp: out.created_at ?? "",
     detail: out.detail ?? undefined,
   };

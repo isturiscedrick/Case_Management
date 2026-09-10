@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { History, Search } from "lucide-react";
+import { History, Search, User as UserIcon } from "lucide-react";
 import type { HistoryAction } from "@/data/historyEvents";
 import { useCases } from "@/context/CasesContext";
 
@@ -134,7 +134,18 @@ export default function HistoryPage() {
                       <td className="p-2 font-mono text-[11px] text-slate-500">{entry.caseNo}</td>
                       <td className="p-2 text-slate-700">{entry.company}</td>
                       <td className="truncate p-2 text-slate-500">{entry.detail || "-"}</td>
-                      <td className="p-2 text-slate-600">{entry.performedBy}</td>
+                      <td className="p-2 text-slate-600">
+                        <div className="flex items-center gap-2">
+                          <div className="flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[#B08D57]/40 bg-[#12331F] text-white">
+                            {entry.performedByProfilePicture ? (
+                              <img src={entry.performedByProfilePicture} alt="" className="h-full w-full object-cover" />
+                            ) : (
+                              <UserIcon size={10} />
+                            )}
+                          </div>
+                          {entry.performedBy}
+                        </div>
+                      </td>
                       <td className="p-2 text-slate-500">{formatTimestamp(entry.timestamp)}</td>
                     </tr>
                   );

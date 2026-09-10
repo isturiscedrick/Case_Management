@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ClipboardList, Search } from "lucide-react";
+import { ClipboardList, Search, User as UserIcon } from "lucide-react";
 import { fetchCurrentUser, fetchDecidedNotifications, fetchMyHistory, fetchMyNotifications, UnauthorizedError, type HistoryOut, type PasswordResetNotification } from "@/lib/api";
 
 export default function ActivityPage() {
@@ -119,7 +119,23 @@ export default function ActivityPage() {
           </div>
           {loading ? <p className="text-sm text-slate-400">Loading activity...</p> : filteredNotifications.length === 0 ? <p className="text-sm text-slate-400">No password reset activity matches your filters.</p> : (
             <div className="space-y-2">
-              {filteredNotifications.map((item) => <div key={item.notification_id} className="flex items-center justify-between rounded-lg bg-slate-50 p-3"><p className="text-sm text-slate-600">{item.message}</p><span className={`ml-3 shrink-0 text-xs font-medium ${item.status === "pending" ? "text-amber-600" : item.status === "approved" ? "text-emerald-600" : item.status === "declined" ? "text-rose-600" : "text-slate-500"}`}>{item.status === "pending" ? "Pending" : item.status === "approved" ? "Approved" : item.status === "declined" ? "Declined" : "Resolved"}</span></div>)}
+              {filteredNotifications.map((item) => (
+                <div key={item.notification_id} className="flex items-center justify-between rounded-lg bg-slate-50 p-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[#B08D57]/40 bg-[#12331F] text-white">
+                      {item.user_profile_picture ? (
+                        <img src={item.user_profile_picture} alt="" className="h-full w-full object-cover" />
+                      ) : (
+                        <UserIcon size={11} />
+                      )}
+                    </div>
+                    <p className="text-sm text-slate-600">{item.message}</p>
+                  </div>
+                  <span className={`ml-3 shrink-0 text-xs font-medium ${item.status === "pending" ? "text-amber-600" : item.status === "approved" ? "text-emerald-600" : item.status === "declined" ? "text-rose-600" : "text-slate-500"}`}>
+                    {item.status === "pending" ? "Pending" : item.status === "approved" ? "Approved" : item.status === "declined" ? "Declined" : "Resolved"}
+                  </span>
+                </div>
+              ))}
             </div>
           )}
         </section>
@@ -131,7 +147,24 @@ export default function ActivityPage() {
           </div>
           {loading ? <p className="text-sm text-slate-400">Loading actions...</p> : filteredActions.length === 0 ? <p className="text-sm text-slate-400">No case actions match your filters.</p> : (
             <div className="space-y-2">
-              {filteredActions.map((action) => <div key={action.history_id} className="flex flex-col gap-1 rounded-lg bg-slate-50 p-3 sm:flex-row sm:items-center sm:justify-between"><div><p className="text-sm font-medium capitalize text-slate-700">{action.action} case {action.case_no}</p><p className="text-xs text-slate-500">{action.company}{action.detail ? ` - ${action.detail}` : ""}</p></div><time className="text-xs text-slate-400">{action.created_at ? new Date(action.created_at).toLocaleString() : ""}</time></div>)}
+              {filteredActions.map((action) => (
+                <div key={action.history_id} className="flex items-start gap-3 rounded-lg bg-slate-50 p-3 sm:items-center sm:justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[#B08D57]/40 bg-[#12331F] text-white">
+                      {action.performed_by_profile_picture ? (
+                        <img src={action.performed_by_profile_picture} alt="" className="h-full w-full object-cover" />
+                      ) : (
+                        <UserIcon size={12} />
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium capitalize text-slate-700">{action.action} case {action.case_no}</p>
+                      <p className="text-xs text-slate-500">{action.company}{action.detail ? ` - ${action.detail}` : ""}</p>
+                    </div>
+                  </div>
+                  <time className="shrink-0 text-xs text-slate-400">{action.created_at ? new Date(action.created_at).toLocaleString() : ""}</time>
+                </div>
+              ))}
             </div>
           )}
         </section>

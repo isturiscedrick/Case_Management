@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Clock3, Landmark, User } from "lucide-react";
+import { Clock3, Landmark, User as UserIcon } from "lucide-react";
 import type { CaseItem } from "@/types/case";
 import { formatDate, formatCurrency, formatTotalPaidCategory, getTotalJudgmentAward } from "@/lib/caseHelpers";
 import { isStageFilled } from "@/lib/caseValidation";
@@ -206,7 +206,7 @@ export function ViewCaseContent({ item }: { item: CaseItem }) {
       </div>
 
       <div className="flex items-center gap-1.5 border-t border-slate-100 pt-3 text-xs text-slate-400">
-        <User size={12} className="text-slate-300" />
+        <UserIcon size={12} className="text-slate-300" />
         <p>
           Created by <span className="font-medium text-slate-600">{item.createdBy || "-"}</span>
           {item.createdAt && <> on {formatDate(item.createdAt)}</>}
@@ -226,20 +226,33 @@ export function ViewCaseContent({ item }: { item: CaseItem }) {
         ) : activity.length === 0 ? (
           <p className="text-sm text-slate-400">No activity recorded yet.</p>
         ) : (
-          <div className="relative space-y-4 pl-5 before:absolute before:bottom-2 before:left-[6px] before:top-2 before:w-px before:bg-slate-200">
+          <div className="space-y-3 pl-1">
             {activity.map((entry) => (
-              <div key={entry.history_id} className="relative">
-                <span className="absolute -left-[21px] top-1.5 h-3 w-3 rounded-full border-2 border-slate-50 bg-[#B08D57]" />
-                <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between sm:gap-4">
-                  <p className="text-sm font-medium capitalize text-slate-700">{entry.action}</p>
-                  <time className="text-xs text-slate-400">
-                    {entry.created_at ? new Date(entry.created_at).toLocaleString() : "-"}
-                  </time>
+              <div key={entry.history_id} className="flex items-start gap-3">
+                <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[#B08D57]/40 bg-[#12331F] text-white">
+                  {entry.performed_by_profile_picture ? (
+                    <img
+                      src={entry.performed_by_profile_picture}
+                      alt=""
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <UserIcon size={12} />
+                  )}
                 </div>
-                <p className="mt-0.5 text-xs text-slate-500">
-                  By <span className="font-medium text-slate-700">{entry.performed_by_username ?? "-"}</span>
-                  {entry.detail ? ` · ${entry.detail}` : ""}
-                </p>
+
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between sm:gap-4">
+                    <p className="text-sm font-medium capitalize text-slate-700">{entry.action}</p>
+                    <time className="text-xs text-slate-400">
+                      {entry.created_at ? new Date(entry.created_at).toLocaleString() : "-"}
+                    </time>
+                  </div>
+                  <p className="mt-0.5 text-xs text-slate-500">
+                    By <span className="font-medium text-slate-700">{entry.performed_by_username ?? "-"}</span>
+                    {entry.detail ? ` · ${entry.detail}` : ""}
+                  </p>
+                </div>
               </div>
             ))}
           </div>
