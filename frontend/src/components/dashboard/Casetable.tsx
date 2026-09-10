@@ -20,9 +20,9 @@ export function CaseTable({
         <table className="min-w-full table-fixed border-separate border-spacing-0 text-[11px]">
           <colgroup>
             {/* Case Status */}
-            <col className="w-20" />
-            {/* Case ID */}
             <col className="w-14" />
+            {/* Case ID */}
+            <col className="w-20" />
             {/* Last Updated */}
             <col className="w-16" />
 
@@ -77,10 +77,10 @@ export function CaseTable({
           <thead className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 shadow-[0_1px_0_rgba(15,23,42,0.08)]">
             <tr>
               <th rowSpan={2} className="sticky left-0 top-0 z-30 border-b border-r border-slate-200 bg-slate-50 p-2 text-left">
-                Case Status
+                Case ID
               </th>
               <th rowSpan={2} className="sticky top-0 z-20 border-b border-r border-slate-200 bg-slate-50 p-2 text-left">
-                ID
+                Case Status
               </th>
               <th rowSpan={2} className="sticky top-0 z-20 border-b border-r border-slate-200 bg-slate-50 p-2 text-left">
                 Last Updated
