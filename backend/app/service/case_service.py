@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.crud import case as case_crud
 from app.crud import decision as decision_crud
+from app.crud import notification as notification_crud
 from app.manager import case_workflow_manager
 from app.manager.case_workflow_manager import STAGE_LEVEL_MAP
 from app.schemas.case import CaseCreate, CaseUpdate, CaseListParams
@@ -101,11 +102,19 @@ def update_case(db: Session, case_id: int, payload: CaseUpdate, current_user: Us
                 )
 
     try:
-        return case_workflow_manager.update_case(
+        updated_case = case_workflow_manager.update_case(
             db, case, payload,
             updated_by_user_id=current_user.user_id, updated_by_username=current_user.full_name,
             reset_stages=reset_stages,
         )
+        if case.created_by_user_id and case.created_by_user_id != current_user.user_id:
+            notification_crud.create_case_update_notification(
+                db,
+                case.created_by_user_id,
+                f"{current_user.full_name} updated your case {case.case_no} ({case.company_name}).",
+            )
+            db.commit()
+        return updated_case
     except IntegrityError:
         db.rollback()
         raise HTTPException(

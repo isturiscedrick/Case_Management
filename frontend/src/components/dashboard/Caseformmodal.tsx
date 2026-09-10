@@ -66,6 +66,7 @@ export function CaseFormModal({
         onChange={onChange}
         companies={companies}
         {...(mode === "edit" && editRestrictions ? editRestrictions : {})}
+        allowUnsettledTotalCategory={mode === "create"}
       />
     </Modal>
   );

@@ -17,6 +17,7 @@ CAN_WRITE = require_role(UserRole.admin, UserRole.handling_personnel)
 # Closing/unclosing a case is the sole hard lock mechanism (see CaseForm.tsx
 # "Close Case"), available to admins and handling personnel.
 CAN_CLOSE = require_role(UserRole.admin, UserRole.handling_personnel)
+CAN_UNCLOSE = require_role(UserRole.admin)
 
 
 @router.get("", response_model=List[CaseOut])
@@ -60,5 +61,5 @@ def close_case(case_id: int, db: Session = Depends(get_db), current_user=Depends
 
 
 @router.post("/{case_id}/unclose", response_model=CaseOut)
-def unclose_case(case_id: int, db: Session = Depends(get_db), current_user=Depends(CAN_CLOSE)):
+def unclose_case(case_id: int, db: Session = Depends(get_db), current_user=Depends(CAN_UNCLOSE)):
     return case_service.unclose_case(db, case_id, current_user)

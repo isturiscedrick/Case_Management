@@ -15,6 +15,18 @@ def create_password_reset_request(db: Session, user_id: int, message: str) -> No
     return notification
 
 
+def create_case_update_notification(db: Session, user_id: int, message: str) -> Notification:
+    notification = Notification(
+        user_id=user_id,
+        notification_type="case_update",
+        message=message,
+        status="unread",
+    )
+    db.add(notification)
+    db.flush()
+    return notification
+
+
 def list_pending(db: Session):
     return db.query(Notification).filter(Notification.status == "pending").order_by(Notification.created_at.desc()).all()
 
@@ -24,10 +36,7 @@ def list_decided(db: Session):
 
 
 def list_for_user(db: Session, user_id: int):
-    return db.query(Notification).filter(
-        Notification.user_id == user_id,
-        Notification.status != "pending",
-    ).order_by(Notification.created_at.desc()).all()
+    return db.query(Notification).filter(Notification.user_id == user_id).order_by(Notification.created_at.desc()).all()
 
 
 def resolve_for_user(db: Session, user_id: int) -> None:

@@ -18,6 +18,8 @@ export default function ArchivePage() {
   const [search, setSearch] = useState("");
   const [progressFilter, setProgressFilter] = useState<"All" | StageProgress>("All");
   const [statusFilter, setStatusFilter] = useState<"All" | CaseStatusSummary>("All");
+  const [dateStart, setDateStart] = useState("");
+  const [dateEnd, setDateEnd] = useState("");
 
   const [viewItem, setViewItem] = useState<CaseItem | null>(null);
   const [restoreItem, setRestoreItem] = useState<CaseItem | null>(null);
@@ -30,6 +32,8 @@ export default function ArchivePage() {
       const matchesProgress =
         progressFilter === "All" || Object.values(item.caseProgress).some((stage) => stage === progressFilter);
       const matchesStatus = statusFilter === "All" || getCaseStatusSummary(item) === statusFilter;
+      const eventDate = item.date.slice(0, 10);
+      const matchesDate = (!dateStart || eventDate >= dateStart) && (!dateEnd || eventDate <= dateEnd);
 
       const matchesSearch =
         item.company.toLowerCase().includes(keyword) ||
@@ -37,9 +41,9 @@ export default function ArchivePage() {
         item.complainants.some((name) => name.toLowerCase().includes(keyword)) ||
         item.cause.some((cause) => cause.toLowerCase().includes(keyword));
 
-      return matchesProgress && matchesStatus && matchesSearch;
+      return matchesProgress && matchesStatus && matchesSearch && matchesDate;
     });
-  }, [archivedCases, search, progressFilter, statusFilter]);
+  }, [archivedCases, search, progressFilter, statusFilter, dateStart, dateEnd]);
 
   const requestRestore = (item: CaseItem) => setRestoreItem(item);
 

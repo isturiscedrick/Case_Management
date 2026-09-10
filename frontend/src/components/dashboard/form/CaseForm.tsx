@@ -43,6 +43,7 @@ export function CaseForm({
   restrictCaDetailsEditing = false,
   restrictCaProgressOnly = false,
   restrictCaProgressEditing = false,
+  allowUnsettledTotalCategory = false,
 }: {
   value: CaseDraft;
   onChange: (next: CaseDraft) => void;
@@ -58,6 +59,7 @@ export function CaseForm({
   restrictCaDetailsEditing?: boolean;
   restrictCaProgressOnly?: boolean;
   restrictCaProgressEditing?: boolean;
+  allowUnsettledTotalCategory?: boolean;
 }) {
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
 
@@ -69,7 +71,7 @@ export function CaseForm({
       next.caseProgress.ca === "Settled" ||
       next.caseProgress.sc === "Settled";
 
-    if (!nextAnyStageSettled && next.totalPaid.category) {
+    if (!nextAnyStageSettled && !allowUnsettledTotalCategory && next.totalPaid.category) {
       onChange({
         ...next,
         totalPaid: { ...next.totalPaid, category: "" },
@@ -530,6 +532,7 @@ export function CaseForm({
             value={value}
             totalJudgmentAward={totalJudgmentAward}
             anyStageSettled={anyStageSettled}
+            allowUnsettledCategory={allowUnsettledTotalCategory}
             setTotalPaidCategory={setTotalPaidCategory}
           />
         )}

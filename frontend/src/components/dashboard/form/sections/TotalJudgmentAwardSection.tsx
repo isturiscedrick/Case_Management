@@ -14,11 +14,13 @@ export function TotalJudgmentAwardSection({
   value,
   totalJudgmentAward,
   anyStageSettled,
+  allowUnsettledCategory,
   setTotalPaidCategory,
 }: {
   value: CaseDraft;
   totalJudgmentAward: string;
   anyStageSettled: boolean;
+  allowUnsettledCategory: boolean;
   setTotalPaidCategory: (
     category: TotalPaidCategory | ""
   ) => void;
@@ -44,7 +46,7 @@ export function TotalJudgmentAwardSection({
           <select
             className={inputCls}
             value={value.totalPaid.category}
-            disabled={!anyStageSettled}
+            disabled={!anyStageSettled && !allowUnsettledCategory}
             onChange={(e) =>
               setTotalPaidCategory(
                 e.target.value as TotalPaidCategory | ""
@@ -67,7 +69,7 @@ export function TotalJudgmentAwardSection({
           </select>
         </Field>
 
-        {!anyStageSettled && (
+        {!anyStageSettled && !allowUnsettledCategory && (
           <p className="mt-1 flex items-center gap-1 text-[10px] text-emerald-700/60">
             <Lock size={10} />
             Enabled once a stage&apos;s Remarks/Progress is marked

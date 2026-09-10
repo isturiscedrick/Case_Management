@@ -10,6 +10,8 @@ export default function ActivityPage() {
   const [search, setSearch] = useState("");
   const [actionFilter, setActionFilter] = useState("All");
   const [statusFilter, setStatusFilter] = useState("All");
+  const [dateStart, setDateStart] = useState("");
+  const [dateEnd, setDateEnd] = useState("");
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
 
@@ -35,12 +37,16 @@ export default function ActivityPage() {
   const filteredNotifications = items.filter((item) => {
     const matchesSearch = item.message.toLowerCase().includes(keyword);
     const matchesStatus = statusFilter === "All" || item.status === statusFilter;
-    return matchesSearch && matchesStatus;
+    const eventDate = (item.resolved_at ?? item.created_at ?? "").slice(0, 10);
+    const matchesDate = (!dateStart || eventDate >= dateStart) && (!dateEnd || eventDate <= dateEnd);
+    return matchesSearch && matchesStatus && matchesDate;
   });
   const filteredActions = caseActions.filter((action) => {
     const matchesSearch = `${action.action} ${action.case_no} ${action.company} ${action.performed_by_username ?? ""}`.toLowerCase().includes(keyword);
     const matchesAction = actionFilter === "All" || action.action === actionFilter;
-    return matchesSearch && matchesAction;
+    const eventDate = (action.created_at ?? "").slice(0, 10);
+    const matchesDate = (!dateStart || eventDate >= dateStart) && (!dateEnd || eventDate <= dateEnd);
+    return matchesSearch && matchesAction && matchesDate;
   });
 
   return (
@@ -58,6 +64,9 @@ export default function ActivityPage() {
           <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} aria-label="Filter notification status" className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 outline-none focus:border-[#12331F] focus:bg-white">
             <option value="All">All request statuses</option><option value="pending">Pending</option><option value="approved">Approved</option><option value="declined">Declined</option><option value="resolved">Resolved</option>
           </select>
+          <input type="date" value={dateStart} onChange={(event) => setDateStart(event.target.value)} aria-label="Activity start date" className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 outline-none focus:border-[#12331F] focus:bg-white" />
+          <span className="self-center text-xs text-slate-400">to</span>
+          <input type="date" value={dateEnd} onChange={(event) => setDateEnd(event.target.value)} aria-label="Activity end date" className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 outline-none focus:border-[#12331F] focus:bg-white" />
         </div>
 
         <section className="mt-5 rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
