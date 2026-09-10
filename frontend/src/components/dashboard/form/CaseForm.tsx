@@ -43,7 +43,7 @@ export function CaseForm({
   restrictCaDetailsEditing = false,
   restrictCaProgressOnly = false,
   restrictCaProgressEditing = false,
-  allowUnsettledTotalCategory = false,
+  isNewUnsavedCase = false,
 }: {
   value: CaseDraft;
   onChange: (next: CaseDraft) => void;
@@ -59,7 +59,7 @@ export function CaseForm({
   restrictCaDetailsEditing?: boolean;
   restrictCaProgressOnly?: boolean;
   restrictCaProgressEditing?: boolean;
-  allowUnsettledTotalCategory?: boolean;
+  isNewUnsavedCase?: boolean;
 }) {
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
 
@@ -71,7 +71,7 @@ export function CaseForm({
       next.caseProgress.ca === "Settled" ||
       next.caseProgress.sc === "Settled";
 
-    if (!nextAnyStageSettled && !allowUnsettledTotalCategory && next.totalPaid.category) {
+    if (!nextAnyStageSettled && !isNewUnsavedCase && next.totalPaid.category) {
       onChange({
         ...next,
         totalPaid: { ...next.totalPaid, category: "" },
@@ -234,9 +234,13 @@ export function CaseForm({
       }
     }
   }, [laVisible, nlrcVisible, caVisible, scVisible, anyStageSettled]);
-  const isClosed = !!value.closed;
-  const isSettled = !!value.totalPaid?.category;
-  const isFieldsetLocked = isClosed || (isSettled && activeStep === "review");
+const isClosed = !!value.closed;
+const isSettled = !!value.totalPaid?.category;
+
+// Only a CLOSED case locks the entire form.
+// A settled case can still reselect/change
+// the Total Judgment Award category before saving.
+const isFieldsetLocked = isClosed;
 
   const visibleStageSteps = stageSteps.filter((s) => isStepVisible(s.key as WizardStep));
 
@@ -532,7 +536,7 @@ export function CaseForm({
             value={value}
             totalJudgmentAward={totalJudgmentAward}
             anyStageSettled={anyStageSettled}
-            allowUnsettledCategory={allowUnsettledTotalCategory}
+            isNewUnsavedCase={isNewUnsavedCase}
             setTotalPaidCategory={setTotalPaidCategory}
           />
         )}
