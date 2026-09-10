@@ -44,6 +44,7 @@ export function CaseForm({
   restrictCaProgressOnly = false,
   restrictCaProgressEditing = false,
   isNewUnsavedCase = false,
+  isAdmin = false,   // + NEW
 }: {
   value: CaseDraft;
   onChange: (next: CaseDraft) => void;
@@ -60,6 +61,7 @@ export function CaseForm({
   restrictCaProgressOnly?: boolean;
   restrictCaProgressEditing?: boolean;
   isNewUnsavedCase?: boolean;
+  isAdmin?: boolean;   // + NEW
 }) {
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
 
@@ -237,10 +239,11 @@ export function CaseForm({
 const isClosed = !!value.closed;
 const isSettled = !!value.totalPaid?.category;
 
-// Only a CLOSED case locks the entire form.
-// A settled case can still reselect/change
+// Only a CLOSED case locks the entire form — except for admins, who are
+// allowed to edit closed cases (backend enforces this too, see
+// case_service.py::update_case). A settled case can still reselect/change
 // the Total Judgment Award category before saving.
-const isFieldsetLocked = isClosed;
+const isFieldsetLocked = isClosed && !isAdmin;   // + admin exemption
 
   const visibleStageSteps = stageSteps.filter((s) => isStepVisible(s.key as WizardStep));
 
@@ -418,17 +421,19 @@ const isFieldsetLocked = isClosed;
           <div className="flex items-center gap-2">
             <span className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-500">
               <Lock size={13} />
-              Case Closed — form locked
+              {isAdmin ? "Case Closed — editable as admin" : "Case Closed — form locked"}
             </span>
 
-            <button
-              type="button"
-              onClick={uncloseCase}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-600 transition hover:bg-emerald-100"
-            >
-              <Unlock size={13} />
-              Unclose Case
-            </button>
+            {isAdmin && (   // + gate: only admins see Unclose
+              <button
+                type="button"
+                onClick={uncloseCase}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-600 transition hover:bg-emerald-100"
+              >
+                <Unlock size={13} />
+                Unclose Case
+              </button>
+            )}
           </div>
         ) : (
           <div className="flex items-center gap-2">

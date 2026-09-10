@@ -6,11 +6,13 @@ export function CaseTable({
   onView,
   onEdit,
   onToggleArchive,
+  canEditClosed = false,   // + NEW
 }: {
   cases: CaseItem[];
   onView: (item: CaseItem) => void;
   onEdit: (item: CaseItem) => void;
   onToggleArchive: (item: CaseItem) => void;
+  canEditClosed?: boolean;   // + NEW
 }) {
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
@@ -158,7 +160,14 @@ export function CaseTable({
 
           <tbody>
             {cases.map((item) => (
-              <CaseTableRow key={item.id} item={item} onView={onView} onEdit={onEdit} onToggleArchive={onToggleArchive} />
+              <CaseTableRow
+                key={item.id}
+                item={item}
+                onView={onView}
+                onEdit={onEdit}
+                onToggleArchive={onToggleArchive}
+                canEditClosed={canEditClosed}   // + NEW
+              />
             ))}
 
             {cases.length === 0 && (

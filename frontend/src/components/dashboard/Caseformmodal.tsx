@@ -22,6 +22,7 @@ export function CaseFormModal({
   onChange,
   companies,
   editRestrictions,
+  isAdmin = false,   // + NEW
   onCancel,
   onSave,
 }: {
@@ -32,6 +33,7 @@ export function CaseFormModal({
   companies: string[];
   // Only required (and applied) in edit mode.
   editRestrictions?: EditRestrictions;
+  isAdmin?: boolean;   // + NEW
   onCancel: () => void;
   onSave: () => void;
 }) {
@@ -67,6 +69,7 @@ export function CaseFormModal({
         companies={companies}
         {...(mode === "edit" && editRestrictions ? editRestrictions : {})}
         isNewUnsavedCase={mode === "create"}
+        isAdmin={isAdmin}   // + NEW
       />
     </Modal>
   );

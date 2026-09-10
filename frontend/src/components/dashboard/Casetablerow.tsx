@@ -34,6 +34,7 @@ export function CaseTableRow({
   onEdit,
   onToggleArchive,
   hideEdit = false,
+  canEditClosed = false,   // + NEW
 }: {
   item: CaseItem;
   onView: (item: CaseItem) => void;
@@ -42,11 +43,14 @@ export function CaseTableRow({
   // Hides the "Update case" action. Used by the Archive page, where cases
   // are read-only until restored.
   hideEdit?: boolean;
+  // Admins can still edit a closed case (server enforces this too).
+  canEditClosed?: boolean;   // + NEW
 }) {
   // Update is locked only once a case has been explicitly closed via
   // "Close Case" in the form. Being resolved (having a Total Paid category)
   // no longer auto-locks editing — Close Case is the sole lock mechanism.
-  const isLocked = !!item.closed;
+  // Admins are exempt from the closed lock.
+  const isLocked = !!item.closed && !canEditClosed;   // + exemption
   const lockReason = "This case is closed and can no longer be updated.";
 
   return (

@@ -11,7 +11,7 @@ import { CURRENT_USER, EMPTY_CASE } from "@/constants/caseOptions";
 // Data
 import { initialCompanies } from "@/data/initialCases";
 import { useCases } from "@/context/CasesContext";
-import { fetchCompanies } from "@/lib/api";
+import { fetchCompanies, fetchCurrentUser } from "@/lib/api";   // + fetchCurrentUser added
 
 import { cloneDraft, getCaseStatusSummary, getTotalJudgmentAward, type CaseStatusSummary } from "@/lib/caseHelpers";
 import { getCaseDraftErrors, getStageGates } from "@/lib/caseValidation";
@@ -49,6 +49,26 @@ export default function CasesPage() {
       })
       .catch((err) => {
         console.error("Failed to fetch companies, using fallback list:", err);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // NEW — whether the current user is an admin (backend already enforces
+  // this on update_case/unclose; this just drives what the UI allows).
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    fetchCurrentUser()
+      .then((user) => {
+        if (!cancelled) setIsAdmin(user.role === "admin");
+      })
+      .catch(() => {
+        // Ignore — isAdmin stays false, closed-case editing stays locked.
       });
 
     return () => {
@@ -232,7 +252,8 @@ export default function CasesPage() {
     // Only closed cases are locked from further edits now — "Close Case" is
     // the sole lock mechanism. A resolved (settled) case is no longer
     // auto-locked; the user closes it explicitly when they're done.
-    if (item.closed) {
+    // Admins are exempt from this lock (see case_service.py::update_case).
+    if (item.closed && !isAdmin) {   // + admin exemption
       return;
     }
 
@@ -464,6 +485,7 @@ export default function CasesPage() {
         onView={openView}
         onEdit={openEdit}
         onToggleArchive={requestToggleArchive}
+        canEditClosed={isAdmin}   // + NEW
       />
 
       {/* CREATE CASE MODAL */}
@@ -491,6 +513,7 @@ export default function CasesPage() {
           draft={draft}
           onChange={setDraft}
           companies={companies}
+          isAdmin={isAdmin}   // + NEW
           editRestrictions={{
             restrictSenaEditing,
             restrictSenaRemarksEditing,

@@ -17,6 +17,7 @@ from app.service.case_validation_service import (
 )
 from app.models.case import Case
 from app.models.user import User
+from app.models.enums import UserRole          
 
 
 def get_case_or_404(db: Session, case_id: int) -> Case:
@@ -57,7 +58,7 @@ def create_case(db: Session, payload: CaseCreate, current_user: User) -> Case:
 def update_case(db: Session, case_id: int, payload: CaseUpdate, current_user: User) -> Case:
     case = get_case_or_404(db, case_id)
 
-    if case.closed:
+    if case.closed and current_user.role != UserRole.admin:   # + admin bypass
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="This case is closed and can no longer be updated.")
 
     validate_case_payload(payload)
