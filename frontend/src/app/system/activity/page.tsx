@@ -33,21 +33,34 @@ export default function ActivityPage() {
     load();
   }, []);
 
+  // Matches an ISO timestamp string against the selected date range. Falls
+  // back to "no date on record -> excluded once a bound is set" so partial
+  // data can't silently bypass the filter, mirroring the dashboard's
+  // Closed Date range behavior.
+  function matchesDateRange(iso: string | null | undefined) {
+    if (!dateStart && !dateEnd) return true;
+    if (!iso) return false;
+    const day = iso.slice(0, 10);
+    return (!dateStart || day >= dateStart) && (!dateEnd || day <= dateEnd);
+  }
+
   const keyword = search.toLowerCase();
   const filteredNotifications = items.filter((item) => {
     const matchesSearch = item.message.toLowerCase().includes(keyword);
     const matchesStatus = statusFilter === "All" || item.status === statusFilter;
-    const eventDate = (item.resolved_at ?? item.created_at ?? "").slice(0, 10);
-    const matchesDate = (!dateStart || eventDate >= dateStart) && (!dateEnd || eventDate <= dateEnd);
+    // Decided requests are dated by resolved_at; a still-pending request
+    // (no resolved_at yet) falls back to when it was created.
+    const matchesDate = matchesDateRange(item.resolved_at ?? item.created_at);
     return matchesSearch && matchesStatus && matchesDate;
   });
   const filteredActions = caseActions.filter((action) => {
     const matchesSearch = `${action.action} ${action.case_no} ${action.company} ${action.performed_by_username ?? ""}`.toLowerCase().includes(keyword);
     const matchesAction = actionFilter === "All" || action.action === actionFilter;
-    const eventDate = (action.created_at ?? "").slice(0, 10);
-    const matchesDate = (!dateStart || eventDate >= dateStart) && (!dateEnd || eventDate <= dateEnd);
+    const matchesDate = matchesDateRange(action.created_at);
     return matchesSearch && matchesAction && matchesDate;
   });
+
+  const hasDateFilter = !!(dateStart || dateEnd);
 
   return (
     <div className="min-h-full bg-[#F5F1E3] p-4 sm:p-6">
@@ -56,7 +69,7 @@ export default function ActivityPage() {
         <h1 className="mt-1 font-serif text-2xl font-medium text-[#12331F]">My Activity</h1>
         <p className="mt-1 text-sm text-slate-500">{isAdmin ? "Review decisions made on password reset requests." : "Only actions and account events performed by you are shown here."}</p>
 
-        <div className="mt-5 flex flex-col gap-2 rounded-xl border border-slate-200 bg-white p-3 shadow-sm sm:flex-row">
+        <div className="mt-5 flex flex-col gap-2 rounded-xl border border-slate-200 bg-white p-3 shadow-sm sm:flex-row sm:flex-wrap">
           <div className="relative flex-1"><Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" /><input aria-label="Search activity" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search activity, case number, company, or user" className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm text-slate-700 outline-none focus:border-[#12331F] focus:bg-white focus:ring-2 focus:ring-[#12331F]/10" /></div>
           <select value={actionFilter} onChange={(event) => setActionFilter(event.target.value)} aria-label="Filter case actions" className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 outline-none focus:border-[#12331F] focus:bg-white">
             <option value="All">All case actions</option><option value="created">Created</option><option value="updated">Updated</option><option value="archived">Archived</option><option value="restored">Restored</option>
@@ -64,9 +77,39 @@ export default function ActivityPage() {
           <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} aria-label="Filter notification status" className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 outline-none focus:border-[#12331F] focus:bg-white">
             <option value="All">All request statuses</option><option value="pending">Pending</option><option value="approved">Approved</option><option value="declined">Declined</option><option value="resolved">Resolved</option>
           </select>
-          <input type="date" value={dateStart} onChange={(event) => setDateStart(event.target.value)} aria-label="Activity start date" className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 outline-none focus:border-[#12331F] focus:bg-white" />
-          <span className="self-center text-xs text-slate-400">to</span>
-          <input type="date" value={dateEnd} onChange={(event) => setDateEnd(event.target.value)} aria-label="Activity end date" className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 outline-none focus:border-[#12331F] focus:bg-white" />
+
+          <div className="flex items-center gap-1.5">
+            <label className="text-xs font-medium text-slate-500">Date</label>
+            <input
+              type="date"
+              value={dateStart}
+              onChange={(event) => setDateStart(event.target.value)}
+              max={dateEnd || undefined}
+              aria-label="Activity date range start"
+              className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2 text-sm text-slate-700 outline-none focus:border-[#12331F] focus:bg-white"
+            />
+            <span className="text-xs text-slate-400">to</span>
+            <input
+              type="date"
+              value={dateEnd}
+              onChange={(event) => setDateEnd(event.target.value)}
+              min={dateStart || undefined}
+              aria-label="Activity date range end"
+              className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2 text-sm text-slate-700 outline-none focus:border-[#12331F] focus:bg-white"
+            />
+            {hasDateFilter && (
+              <button
+                type="button"
+                onClick={() => {
+                  setDateStart("");
+                  setDateEnd("");
+                }}
+                className="text-xs text-slate-400 underline hover:text-slate-600"
+              >
+                Clear
+              </button>
+            )}
+          </div>
         </div>
 
         <section className="mt-5 rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">

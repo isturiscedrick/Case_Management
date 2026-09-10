@@ -18,8 +18,10 @@ export default function ArchivePage() {
   const [search, setSearch] = useState("");
   const [progressFilter, setProgressFilter] = useState<"All" | StageProgress>("All");
   const [statusFilter, setStatusFilter] = useState<"All" | CaseStatusSummary>("All");
-  const [dateStart, setDateStart] = useState("");
-  const [dateEnd, setDateEnd] = useState("");
+  const [filingDateStart, setFilingDateStart] = useState<string>("");
+  const [filingDateEnd, setFilingDateEnd] = useState<string>("");
+  const [closedDateStart, setClosedDateStart] = useState<string>("");
+  const [closedDateEnd, setClosedDateEnd] = useState<string>("");
 
   const [viewItem, setViewItem] = useState<CaseItem | null>(null);
   const [restoreItem, setRestoreItem] = useState<CaseItem | null>(null);
@@ -32,8 +34,21 @@ export default function ArchivePage() {
       const matchesProgress =
         progressFilter === "All" || Object.values(item.caseProgress).some((stage) => stage === progressFilter);
       const matchesStatus = statusFilter === "All" || getCaseStatusSummary(item) === statusFilter;
-      const eventDate = item.date.slice(0, 10);
-      const matchesDate = (!dateStart || eventDate >= dateStart) && (!dateEnd || eventDate <= dateEnd);
+
+      const matchesFilingDateRange =
+        (!filingDateStart || item.filingDate >= filingDateStart) &&
+        (!filingDateEnd || item.filingDate <= filingDateEnd);
+
+      // Only constrains results when the item is actually closed; a case
+      // with no closedDate set (not closed) is excluded once either bound
+      // is set, since it has nothing to compare against. Mirrors the same
+      // logic on the dashboard's More Filters.
+      const matchesClosedDateRange =
+        !closedDateStart && !closedDateEnd
+          ? true
+          : !!item.closedDate &&
+            (!closedDateStart || item.closedDate >= closedDateStart) &&
+            (!closedDateEnd || item.closedDate <= closedDateEnd);
 
       const matchesSearch =
         item.company.toLowerCase().includes(keyword) ||
@@ -41,9 +56,31 @@ export default function ArchivePage() {
         item.complainants.some((name) => name.toLowerCase().includes(keyword)) ||
         item.cause.some((cause) => cause.toLowerCase().includes(keyword));
 
-      return matchesProgress && matchesStatus && matchesSearch && matchesDate;
+      return (
+        matchesProgress &&
+        matchesStatus &&
+        matchesFilingDateRange &&
+        matchesClosedDateRange &&
+        matchesSearch
+      );
     });
-  }, [archivedCases, search, progressFilter, statusFilter, dateStart, dateEnd]);
+  }, [archivedCases, search, progressFilter, statusFilter, filingDateStart, filingDateEnd, closedDateStart, closedDateEnd]);
+
+  const activeFilterCount =
+    [progressFilter, statusFilter].filter((filter) => filter !== "All").length +
+    (search ? 1 : 0) +
+    (filingDateStart || filingDateEnd ? 1 : 0) +
+    (closedDateStart || closedDateEnd ? 1 : 0);
+
+  const resetFilters = () => {
+    setSearch("");
+    setProgressFilter("All");
+    setStatusFilter("All");
+    setFilingDateStart("");
+    setFilingDateEnd("");
+    setClosedDateStart("");
+    setClosedDateEnd("");
+  };
 
   const requestRestore = (item: CaseItem) => setRestoreItem(item);
 
@@ -102,6 +139,66 @@ export default function ArchivePage() {
             <option value="Pending">Pending</option>
             <option value="Closed">Closed</option>
           </select>
+        </div>
+
+        {/* DATE RANGES */}
+        <div className="mt-2 flex flex-col gap-2 border-t border-slate-100 pt-2 sm:flex-row sm:items-center sm:flex-wrap">
+          <div className="flex items-center gap-1.5">
+            <label className="text-[11px] font-medium text-slate-500">Filing Date</label>
+
+            <input
+              type="date"
+              value={filingDateStart}
+              onChange={(e) => setFilingDateStart(e.target.value)}
+              max={filingDateEnd || undefined}
+              aria-label="Filing date range start"
+              className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs text-slate-700 outline-none transition focus:border-slate-400 focus:bg-white"
+            />
+
+            <span className="text-[11px] text-slate-400">to</span>
+
+            <input
+              type="date"
+              value={filingDateEnd}
+              onChange={(e) => setFilingDateEnd(e.target.value)}
+              min={filingDateStart || undefined}
+              aria-label="Filing date range end"
+              className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs text-slate-700 outline-none transition focus:border-slate-400 focus:bg-white"
+            />
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            <label className="text-[11px] font-medium text-slate-500">Closed Date</label>
+
+            <input
+              type="date"
+              value={closedDateStart}
+              onChange={(e) => setClosedDateStart(e.target.value)}
+              max={closedDateEnd || undefined}
+              aria-label="Closed date range start"
+              className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs text-slate-700 outline-none transition focus:border-slate-400 focus:bg-white"
+            />
+
+            <span className="text-[11px] text-slate-400">to</span>
+
+            <input
+              type="date"
+              value={closedDateEnd}
+              onChange={(e) => setClosedDateEnd(e.target.value)}
+              min={closedDateStart || undefined}
+              aria-label="Closed date range end"
+              className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs text-slate-700 outline-none transition focus:border-slate-400 focus:bg-white"
+            />
+          </div>
+
+          {activeFilterCount > 0 && (
+            <button
+              onClick={resetFilters}
+              className="text-[11px] font-medium text-slate-500 underline-offset-2 hover:text-blue-950 hover:underline"
+            >
+              Reset filters
+            </button>
+          )}
         </div>
 
         <p className="mt-2 text-[11px] text-slate-400">
