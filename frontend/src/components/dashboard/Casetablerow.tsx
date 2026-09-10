@@ -56,12 +56,15 @@ export function CaseTableRow({
   return (
     <tr className="group border-b border-slate-100 last:border-0 hover:bg-slate-50">
       {/* Case ID */}
-      <td className="border-r border-slate-100 p-2 font-mono text-[11px] text-slate-500">{item.id}</td>
-      
-      {/* Case Status (overall, across all stages) */}
-      <td className="sticky left-0 z-10 border-r border-slate-200 bg-white p-2 group-hover:bg-slate-50">
-        <CaseStatusSummaryBadge status={getCaseStatusSummary(item)} />
+      <td className="sticky left-0 z-10 border-r border-slate-200 bg-white p-2 font-mono text-[11px] text-slate-500 group-hover:bg-slate-50">
+      {item.id}
       </td>
+
+      {/* Case Status (overall, across all stages) */}
+      <td className="border-r border-slate-100 bg-white p-2 group-hover:bg-slate-50">
+       <CaseStatusSummaryBadge status={getCaseStatusSummary(item)} />
+      </td>
+
 
       {/* Last Updated */}
       <td className="border-r border-slate-100 p-2 text-slate-600">{formatDate(item.date)}</td>
