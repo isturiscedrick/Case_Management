@@ -59,3 +59,17 @@ def decline_notification(
     _admin=Depends(require_role(UserRole.admin)),
 ):
     return _decide_notification(notification_id, "declined", db)
+
+
+@router.post("/{notification_id}/read", response_model=NotificationOut)
+def mark_notification_read(
+    notification_id: int,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    notification = notification_crud.mark_read(db, notification_id, current_user.user_id)
+    if not notification:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Notification not found.")
+    db.commit()
+    db.refresh(notification)
+    return notification

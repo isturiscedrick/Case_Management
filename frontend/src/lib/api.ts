@@ -286,6 +286,11 @@ export async function decideNotification(id: number, decision: "approve" | "decl
   return res.json();
 }
 
+export async function markNotificationRead(id: number): Promise<PasswordResetNotification> {
+  const res = await authMutation(`/api/notifications/${id}/read`, "POST");
+  return res.json();
+}
+
 export async function fetchMyHistory(): Promise<HistoryOut[]> {
   const res = await authFetch("/api/history/me?page_size=100");
   return res.json();

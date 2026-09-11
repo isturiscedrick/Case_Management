@@ -44,21 +44,36 @@ export default function ActivityPage() {
     return (!dateStart || day >= dateStart) && (!dateEnd || day <= dateEnd);
   }
 
+  // Descending timestamp comparator — used to guarantee latest-to-oldest
+  // ordering on the client, since each list is fetched independently and
+  // filtering doesn't reorder, but it's worth not relying solely on the
+  // backend's ORDER BY holding across every call path.
+  function byNewestFirst(aIso: string | null | undefined, bIso: string | null | undefined) {
+    const aTime = aIso ? new Date(aIso).getTime() : 0;
+    const bTime = bIso ? new Date(bIso).getTime() : 0;
+    return bTime - aTime;
+  }
+
   const keyword = search.toLowerCase();
-  const filteredNotifications = items.filter((item) => {
-    const matchesSearch = item.message.toLowerCase().includes(keyword);
-    const matchesStatus = statusFilter === "All" || item.status === statusFilter;
-    // Decided requests are dated by resolved_at; a still-pending request
-    // (no resolved_at yet) falls back to when it was created.
-    const matchesDate = matchesDateRange(item.resolved_at ?? item.created_at);
-    return matchesSearch && matchesStatus && matchesDate;
-  });
-  const filteredActions = caseActions.filter((action) => {
-    const matchesSearch = `${action.action} ${action.case_no} ${action.company} ${action.performed_by_username ?? ""}`.toLowerCase().includes(keyword);
-    const matchesAction = actionFilter === "All" || action.action === actionFilter;
-    const matchesDate = matchesDateRange(action.created_at);
-    return matchesSearch && matchesAction && matchesDate;
-  });
+  const filteredNotifications = items
+    .filter((item) => {
+      const matchesSearch = item.message.toLowerCase().includes(keyword);
+      const matchesStatus = statusFilter === "All" || item.status === statusFilter;
+      // Decided requests are dated by resolved_at; a still-pending request
+      // (no resolved_at yet) falls back to when it was created.
+      const matchesDate = matchesDateRange(item.resolved_at ?? item.created_at);
+      return matchesSearch && matchesStatus && matchesDate;
+    })
+    .sort((a, b) => byNewestFirst(a.resolved_at ?? a.created_at, b.resolved_at ?? b.created_at));
+
+  const filteredActions = caseActions
+    .filter((action) => {
+      const matchesSearch = `${action.action} ${action.case_no} ${action.company} ${action.performed_by_username ?? ""}`.toLowerCase().includes(keyword);
+      const matchesAction = actionFilter === "All" || action.action === actionFilter;
+      const matchesDate = matchesDateRange(action.created_at);
+      return matchesSearch && matchesAction && matchesDate;
+    })
+    .sort((a, b) => byNewestFirst(a.created_at, b.created_at));
 
   const hasDateFilter = !!(dateStart || dateEnd);
 

@@ -57,6 +57,22 @@ def update_status(db: Session, notification_id: int, status: str) -> Notificatio
     return notification
 
 
+# NEW — lets the notification's OWNER (the case creator) dismiss a
+# case_update notification once they've seen it. Scoped to user_id so a
+# person can only mark their own notifications read, never someone else's.
+def mark_read(db: Session, notification_id: int, user_id: int) -> Notification | None:
+    notification = db.query(Notification).filter(
+        Notification.notification_id == notification_id,
+        Notification.user_id == user_id,
+    ).first()
+    if not notification:
+        return None
+    notification.status = "read"
+    notification.resolved_at = datetime.utcnow()
+    db.flush()
+    return notification
+
+
 def consume_approved_password_reset(db: Session, user_id: int) -> None:
     db.query(Notification).filter(
         Notification.user_id == user_id,

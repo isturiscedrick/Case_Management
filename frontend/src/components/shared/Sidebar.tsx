@@ -40,11 +40,25 @@ export default function Sidebar() {
     loadCurrentUser();
     window.addEventListener("profile-updated", loadCurrentUser);
 
+    // Everyone (admin or not) always fetches their OWN notifications — this
+    // is what surfaces "X updated your case" alerts to a case's creator,
+    // including admin creators, who previously only ever saw the global
+    // pending password-reset queue and never their own case_update items.
+    // Admins additionally merge in the pending password-reset queue they're
+    // responsible for reviewing.
     const loadNotifications = () => {
-      const notificationRequest = currentUser?.role === "admin" ? fetchPendingNotifications() : fetchMyNotifications();
-      notificationRequest.then((items) => {
-        if (!cancelled) setNotifications(items);
-      }).catch(() => undefined);
+      const requests: Promise<PasswordResetNotification[]>[] = [fetchMyNotifications()];
+      if (currentUser?.role === "admin") requests.push(fetchPendingNotifications());
+
+      Promise.all(requests)
+        .then(([mine, pending]) => {
+          if (cancelled) return;
+          const merged = pending
+            ? [...mine, ...pending.filter((p) => !mine.some((m) => m.notification_id === p.notification_id))]
+            : mine;
+          setNotifications(merged);
+        })
+        .catch(() => undefined);
     };
     loadNotifications();
     const notificationTimer = window.setInterval(loadNotifications, 30000);
@@ -136,9 +150,12 @@ export default function Sidebar() {
               <div className="flex items-center gap-3">
                 <span className="relative">
                   <Icon className="h-4 w-4 shrink-0" />
-                  {item.label === "Notifications" && notifications.some((notification) => notification.status === "pending") && (
-                    <span className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-rose-400 ring-2 ring-[#12331F]" />
-                  )}
+                  {item.label === "Notifications" &&
+                    notifications.some(
+                      (notification) => notification.status === "pending" || notification.status === "unread"
+                    ) && (
+                      <span className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-rose-400 ring-2 ring-[#12331F]" />
+                    )}
                 </span>
                 {!collapsed && <span>{item.label}</span>}
               </div>
