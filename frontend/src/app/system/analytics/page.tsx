@@ -8,8 +8,9 @@ import {
   Users,
   PieChart as PieChartIcon,
   CalendarRange,
-  TrendingUp,
   Layers,
+  Landmark,
+  RefreshCw,
 } from "lucide-react";
 
 import type { CaseItem, TotalPaidCategory } from "@/types/case";
@@ -117,21 +118,6 @@ function isWithinRange(dateStr: string | undefined, start: string, end: string) 
   return true;
 }
 
-// Groups an ISO-ish date string into a "YYYY-MM" bucket key. Returns "" for
-// missing/unparseable dates so callers can skip them.
-function monthKeyOf(dateStr: string | undefined) {
-  if (!dateStr || dateStr.length < 7) return "";
-  return dateStr.slice(0, 7);
-}
-
-function monthLabelOf(monthKey: string) {
-  const [year, month] = monthKey.split("-");
-  const y = Number(year);
-  const m = Number(month);
-  if (!y || !m) return monthKey;
-  return new Date(y, m - 1, 1).toLocaleDateString(undefined, { month: "short", year: "2-digit" });
-}
-
 // Renders a set of value/color segments as a crisp SVG ring — used in place
 // of a CSS conic-gradient string so edges stay sharp at any size/zoom and
 // there's a single source of truth (no separate gradient string to keep in
@@ -206,7 +192,7 @@ function SectionTitle({
 }
 
 export default function AnalyticsPage() {
-  const { cases: allCases } = useCases();
+  const { cases: allCases, isLoading, refetch } = useCases();
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
 
@@ -239,54 +225,6 @@ export default function AnalyticsPage() {
 
     return result;
   }, [cases]);
-
-  // Monthly trend: cases filed vs. (approximately) settled, per month,
-  // scoped to the currently filtered `cases`.
-  //
-  // "Filed" is exact — from CaseItem.filingDate. "Settled" has no dedicated
-  // timestamp anywhere in the data model, so this approximates it using
-  // item.date (Last Updated), which is bumped on every save — including the
-  // save that marks a stage/remarks "Settled". Treat this series as
-  // indicative, not exact, if a case was edited again afterward.
-  const monthlyTrend = useMemo(() => {
-    const filedByMonth = new Map<string, number>();
-    const settledByMonth = new Map<string, number>();
-
-    cases.forEach((item) => {
-      const filedKey = monthKeyOf(item.filingDate);
-      if (filedKey) filedByMonth.set(filedKey, (filedByMonth.get(filedKey) ?? 0) + 1);
-
-      if (getCaseStatusSummary(item) === "Settled") {
-        const settledKey = monthKeyOf(item.date);
-        if (settledKey) settledByMonth.set(settledKey, (settledByMonth.get(settledKey) ?? 0) + 1);
-      }
-    });
-
-    const allKeys = new Set<string>([...filedByMonth.keys(), ...settledByMonth.keys()]);
-
-    return Array.from(allKeys)
-      .sort()
-      .map((monthKey) => ({
-        monthKey,
-        label: monthLabelOf(monthKey),
-        filed: filedByMonth.get(monthKey) ?? 0,
-        settled: settledByMonth.get(monthKey) ?? 0,
-      }));
-  }, [cases]);
-
-  const maxMonthlyValue = useMemo(
-    () => Math.max(1, ...monthlyTrend.flatMap((point) => [point.filed, point.settled])),
-    [monthlyTrend]
-  );
-
-  const monthlyTotals = useMemo(
-    () =>
-      monthlyTrend.reduce(
-        (acc, point) => ({ filed: acc.filed + point.filed, settled: acc.settled + point.settled }),
-        { filed: 0, settled: 0 }
-      ),
-    [monthlyTrend]
-  );
 
   const grandTotal = useMemo(
     () => cases.reduce((sum, c) => sum + parseAmount(c.totalPaid?.amount), 0),
@@ -371,109 +309,61 @@ export default function AnalyticsPage() {
           <p className="mt-1 text-sm text-slate-500">Case status and judgment award breakdown by stage.</p>
         </div>
 
-        <div className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-600 shadow-sm">
-          <CalendarRange size={14} className="text-slate-400" />
-          <input
-            type="date"
-            value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
-            className="w-38 bg-transparent outline-none"
-            aria-label="Start date"
-          />
-          <span className="text-slate-300">–</span>
-          <input
-            type="date"
-            value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
-            className="w-38 bg-transparent outline-none"
-            aria-label="End date"
-          />
-          {(startDate || endDate) && (
-            <button
-              type="button"
-              onClick={() => {
-                setStartDate("");
-                setEndDate("");
-              }}
-              className="ml-1 text-[11px] text-slate-400 underline hover:text-slate-600"
-            >
-              Clear
-            </button>
-          )}
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-600 shadow-sm">
+            <CalendarRange size={14} className="text-slate-400" />
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="w-38 bg-transparent outline-none"
+              aria-label="Start date"
+            />
+            <span className="text-slate-300">–</span>
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="w-38 bg-transparent outline-none"
+              aria-label="End date"
+            />
+            {(startDate || endDate) && (
+              <button
+                type="button"
+                onClick={() => {
+                  setStartDate("");
+                  setEndDate("");
+                }}
+                className="ml-1 text-[11px] text-slate-400 underline hover:text-slate-600"
+              >
+                Clear
+              </button>
+            )}
+          </div>
+
+          <button
+            type="button"
+            onClick={refetch}
+            disabled={isLoading}
+            aria-label="Refresh analytics"
+            title="Refresh analytics"
+            className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <RefreshCw size={13} className={isLoading ? "animate-spin" : ""} />
+            Refresh
+          </button>
         </div>
       </div>
 
       {/* TOP SUMMARY */}
-      <div className="grid gap-2.5 sm:grid-cols-2">
-        <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100 text-slate-700">
-            <Briefcase size={18} />
-          </div>
-          <div>
-            <p className="text-[11px] uppercase tracking-wide text-slate-400">Cases Analyzed</p>
-            <p className="text-lg font-semibold tabular-nums text-[#12331F]">{cases.length}</p>
-          </div>
+      <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:max-w-xs">
+        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100 text-slate-700">
+          <Briefcase size={18} />
         </div>
-
-        <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-50 text-emerald-700">
-            <BarChart3 size={18} />
-          </div>
-          <div>
-            <p className="text-[11px] uppercase tracking-wide text-slate-400">Total Judgment Awards Paid</p>
-            <p className="text-lg font-semibold tabular-nums text-[#12331F]">{formatCurrency(String(grandTotal))}</p>
-          </div>
+        <div>
+          <p className="text-[11px] uppercase tracking-wide text-slate-400">Cases Analyzed</p>
+          <p className="text-lg font-semibold tabular-nums text-[#12331F]">{cases.length}</p>
         </div>
-      </div>
-
-      {/* MONTHLY TRENDS */}
-      <div>
-        <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
-          <SectionTitle icon={TrendingUp} title="Monthly Trends" subtitle="Cases filed vs. settled, by month, within the selected range." />
-          <div className="flex items-center gap-3 text-[11px] text-slate-500">
-            <span className="flex items-center gap-1.5">
-              <span className="h-1.5 w-1.5 rounded-full bg-sky-500" />
-              Filed ({monthlyTotals.filed})
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-              Settled ({monthlyTotals.settled})
-            </span>
-          </div>
-        </div>
-
-        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-          {monthlyTrend.length === 0 ? (
-            <p className="text-xs italic text-slate-400">No cases match the current filters.</p>
-          ) : (
-            <div className="overflow-x-auto">
-              <div className="flex min-w-max items-end gap-6 border-b border-slate-100 pb-3">
-                {monthlyTrend.map((point) => (
-                  <div key={point.monthKey} className="flex flex-col items-center gap-1.5">
-                    <div className="flex h-32 items-end gap-1">
-                      <div
-                        className="w-3 rounded-t bg-sky-500"
-                        style={{ height: `${Math.max(2, (point.filed / maxMonthlyValue) * 128)}px` }}
-                        title={`${point.label} · Filed: ${point.filed}`}
-                      />
-                      <div
-                        className="w-3 rounded-t bg-emerald-500"
-                        style={{ height: `${Math.max(2, (point.settled / maxMonthlyValue) * 128)}px` }}
-                        title={`${point.label} · Settled: ${point.settled}`}
-                      />
-                    </div>
-                    <span className="whitespace-nowrap text-[10px] tabular-nums text-slate-400">{point.label}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-
-        <p className="mt-1.5 text-[11px] text-slate-400">
-          "Settled" is approximated from each case&apos;s Last Updated date — there is no dedicated settlement-date
-          field in the data model yet, so treat this series as directional rather than exact.
-        </p>
       </div>
 
       {/* STATUS BREAKDOWN PER STAGE */}
@@ -609,6 +499,17 @@ export default function AnalyticsPage() {
               })}
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* TOTAL JUDGMENT AWARDS PAID */}
+      <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:max-w-xs">
+        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-50 text-emerald-700">
+          <Landmark size={18} />
+        </div>
+        <div>
+          <p className="text-[11px] uppercase tracking-wide text-slate-400">Total Judgment Awards Paid</p>
+          <p className="text-lg font-semibold tabular-nums text-[#12331F]">{formatCurrency(String(grandTotal))}</p>
         </div>
       </div>
 
