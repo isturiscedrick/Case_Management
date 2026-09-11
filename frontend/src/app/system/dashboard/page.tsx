@@ -375,27 +375,33 @@ export default function CasesPage() {
     setActiveCase(item);
     setDraft(cloneDraft(item));
 
+    // Admins bypass every per-stage "locked once filled" restriction below —
+    // they can still see the normal stage visibility rules (laVisible,
+    // nlrcVisible, etc. from getStageGates), but nothing is grayed out for
+    // them. Non-admins keep the existing behavior untouched.
+    const bypassFieldLocks = isAdmin;
+
     /* SEnA */
-    setRestrictSenaEditing(isSenaOnlyCase(item) || gates.laFilled);
-    setRestrictSenaRemarksEditing(gates.laFilled);
+    setRestrictSenaEditing(!bypassFieldLocks && (isSenaOnlyCase(item) || gates.laFilled));
+    setRestrictSenaRemarksEditing(!bypassFieldLocks && gates.laFilled);
 
     /* LA */
-    setRestrictLaDetailsEditing(gates.laFilled);
-    setRestrictLaProgressOnly(laProgressIsPending);
-    setRestrictLaProgressEditing(gates.laFilled && !laProgressIsPending);
+    setRestrictLaDetailsEditing(!bypassFieldLocks && gates.laFilled);
+    setRestrictLaProgressOnly(!bypassFieldLocks && laProgressIsPending);
+    setRestrictLaProgressEditing(!bypassFieldLocks && gates.laFilled && !laProgressIsPending);
 
     /* NLRC */
-    setRestrictNlrcDetailsEditing(gates.nlrcFilled);
-    setRestrictNlrcProgressOnly(nlrcProgressIsPending);
+    setRestrictNlrcDetailsEditing(!bypassFieldLocks && gates.nlrcFilled);
+    setRestrictNlrcProgressOnly(!bypassFieldLocks && nlrcProgressIsPending);
     setRestrictNlrcProgressEditing(
-      gates.nlrcFilled && !nlrcProgressIsPending && !nlrcHasMotionForReconsideration
+      !bypassFieldLocks && gates.nlrcFilled && !nlrcProgressIsPending && !nlrcHasMotionForReconsideration
     );
 
     /* CA */
-    setRestrictCaDetailsEditing(gates.caFilled);
-    setRestrictCaProgressOnly(caProgressIsPending);
+    setRestrictCaDetailsEditing(!bypassFieldLocks && gates.caFilled);
+    setRestrictCaProgressOnly(!bypassFieldLocks && caProgressIsPending);
     setRestrictCaProgressEditing(
-      gates.caFilled && !caProgressIsPending && !caHasMotionForReconsideration
+      !bypassFieldLocks && gates.caFilled && !caProgressIsPending && !caHasMotionForReconsideration
     );
 
     setModal("edit");

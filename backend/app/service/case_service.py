@@ -77,6 +77,9 @@ def update_case(db: Session, case_id: int, payload: CaseUpdate, current_user: Us
     # Server-side mirror of the frontend's per-stage disabled fieldsets:
     # once a stage was already filled, its details can't be silently
     # rewritten by a non-UI client — only Remarks and Progress may still change.
+    # Admins are exempt, matching the frontend's bypassFieldLocks behavior
+    # in dashboard/page.tsx::openEdit — same exemption pattern already used
+    # for the closed-case lock a few lines above.
     existing_stage_dicts = {
         stage_key: decision_crud.get_decision_as_stage_dict(db, case_id, level)
         for stage_key, level in STAGE_LEVEL_MAP.items()
@@ -84,7 +87,10 @@ def update_case(db: Session, case_id: int, payload: CaseUpdate, current_user: Us
     existing_stages_typed = {
         k: DecisionIn(**v) if v else None for k, v in existing_stage_dicts.items()
     }
-    locked_stages = determine_locked_stage_edits(existing_stages_typed)
+    locked_stages = (
+        [] if current_user.role == UserRole.admin
+        else determine_locked_stage_edits(existing_stages_typed)
+    )
 
     for stage_key in locked_stages:
         incoming_stage = getattr(payload, stage_key)
