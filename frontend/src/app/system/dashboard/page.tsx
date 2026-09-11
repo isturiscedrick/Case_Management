@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 // Types
 import type { CaseDraft, CaseItem, ModalType, StageProgress, EditRestrictions } from "@/types/case";
@@ -11,7 +11,14 @@ import { CURRENT_USER, EMPTY_CASE } from "@/constants/caseOptions";
 // Data
 import { initialCompanies } from "@/data/initialCases";
 import { useCases } from "@/context/CasesContext";
-import { fetchCompanies, fetchCurrentUser } from "@/lib/api";   // + fetchCurrentUser added
+import {
+  fetchCompanies,
+  fetchCurrentUser,
+  acquireCaseLock,
+  heartbeatCaseLock,
+  releaseCaseLock,
+  LockConflictError,
+} from "@/lib/api"; // + NEW: lock functions + LockConflictError
 
 import { cloneDraft, getCaseStatusSummary, getTotalJudgmentAward, type CaseStatusSummary } from "@/lib/caseHelpers";
 import { getCaseDraftErrors, getStageGates } from "@/lib/caseValidation";
@@ -25,6 +32,13 @@ import { ViewCaseModal } from "@/components/dashboard/ViewCaseModal";
 import { SaveConfirmDialog } from "@/components/dashboard/SaveConfirmDialog";
 import { ArchiveConfirmDialog } from "@/components/dashboard/ArchiveConfirmDialog";
 import { isSenaOnlyCase } from "@/components/shared/caseTableHelpers";
+
+// + NEW — how often we ping the server to keep an acquired edit lock
+// alive. Must stay comfortably under the server's 60s staleness timeout
+// (case_lock_service.py::LOCK_TIMEOUT_SECONDS) so a missed beat or two
+// doesn't cause the lock to be reclaimed out from under an active editor.
+const HEARTBEAT_INTERVAL_MS = 20_000;
+
 /* =========================================================
    PAGE
 ========================================================= */
@@ -74,6 +88,72 @@ export default function CasesPage() {
     return () => {
       cancelled = true;
     };
+  }, []);
+
+  /* =======================================================
+     EDIT LOCK STATE  (+ NEW)
+  ======================================================= */
+
+  // Set while the read-only View modal is showing because another user
+  // currently holds the edit lock — drives the "locked by X" banner.
+  const [lockedByUsername, setLockedByUsername] = useState<string | null>(null);
+
+  // Tracks which case (if any) THIS session currently holds the lock for,
+  // so closeModal/unmount know whether there's anything to release.
+  const lockedCaseIdRef = useRef<number | null>(null);
+  const heartbeatIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const stopHeartbeat = () => {
+    if (heartbeatIntervalRef.current !== null) {
+      clearInterval(heartbeatIntervalRef.current);
+      heartbeatIntervalRef.current = null;
+    }
+  };
+
+  const startHeartbeat = (caseId: number) => {
+    stopHeartbeat();
+    heartbeatIntervalRef.current = setInterval(async () => {
+      try {
+        await heartbeatCaseLock(caseId);
+      } catch (error) {
+        // The lock was reclaimed by someone else after a timeout (or lost
+        // for another reason) — stop editing immediately rather than let
+        // the user keep typing into a case someone else now owns.
+        stopHeartbeat();
+        lockedCaseIdRef.current = null;
+        alert(
+          error instanceof LockConflictError
+            ? `${error.message} Your unsaved changes were not saved — please reopen the case to see the latest version.`
+            : "Lost the edit lock for this case. Please reopen it."
+        );
+        setModal(null);
+        setActiveCase(null);
+        resetEditRestrictions();
+      }
+    }, HEARTBEAT_INTERVAL_MS);
+  };
+
+  const releaseLockIfHeld = async () => {
+    const caseId = lockedCaseIdRef.current;
+    if (caseId === null) return;
+    lockedCaseIdRef.current = null;
+    stopHeartbeat();
+    try {
+      await releaseCaseLock(caseId);
+    } catch {
+      // Best-effort — if this fails (e.g. a network hiccup on the way
+      // out), the lock still self-expires via the server's staleness
+      // timeout once heartbeats stop arriving.
+    }
+  };
+
+  // Release on unmount too (e.g. the user navigates away mid-edit rather
+  // than clicking Cancel/Save).
+  useEffect(() => {
+    return () => {
+      void releaseLockIfHeld();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   /* =======================================================
@@ -244,11 +324,12 @@ export default function CasesPage() {
   };
 
   const openView = (item: CaseItem) => {
+    setLockedByUsername(null); // + NEW — clear any stale lock banner from a prior locked-edit attempt
     setActiveCase(item);
     setModal("view");
   };
 
-  const openEdit = (item: CaseItem) => {
+  const openEdit = async (item: CaseItem) => {
     // Only closed cases are locked from further edits now — "Close Case" is
     // the sole lock mechanism. A resolved (settled) case is no longer
     // auto-locked; the user closes it explicitly when they're done.
@@ -256,6 +337,25 @@ export default function CasesPage() {
     if (item.closed && !isAdmin) {   // + admin exemption
       return;
     }
+
+    // + NEW — acquire the concurrent-edit lock before opening the form.
+    // Hard block: if another user holds it, show the read-only view with
+    // a "locked by X" banner instead of ever opening the edit form.
+    try {
+      await acquireCaseLock(item.id);
+    } catch (error) {
+      if (error instanceof LockConflictError) {
+        setLockedByUsername(error.lockedBy);
+        setActiveCase(item);
+        setModal("view");
+        return;
+      }
+      alert(error instanceof Error ? error.message : "Unable to open this case for editing right now.");
+      return;
+    }
+
+    lockedCaseIdRef.current = item.id;
+    startHeartbeat(item.id);
 
     const gates = getStageGates(item);
 
@@ -302,8 +402,10 @@ export default function CasesPage() {
   };
 
   const closeModal = () => {
+    void releaseLockIfHeld(); // + NEW — release the edit lock (no-op if we never held one, e.g. closing a plain View)
     setModal(null);
     setActiveCase(null);
+    setLockedByUsername(null); // + NEW
 
     resetEditRestrictions();
   };
@@ -386,7 +488,7 @@ export default function CasesPage() {
         await setCaseClosed(updatedCase.id, !!updatedCase.closed);
       }
       setConfirmSave(null);
-      closeModal();
+      closeModal(); // releases the edit lock as part of the normal close flow
     } catch (error) {
       alert(error instanceof Error ? error.message : "Unable to save the case.");
     }
@@ -501,8 +603,14 @@ export default function CasesPage() {
         />
       )}
 
-      {/* VIEW CASE MODAL */}
-      {modal === "view" && activeCase && <ViewCaseModal item={activeCase} onClose={closeModal} />}
+      {/* VIEW CASE MODAL (also used as the read-only "locked by X" view — + NEW) */}
+      {modal === "view" && activeCase && (
+        <ViewCaseModal
+          item={activeCase}
+          onClose={closeModal}
+          lockedByUsername={lockedByUsername ?? undefined}
+        />
+      )}
 
       {/* EDIT CASE MODAL */}
       {modal === "edit" && activeCase && (

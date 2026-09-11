@@ -1,12 +1,12 @@
 // Minimal API client. Auth uses a plain (non-httpOnly) "session" cookie
-// holding the JWT access token — simple, but readable by JS, which is a
+// holding the JWT access token - simple, but readable by JS, which is a
 // known tradeoff until a proper backend-for-frontend proxy exists. Every
 // authenticated call should go through authHeaders()/authFetch() below.
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 const SESSION_COOKIE_NAME = "session";
 // Mirrors settings.ACCESS_TOKEN_EXPIRE_MINUTES default (60) in
-// backend/app/core/config.py. If that default changes, update this too —
+// backend/app/core/config.py. If that default changes, update this too -
 // it only controls how long the browser keeps the cookie, not the token's
 // actual validity (the backend still rejects an expired JWT regardless).
 const SESSION_COOKIE_MAX_AGE_SECONDS = 60 * 60;
@@ -68,7 +68,7 @@ export async function login(username: string, password: string): Promise<LoginRe
 }
 
 export function setSessionToken(token: string) {
-  // Not httpOnly — this cookie is only a signal for app/page.tsx's
+  // Not httpOnly - this cookie is only a signal for app/page.tsx's
   // server-side redirect check and for reading the token back out on the
   // client to build Authorization headers. It is never sent to the
   // FastAPI backend as a cookie; the backend only ever sees it via the
@@ -92,7 +92,7 @@ export function authHeaders(): HeadersInit {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 // ---------------------------------------------------------------------
-// Cases / History (read-only for now — Phase 2)
+// Cases / History (read-only for now - Phase 2)
 // ---------------------------------------------------------------------
 
 import type { CaseDraft } from "@/types/case";
@@ -303,4 +303,75 @@ export async function updateUserRole(userId: number, role: UserRole): Promise<Cu
 
 export async function deleteUser(userId: number): Promise<void> {
   await authMutation(`/api/auth/users/${userId}`, "DELETE");
+}
+
+// ---------------------------------------------------------------------
+// Case edit locking - prevents two users from editing the same case
+// concurrently. See backend/app/service/case_lock_service.py for the
+// server-side timeout/reclaim rules (60s staleness window).
+// ---------------------------------------------------------------------
+
+export interface CaseLockOut {
+  case_id: number;
+  user_id: number;
+  username: string;
+  locked_at: string | null;
+  last_heartbeat_at: string | null;
+}
+
+export class LockConflictError extends Error {
+  lockedBy: string;
+  constructor(lockedBy: string) {
+    super(`This case is currently being edited by ${lockedBy}.`);
+    this.name = "LockConflictError";
+    this.lockedBy = lockedBy;
+  }
+}
+
+async function lockMutation(path: string, method: "POST" | "DELETE"): Promise<Response> {
+  const res = await fetch(`${API_BASE_URL}${path}`, {
+    method,
+    cache: "no-store",
+    headers: { "Content-Type": "application/json", ...authHeaders() },
+  });
+
+  if (res.status === 401) throw new UnauthorizedError();
+  if (res.status === 409) {
+    const detail = await res.json().catch(() => null);
+    const message: string = typeof detail?.detail === "string" ? detail.detail : "";
+    // Backend message is "This case is currently being edited by {username}."
+    const match = message.match(/edited by (.+)\.$/);
+    throw new LockConflictError(match ? match[1] : "another user");
+  }
+  if (!res.ok) {
+    const detail = await res.json().catch(() => null);
+    throw new Error(formatApiError(detail?.detail, res.status));
+  }
+  return res;
+}
+
+// Read-only check - returns null if the case is free to edit (or the
+// existing lock has gone stale server-side). Never throws on conflict.
+export async function fetchCaseLockStatus(caseId: number): Promise<CaseLockOut | null> {
+  const res = await authFetch(`/api/cases/${caseId}/lock`);
+  const data = await res.json();
+  return data ?? null;
+}
+
+// Throws LockConflictError if another user currently holds the lock.
+export async function acquireCaseLock(caseId: number): Promise<CaseLockOut> {
+  const res = await lockMutation(`/api/cases/${caseId}/lock`, "POST");
+  return res.json();
+}
+
+// Throws LockConflictError if this session no longer holds the lock
+// (someone else reclaimed it after a timeout) - caller should treat this
+// as "lock lost mid-edit" and prompt the user accordingly.
+export async function heartbeatCaseLock(caseId: number): Promise<CaseLockOut> {
+  const res = await lockMutation(`/api/cases/${caseId}/lock/heartbeat`, "POST");
+  return res.json();
+}
+
+export async function releaseCaseLock(caseId: number): Promise<void> {
+  await lockMutation(`/api/cases/${caseId}/lock`, "DELETE");
 }
