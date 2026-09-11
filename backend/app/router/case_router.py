@@ -4,7 +4,8 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.schemas.case import CaseCreate, CaseUpdate, CaseOut, CaseListParams
-from app.service import case_service
+from app.schemas.case_lock import CaseLockOut
+from app.service import case_service, case_lock_service
 from app.service.deps import get_current_user, require_role
 from app.models.enums import UserRole
 
@@ -63,3 +64,30 @@ def close_case(case_id: int, db: Session = Depends(get_db), current_user=Depends
 @router.post("/{case_id}/unclose", response_model=CaseOut)
 def unclose_case(case_id: int, db: Session = Depends(get_db), current_user=Depends(CAN_UNCLOSE)):
     return case_service.unclose_case(db, case_id, current_user)
+
+
+# ---------------------------------------------------------------------
+# Edit locking — prevents two users from editing the same case at once.
+# GET is a read-only status check (used when opening a case, before the
+# form renders); POST /lock acquires/reclaims; POST /lock/heartbeat keeps
+# an acquired lock alive; DELETE /lock releases it (Cancel/Save/unmount).
+# ---------------------------------------------------------------------
+
+@router.get("/{case_id}/lock", response_model=Optional[CaseLockOut])
+def get_case_lock_status(case_id: int, db: Session = Depends(get_db), _current_user=Depends(get_current_user)):
+    return case_lock_service.get_lock_status(db, case_id)
+
+
+@router.post("/{case_id}/lock", response_model=CaseLockOut)
+def acquire_case_lock(case_id: int, db: Session = Depends(get_db), current_user=Depends(CAN_WRITE)):
+    return case_lock_service.acquire_lock(db, case_id, current_user)
+
+
+@router.post("/{case_id}/lock/heartbeat", response_model=CaseLockOut)
+def heartbeat_case_lock(case_id: int, db: Session = Depends(get_db), current_user=Depends(CAN_WRITE)):
+    return case_lock_service.heartbeat(db, case_id, current_user)
+
+
+@router.delete("/{case_id}/lock", status_code=204)
+def release_case_lock(case_id: int, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
+    case_lock_service.release_lock(db, case_id, current_user)
