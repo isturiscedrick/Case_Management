@@ -8,11 +8,13 @@ import {
   Users,
   PieChart as PieChartIcon,
   CalendarRange,
+  TrendingUp,
+  Layers,
 } from "lucide-react";
 
 import type { CaseItem, TotalPaidCategory } from "@/types/case";
 import { useCases } from "@/context/CasesContext";
-import { formatCurrency } from "@/lib/caseHelpers";
+import { formatCurrency, getCaseStatusSummary } from "@/lib/caseHelpers";
 import { STAGE_STYLES, type StageKey } from "@/components/dashboard/form/shared/SectionHeader";
 import { SummaryCards } from "@/components/shared/SummaryCards";
 
@@ -44,8 +46,8 @@ const CATEGORY_META: Record<TotalPaidCategory, { label: string; dot: string; hex
   Settlement: { label: "Settlement", dot: "bg-amber-500", hex: "#f59e0b", text: "text-amber-700" },
 };
 
-// Cycled through for the per-company pie/bar chart, since the number of
-// companies is dynamic and can't be given fixed Tailwind classes ahead of time.
+// Cycled through for the per-company chart, since the number of companies
+// is dynamic and can't be given fixed Tailwind classes ahead of time.
 const COMPANY_CHART_COLORS = [
   "#0ea5e9", // sky
   "#f59e0b", // amber
@@ -115,6 +117,94 @@ function isWithinRange(dateStr: string | undefined, start: string, end: string) 
   return true;
 }
 
+// Groups an ISO-ish date string into a "YYYY-MM" bucket key. Returns "" for
+// missing/unparseable dates so callers can skip them.
+function monthKeyOf(dateStr: string | undefined) {
+  if (!dateStr || dateStr.length < 7) return "";
+  return dateStr.slice(0, 7);
+}
+
+function monthLabelOf(monthKey: string) {
+  const [year, month] = monthKey.split("-");
+  const y = Number(year);
+  const m = Number(month);
+  if (!y || !m) return monthKey;
+  return new Date(y, m - 1, 1).toLocaleDateString(undefined, { month: "short", year: "2-digit" });
+}
+
+// Renders a set of value/color segments as a crisp SVG ring — used in place
+// of a CSS conic-gradient string so edges stay sharp at any size/zoom and
+// there's a single source of truth (no separate gradient string to keep in
+// sync with the segment data).
+function DonutChart({
+  segments,
+  size = 144,
+  strokeWidth = 16,
+}: {
+  segments: { value: number; color: string }[];
+  size?: number;
+  strokeWidth?: number;
+}) {
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const total = segments.reduce((sum, s) => sum + s.value, 0);
+  let cumulativeFraction = 0;
+
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="-rotate-90">
+      <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="#e2e8f0" strokeWidth={strokeWidth} />
+      {total > 0 &&
+        segments.map((segment, index) => {
+          if (segment.value <= 0) return null;
+          const fraction = segment.value / total;
+          const dash = fraction * circumference;
+          const gap = circumference - dash;
+          const offset = -cumulativeFraction * circumference;
+          cumulativeFraction += fraction;
+          return (
+            <circle
+              key={index}
+              cx={size / 2}
+              cy={size / 2}
+              r={radius}
+              fill="none"
+              stroke={segment.color}
+              strokeWidth={strokeWidth}
+              strokeDasharray={`${dash} ${gap}`}
+              strokeDashoffset={offset}
+            />
+          );
+        })}
+    </svg>
+  );
+}
+
+// Shared section header — icon chip + serif title + one-line subtitle.
+// Matches the pattern already used elsewhere in the app (Add User form,
+// Notifications panel) instead of the three different ad hoc header
+// treatments this page previously had.
+function SectionTitle({
+  icon: Icon,
+  title,
+  subtitle,
+}: {
+  icon: React.ComponentType<{ size?: number; className?: string }>;
+  title: string;
+  subtitle?: string;
+}) {
+  return (
+    <div className="mb-3 flex items-center gap-2.5">
+      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-600">
+        <Icon size={15} />
+      </div>
+      <div>
+        <h2 className="font-serif text-sm font-medium tracking-tight text-[#12331F]">{title}</h2>
+        {subtitle && <p className="text-[11px] text-slate-400">{subtitle}</p>}
+      </div>
+    </div>
+  );
+}
+
 export default function AnalyticsPage() {
   const { cases: allCases } = useCases();
   const [startDate, setStartDate] = useState("");
@@ -150,6 +240,54 @@ export default function AnalyticsPage() {
     return result;
   }, [cases]);
 
+  // Monthly trend: cases filed vs. (approximately) settled, per month,
+  // scoped to the currently filtered `cases`.
+  //
+  // "Filed" is exact — from CaseItem.filingDate. "Settled" has no dedicated
+  // timestamp anywhere in the data model, so this approximates it using
+  // item.date (Last Updated), which is bumped on every save — including the
+  // save that marks a stage/remarks "Settled". Treat this series as
+  // indicative, not exact, if a case was edited again afterward.
+  const monthlyTrend = useMemo(() => {
+    const filedByMonth = new Map<string, number>();
+    const settledByMonth = new Map<string, number>();
+
+    cases.forEach((item) => {
+      const filedKey = monthKeyOf(item.filingDate);
+      if (filedKey) filedByMonth.set(filedKey, (filedByMonth.get(filedKey) ?? 0) + 1);
+
+      if (getCaseStatusSummary(item) === "Settled") {
+        const settledKey = monthKeyOf(item.date);
+        if (settledKey) settledByMonth.set(settledKey, (settledByMonth.get(settledKey) ?? 0) + 1);
+      }
+    });
+
+    const allKeys = new Set<string>([...filedByMonth.keys(), ...settledByMonth.keys()]);
+
+    return Array.from(allKeys)
+      .sort()
+      .map((monthKey) => ({
+        monthKey,
+        label: monthLabelOf(monthKey),
+        filed: filedByMonth.get(monthKey) ?? 0,
+        settled: settledByMonth.get(monthKey) ?? 0,
+      }));
+  }, [cases]);
+
+  const maxMonthlyValue = useMemo(
+    () => Math.max(1, ...monthlyTrend.flatMap((point) => [point.filed, point.settled])),
+    [monthlyTrend]
+  );
+
+  const monthlyTotals = useMemo(
+    () =>
+      monthlyTrend.reduce(
+        (acc, point) => ({ filed: acc.filed + point.filed, settled: acc.settled + point.settled }),
+        { filed: 0, settled: 0 }
+      ),
+    [monthlyTrend]
+  );
+
   const grandTotal = useMemo(
     () => cases.reduce((sum, c) => sum + parseAmount(c.totalPaid?.amount), 0),
     [cases]
@@ -183,21 +321,12 @@ export default function AnalyticsPage() {
     [categoryTotals]
   );
 
-  // Conic-gradient pie (by case count) for the Won / Lost / Settlement split.
-  const pieGradient = useMemo(() => {
-    if (categoryCaseTotal === 0) return "conic-gradient(#e2e8f0 0deg 360deg)";
-    let cursor = 0;
-    const stops = CATEGORY_ORDER.map((cat) => {
-      const count = categoryTotals[cat].count;
-      const start = cursor;
-      const sliceDeg = (count / categoryCaseTotal) * 360;
-      cursor += sliceDeg;
-      return `${CATEGORY_META[cat].hex} ${start}deg ${cursor}deg`;
-    });
-    return `conic-gradient(${stops.join(", ")})`;
-  }, [categoryTotals, categoryCaseTotal]);
+  const categorySegments = useMemo(
+    () => CATEGORY_ORDER.map((cat) => ({ value: categoryTotals[cat].count, color: CATEGORY_META[cat].hex })),
+    [categoryTotals]
+  );
 
-  // Case count per company, for the "Cases by Company" pie/bar chart below.
+  // Case count per company, for the "Cases by Company" chart below.
   const companyBreakdown = useMemo(() => {
     const map = new Map<string, number>();
     cases.forEach((item) => {
@@ -213,17 +342,10 @@ export default function AnalyticsPage() {
       .sort((a, b) => b.count - a.count);
   }, [cases]);
 
-  const companyPieGradient = useMemo(() => {
-    if (cases.length === 0) return "conic-gradient(#e2e8f0 0deg 360deg)";
-    let cursor = 0;
-    const stops = companyBreakdown.map(({ count, color }) => {
-      const start = cursor;
-      const sliceDeg = (count / cases.length) * 360;
-      cursor += sliceDeg;
-      return `${color} ${start}deg ${cursor}deg`;
-    });
-    return `conic-gradient(${stops.join(", ")})`;
-  }, [companyBreakdown, cases.length]);
+  const companySegments = useMemo(
+    () => companyBreakdown.map((c) => ({ value: c.count, color: c.color })),
+    [companyBreakdown]
+  );
 
   // Cases handled per personnel — name plus the case titles they're on
   const personnelBreakdown = useMemo(() => {
@@ -240,45 +362,44 @@ export default function AnalyticsPage() {
   }, [cases]);
 
   return (
-    <div className="h-full min-w-0 space-y-4 overflow-y-auto bg-[#F5F1E3] p-4">
+    <div className="h-full min-w-0 space-y-5 overflow-y-auto bg-[#F5F1E3] p-4 sm:p-6">
       {/* HEADER */}
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="font-serif text-lg font-medium tracking-tight text-[#12331F] md:text-xl">Analytics</h1>
-          <p className="mt-0.5 text-xs text-slate-500">Case status and judgment award breakdown by stage.</p>
+          <p className="text-xs font-medium uppercase tracking-wide text-[#B08D57]">Reporting</p>
+          <h1 className="mt-1 font-serif text-2xl font-medium tracking-tight text-[#12331F]">Analytics</h1>
+          <p className="mt-1 text-sm text-slate-500">Case status and judgment award breakdown by stage.</p>
         </div>
 
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-          <div className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-600 shadow-sm">
-            <CalendarRange size={14} className="text-slate-400" />
-            <input
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="w-38 bg-transparent outline-none"
-              aria-label="Start date"
-            />
-            <span className="text-slate-300">–</span>
-            <input
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="w-38 bg-transparent outline-none"
-              aria-label="End date"
-            />
-            {(startDate || endDate) && (
-              <button
-                type="button"
-                onClick={() => {
-                  setStartDate("");
-                  setEndDate("");
-                }}
-                className="ml-1 text-[11px] text-slate-400 underline hover:text-slate-600"
-              >
-                Clear
-              </button>
-            )}
-          </div>
+        <div className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-600 shadow-sm">
+          <CalendarRange size={14} className="text-slate-400" />
+          <input
+            type="date"
+            value={startDate}
+            onChange={(e) => setStartDate(e.target.value)}
+            className="w-38 bg-transparent outline-none"
+            aria-label="Start date"
+          />
+          <span className="text-slate-300">–</span>
+          <input
+            type="date"
+            value={endDate}
+            onChange={(e) => setEndDate(e.target.value)}
+            className="w-38 bg-transparent outline-none"
+            aria-label="End date"
+          />
+          {(startDate || endDate) && (
+            <button
+              type="button"
+              onClick={() => {
+                setStartDate("");
+                setEndDate("");
+              }}
+              className="ml-1 text-[11px] text-slate-400 underline hover:text-slate-600"
+            >
+              Clear
+            </button>
+          )}
         </div>
       </div>
 
@@ -290,14 +411,74 @@ export default function AnalyticsPage() {
           </div>
           <div>
             <p className="text-[11px] uppercase tracking-wide text-slate-400">Cases Analyzed</p>
-            <p className="text-lg font-semibold text-[#12331F]">{cases.length}</p>
+            <p className="text-lg font-semibold tabular-nums text-[#12331F]">{cases.length}</p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-50 text-emerald-700">
+            <BarChart3 size={18} />
+          </div>
+          <div>
+            <p className="text-[11px] uppercase tracking-wide text-slate-400">Total Judgment Awards Paid</p>
+            <p className="text-lg font-semibold tabular-nums text-[#12331F]">{formatCurrency(String(grandTotal))}</p>
           </div>
         </div>
       </div>
 
+      {/* MONTHLY TRENDS */}
+      <div>
+        <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
+          <SectionTitle icon={TrendingUp} title="Monthly Trends" subtitle="Cases filed vs. settled, by month, within the selected range." />
+          <div className="flex items-center gap-3 text-[11px] text-slate-500">
+            <span className="flex items-center gap-1.5">
+              <span className="h-1.5 w-1.5 rounded-full bg-sky-500" />
+              Filed ({monthlyTotals.filed})
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+              Settled ({monthlyTotals.settled})
+            </span>
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+          {monthlyTrend.length === 0 ? (
+            <p className="text-xs italic text-slate-400">No cases match the current filters.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <div className="flex min-w-max items-end gap-6 border-b border-slate-100 pb-3">
+                {monthlyTrend.map((point) => (
+                  <div key={point.monthKey} className="flex flex-col items-center gap-1.5">
+                    <div className="flex h-32 items-end gap-1">
+                      <div
+                        className="w-3 rounded-t bg-sky-500"
+                        style={{ height: `${Math.max(2, (point.filed / maxMonthlyValue) * 128)}px` }}
+                        title={`${point.label} · Filed: ${point.filed}`}
+                      />
+                      <div
+                        className="w-3 rounded-t bg-emerald-500"
+                        style={{ height: `${Math.max(2, (point.settled / maxMonthlyValue) * 128)}px` }}
+                        title={`${point.label} · Settled: ${point.settled}`}
+                      />
+                    </div>
+                    <span className="whitespace-nowrap text-[10px] tabular-nums text-slate-400">{point.label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <p className="mt-1.5 text-[11px] text-slate-400">
+          "Settled" is approximated from each case&apos;s Last Updated date — there is no dedicated settlement-date
+          field in the data model yet, so treat this series as directional rather than exact.
+        </p>
+      </div>
+
       {/* STATUS BREAKDOWN PER STAGE */}
       <div>
-        <h2 className="mb-2 text-sm font-semibold text-[#12331F]">Case Status by Stage</h2>
+        <SectionTitle icon={Layers} title="Case Status by Stage" subtitle="Where each case currently sits, and its outcome at that stage." />
 
         {/* Overall totals — same rollup used on the dashboard, scoped to the
             cases currently in view (date range applied above). */}
@@ -321,7 +502,7 @@ export default function AnalyticsPage() {
                     </div>
                     <div>
                       <p className={`text-xs font-semibold ${meta.text}`}>{STAGE_LABELS[stage]}</p>
-                      <p className="text-[10px] text-slate-400">{total} case{total === 1 ? "" : "s"}</p>
+                      <p className="text-[10px] tabular-nums text-slate-400">{total} case{total === 1 ? "" : "s"}</p>
                     </div>
                   </div>
                 </div>
@@ -350,7 +531,7 @@ export default function AnalyticsPage() {
                         <span className={`h-1.5 w-1.5 rounded-full ${BUCKET_STYLES[bucket].dot}`} />
                         {bucket}
                       </span>
-                      <span className={`font-medium ${BUCKET_STYLES[bucket].text}`}>{counts[bucket]}</span>
+                      <span className={`font-medium tabular-nums ${BUCKET_STYLES[bucket].text}`}>{counts[bucket]}</span>
                     </div>
                   ))}
                 </div>
@@ -360,19 +541,10 @@ export default function AnalyticsPage() {
         </div>
       </div>
 
+      {/* AWARD OUTCOME BREAKDOWN */}
       <div>
-        <h2 className="mb-2 text-sm font-semibold text-[#12331F]">Award Outcome Breakdown</h2>
-        {/* TOTAL JUDGMENT AWARDS PAID */}
-      <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:max-w-sm">
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-50 text-emerald-700">
-          <BarChart3 size={18} />
-        </div>
-        <div>
-          <p className="text-[11px] uppercase tracking-wide text-slate-400">Total Judgment Awards Paid</p>
-          <p className="text-lg font-semibold text-[#12331F]">{formatCurrency(String(grandTotal))}</p>
-        </div>
-      </div>
-        <br></br>
+        <SectionTitle icon={BarChart3} title="Award Outcome Breakdown" subtitle="How judgment awards resolved — in favor, against, or by settlement." />
+
         <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto]">
           {/* Category cards + bars */}
           <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
@@ -393,10 +565,10 @@ export default function AnalyticsPage() {
                         style={{ width: `${amount > 0 ? Math.max(pct, 3) : 0}%` }}
                       />
                     </div>
-                    <div className="w-24 shrink-0 text-right text-xs font-semibold text-slate-700">
+                    <div className="w-24 shrink-0 text-right text-xs font-semibold tabular-nums text-slate-700">
                       {formatCurrency(String(amount))}
                     </div>
-                    <div className="w-16 shrink-0 text-right text-[11px] text-slate-400">
+                    <div className="w-16 shrink-0 text-right text-[11px] tabular-nums text-slate-400">
                       {count} case{count === 1 ? "" : "s"}
                     </div>
                   </div>
@@ -405,16 +577,16 @@ export default function AnalyticsPage() {
             </div>
           </div>
 
-          {/* Pie chart (by case count) */}
+          {/* Donut chart (by case count) */}
           <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
             <div className="flex items-center gap-1.5 self-start text-[11px] uppercase tracking-wide text-slate-400">
               <PieChartIcon size={13} />
               By case count
             </div>
             <div className="relative h-36 w-36">
-              <div className="h-36 w-36 rounded-full" style={{ background: pieGradient }} />
+              <DonutChart segments={categorySegments} size={144} strokeWidth={16} />
               <div className="absolute inset-3 flex flex-col items-center justify-center rounded-full bg-white">
-                <span className="text-lg font-semibold text-[#12331F]">{categoryCaseTotal}</span>
+                <span className="text-lg font-semibold tabular-nums text-[#12331F]">{categoryCaseTotal}</span>
                 <span className="text-[10px] text-slate-400">cases</span>
               </div>
             </div>
@@ -429,7 +601,7 @@ export default function AnalyticsPage() {
                       <span className={`h-1.5 w-1.5 rounded-full ${meta.dot}`} />
                       {meta.label}
                     </span>
-                    <span className={`font-medium ${meta.text}`}>
+                    <span className={`font-medium tabular-nums ${meta.text}`}>
                       {count} ({pct}%)
                     </span>
                   </div>
@@ -442,10 +614,8 @@ export default function AnalyticsPage() {
 
       {/* CASES BY COMPANY */}
       <div>
-        <h2 className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-[#12331F]">
-          <Building2 size={14} className="text-slate-400" />
-          Cases by Company
-        </h2>
+        <SectionTitle icon={Building2} title="Cases by Company" subtitle="Case volume across the companies in the selected range." />
+
         <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto]">
           {/* Company bars */}
           <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
@@ -469,7 +639,7 @@ export default function AnalyticsPage() {
                           style={{ width: `${count > 0 ? Math.max(pct, 3) : 0}%`, backgroundColor: color }}
                         />
                       </div>
-                      <div className="w-16 shrink-0 text-right text-[11px] text-slate-400">
+                      <div className="w-16 shrink-0 text-right text-[11px] tabular-nums text-slate-400">
                         {count} case{count === 1 ? "" : "s"}
                       </div>
                     </div>
@@ -479,16 +649,16 @@ export default function AnalyticsPage() {
             )}
           </div>
 
-          {/* Pie chart (by case count) */}
+          {/* Donut chart (by case count) */}
           <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
             <div className="flex items-center gap-1.5 self-start text-[11px] uppercase tracking-wide text-slate-400">
               <PieChartIcon size={13} />
               Total No. of Cases
             </div>
             <div className="relative h-36 w-36">
-              <div className="h-36 w-36 rounded-full" style={{ background: companyPieGradient }} />
+              <DonutChart segments={companySegments} size={144} strokeWidth={16} />
               <div className="absolute inset-3 flex flex-col items-center justify-center rounded-full bg-white">
-                <span className="text-lg font-semibold text-[#12331F]">{cases.length}</span>
+                <span className="text-lg font-semibold tabular-nums text-[#12331F]">{cases.length}</span>
                 <span className="text-[10px] text-slate-400">cases</span>
               </div>
             </div>
@@ -501,7 +671,7 @@ export default function AnalyticsPage() {
                       <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: color }} />
                       <span className="truncate" title={name}>{name}</span>
                     </span>
-                    <span className="shrink-0 font-medium text-slate-700">
+                    <span className="shrink-0 font-medium tabular-nums text-slate-700">
                       {count} ({pct}%)
                     </span>
                   </div>
@@ -514,10 +684,8 @@ export default function AnalyticsPage() {
 
       {/* CASES HANDLED PER PERSONNEL */}
       <div>
-        <h2 className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-[#12331F]">
-          <Users size={14} className="text-slate-400" />
-          Cases Handled per Personnel
-        </h2>
+        <SectionTitle icon={Users} title="Cases Handled per Personnel" subtitle="Caseload distribution across handling personnel." />
+
         <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
           {personnelBreakdown.length === 0 ? (
             <p className="text-xs italic text-slate-400">No cases match the current filters.</p>
@@ -529,7 +697,7 @@ export default function AnalyticsPage() {
                     <span className="truncate text-xs font-semibold text-[#12331F]" title={name}>
                       {name}
                     </span>
-                    <span className="shrink-0 rounded-full bg-[#12331F]/10 px-2 py-0.5 text-[10px] font-medium text-[#12331F]">
+                    <span className="shrink-0 rounded-full bg-[#12331F]/10 px-2 py-0.5 text-[10px] font-medium tabular-nums text-[#12331F]">
                       {count} case{count === 1 ? "" : "s"}
                     </span>
                   </div>
