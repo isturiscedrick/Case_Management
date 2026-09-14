@@ -24,9 +24,6 @@ export default function ActivityPage() {
         const user = await fetchCurrentUser();
         const admin = user.role === "admin";
         setIsAdmin(admin);
-        // + NEW — always fetch the user's own notifications too (even for
-        // admins, who otherwise only fetch OTHER users' decided requests),
-        // so a self-initiated password change is never missed.
         const [notifications, history, mine] = await Promise.all([
           admin ? fetchDecidedNotifications() : fetchMyNotifications(),
           fetchMyHistory(),
@@ -45,10 +42,6 @@ export default function ActivityPage() {
     load();
   }, []);
 
-  // Matches an ISO timestamp string against the selected date range. Falls
-  // back to "no date on record -> excluded once a bound is set" so partial
-  // data can't silently bypass the filter, mirroring the dashboard's
-  // Closed Date range behavior.
   function matchesDateRange(iso: string | null | undefined) {
     if (!dateStart && !dateEnd) return true;
     if (!iso) return false;
@@ -56,10 +49,6 @@ export default function ActivityPage() {
     return (!dateStart || day >= dateStart) && (!dateEnd || day <= dateEnd);
   }
 
-  // Descending timestamp comparator — used to guarantee latest-to-oldest
-  // ordering on the client, since each list is fetched independently and
-  // filtering doesn't reorder, but it's worth not relying solely on the
-  // backend's ORDER BY holding across every call path.
   function byNewestFirst(aIso: string | null | undefined, bIso: string | null | undefined) {
     const aTime = aIso ? new Date(aIso).getTime() : 0;
     const bTime = bIso ? new Date(bIso).getTime() : 0;
@@ -71,8 +60,6 @@ export default function ActivityPage() {
     .filter((item) => {
       const matchesSearch = item.message.toLowerCase().includes(keyword);
       const matchesStatus = statusFilter === "All" || item.status === statusFilter;
-      // Decided requests are dated by resolved_at; a still-pending request
-      // (no resolved_at yet) falls back to when it was created.
       const matchesDate = matchesDateRange(item.resolved_at ?? item.created_at);
       return matchesSearch && matchesStatus && matchesDate;
     })
@@ -87,8 +74,6 @@ export default function ActivityPage() {
     })
     .sort((a, b) => byNewestFirst(a.created_at, b.created_at));
 
-  // + NEW — this user's own password-change events, filtered/sorted the
-  // same way as case actions so they can render in the same feed.
   const filteredPasswordChanges = passwordChanges
     .filter((notification) => {
       const matchesSearch = "changed password".includes(keyword) || keyword === "";
@@ -189,8 +174,6 @@ export default function ActivityPage() {
             <p className="text-sm text-slate-400">No case actions match your filters.</p>
           ) : (
             <div className="space-y-2">
-              {/* + NEW — password-change events, merged and sorted alongside
-                  case actions below rather than in a separate list. */}
               {filteredPasswordChanges.map((notification) => (
                 <div key={`pw-${notification.notification_id}`} className="flex items-start gap-3 rounded-lg bg-slate-50 p-3 sm:items-center sm:justify-between">
                   <div className="flex items-center gap-3">

@@ -1,14 +1,8 @@
 ﻿"use client";
 
 import { useEffect, useRef, useState } from "react";
-
-// Types
 import type { CaseDraft, CaseItem, ModalType, StageProgress, EditRestrictions } from "@/types/case";
-
-// Constants
 import { CURRENT_USER, EMPTY_CASE } from "@/constants/caseOptions";
-
-// Data
 import { initialCompanies } from "@/data/initialCases";
 import { useCases } from "@/context/CasesContext";
 import {
@@ -18,7 +12,7 @@ import {
   heartbeatCaseLock,
   releaseCaseLock,
   LockConflictError,
-} from "@/lib/api"; // + NEW: lock functions + LockConflictError
+} from "@/lib/api"; 
 
 import { cloneDraft, getCaseStatusSummary, getTotalJudgmentAward, type CaseStatusSummary } from "@/lib/caseHelpers";
 import { getCaseDraftErrors, getStageGates } from "@/lib/caseValidation";
@@ -33,10 +27,6 @@ import { SaveConfirmDialog } from "@/components/dashboard/SaveConfirmDialog";
 import { ArchiveConfirmDialog } from "@/components/dashboard/ArchiveConfirmDialog";
 import { isSenaOnlyCase } from "@/components/shared/caseTableHelpers";
 
-// + NEW — how often we ping the server to keep an acquired edit lock
-// alive. Must stay comfortably under the server's 60s staleness timeout
-// (case_lock_service.py::LOCK_TIMEOUT_SECONDS) so a missed beat or two
-// doesn't cause the lock to be reclaimed out from under an active editor.
 const HEARTBEAT_INTERVAL_MS = 20_000;
 
 // + NEW — pagination page size for the case table.
@@ -51,8 +41,7 @@ export default function CasesPage() {
      CASE DATA
   ======================================================= */
 
-  const { cases, addCase, updateCase, toggleArchive, setCaseClosed, isLoading, loadError, refetch } = useCases();  // Falls back to the bundled initialCompanies list (kept in sync with the
-  // same seed CSV) if the API call fails, e.g. backend not running locally.
+  const { cases, addCase, updateCase, toggleArchive, setCaseClosed, isLoading, loadError, refetch } = useCases(); 
   const [companies, setCompanies] = useState<string[]>(initialCompanies);
 
   useEffect(() => {
@@ -73,8 +62,6 @@ export default function CasesPage() {
     };
   }, []);
 
-  // NEW — whether the current user is an admin (backend already enforces
-  // this on update_case/unclose; this just drives what the UI allows).
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
@@ -85,7 +72,6 @@ export default function CasesPage() {
         if (!cancelled) setIsAdmin(user.role === "admin");
       })
       .catch(() => {
-        // Ignore — isAdmin stays false, closed-case editing stays locked.
       });
 
     return () => {
@@ -97,12 +83,8 @@ export default function CasesPage() {
      EDIT LOCK STATE  (+ NEW)
   ======================================================= */
 
-  // Set while the read-only View modal is showing because another user
-  // currently holds the edit lock — drives the "locked by X" banner.
   const [lockedByUsername, setLockedByUsername] = useState<string | null>(null);
 
-  // Tracks which case (if any) THIS session currently holds the lock for,
-  // so closeModal/unmount know whether there's anything to release.
   const lockedCaseIdRef = useRef<number | null>(null);
   const heartbeatIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -119,9 +101,6 @@ export default function CasesPage() {
       try {
         await heartbeatCaseLock(caseId);
       } catch (error) {
-        // The lock was reclaimed by someone else after a timeout (or lost
-        // for another reason) — stop editing immediately rather than let
-        // the user keep typing into a case someone else now owns.
         stopHeartbeat();
         lockedCaseIdRef.current = null;
         alert(
@@ -144,26 +123,20 @@ export default function CasesPage() {
     try {
       await releaseCaseLock(caseId);
     } catch {
-      // Best-effort — if this fails (e.g. a network hiccup on the way
-      // out), the lock still self-expires via the server's staleness
-      // timeout once heartbeats stop arriving.
     }
   };
 
-  // Release on unmount too (e.g. the user navigates away mid-edit rather
-  // than clicking Cancel/Save).
   useEffect(() => {
     return () => {
       void releaseLockIfHeld();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   /* =======================================================
      FILTER STATE
   ======================================================= */
 
-    const [statusFilter, setStatusFilter] = useState<"All" | CaseStatusSummary>("All");
+  const [statusFilter, setStatusFilter] = useState<"All" | CaseStatusSummary>("All");
   const [companyFilter, setCompanyFilter] = useState<string>("All");
   const [progressFilter, setProgressFilter] = useState<"All" | StageProgress>("All");
   const [stageFilter, setStageFilter] = useState<StageFilterKey>("All");
@@ -174,8 +147,6 @@ export default function CasesPage() {
   const [filingDateEnd, setFilingDateEnd] = useState<string>("");
   const [closedDateStart, setClosedDateStart] = useState<string>("");
   const [closedDateEnd, setClosedDateEnd] = useState<string>("");
-
-  // + NEW — pagination state for the case table.
   const [currentPage, setCurrentPage] = useState(1);
 
   /* =======================================================
@@ -215,8 +186,6 @@ export default function CasesPage() {
 
   const companyOptions = ["All", ...companies];
 
-  // Archived cases live on a separate page — the summary cards must reflect
-  // only active (non-archived) cases, never archived ones.
   const activeCases = cases.filter((item) => !item.archived);
 
   const filteredCases = cases
@@ -240,9 +209,6 @@ export default function CasesPage() {
         (!filingDateStart || item.filingDate >= filingDateStart) &&
         (!filingDateEnd || item.filingDate <= filingDateEnd);
 
-      // Only constrains results when the item is actually closed; a case
-      // with no closedDate set (not closed) is excluded once either bound
-      // is set, since it has nothing to compare against.
       const matchesClosedDateRange =
         !closedDateStart && !closedDateEnd
           ? true
@@ -270,15 +236,12 @@ export default function CasesPage() {
 
   const activeCaseCount = cases.filter((item) => item.archived === showArchived).length;
 
-  // + NEW — paginate the filtered results, 10 cases per page.
   const totalPages = Math.max(1, Math.ceil(filteredCases.length / PAGE_SIZE));
   const paginatedCases = filteredCases.slice(
     (currentPage - 1) * PAGE_SIZE,
     currentPage * PAGE_SIZE
   );
 
-  // Snap back to page 1 whenever a filter changes, so the user isn't
-  // stranded on a now-empty page.
   useEffect(() => {
     setCurrentPage(1);
   }, [
@@ -293,8 +256,6 @@ export default function CasesPage() {
     closedDateEnd,
   ]);
 
-  // Clamp the current page down if it's now past the end (e.g. an
-  // archive/restore shrinks the result set without a filter changing).
   useEffect(() => {
     setCurrentPage((page) => Math.min(page, totalPages));
   }, [totalPages]);
@@ -336,8 +297,6 @@ export default function CasesPage() {
     setSearch("");
   };
 
-  // Clear Closed Date whenever Status moves away from "Closed", since the
-  // inputs are hidden and shouldn't silently keep filtering in the background.
   const handleStatusFilterChange = (value: "All" | CaseStatusSummary) => {
     setStatusFilter(value);
     if (value !== "Closed") {
@@ -359,23 +318,16 @@ export default function CasesPage() {
   };
 
   const openView = (item: CaseItem) => {
-    setLockedByUsername(null); // + NEW — clear any stale lock banner from a prior locked-edit attempt
+    setLockedByUsername(null); 
     setActiveCase(item);
     setModal("view");
   };
 
   const openEdit = async (item: CaseItem) => {
-    // Only closed cases are locked from further edits now — "Close Case" is
-    // the sole lock mechanism. A resolved (settled) case is no longer
-    // auto-locked; the user closes it explicitly when they're done.
-    // Admins are exempt from this lock (see case_service.py::update_case).
     if (item.closed && !isAdmin) {   // + admin exemption
       return;
     }
 
-    // + NEW — acquire the concurrent-edit lock before opening the form.
-    // Hard block: if another user holds it, show the read-only view with
-    // a "locked by X" banner instead of ever opening the edit form.
     try {
       await acquireCaseLock(item.id);
     } catch (error) {
@@ -397,23 +349,12 @@ export default function CasesPage() {
     const laProgressIsPending = gates.laFilled && item.caseProgress.la === "";
     const nlrcProgressIsPending = gates.nlrcFilled && item.caseProgress.nlrc === "";
     const caProgressIsPending = gates.caFilled && item.caseProgress.ca === "";
-
-    // "Motion for Reconsideration" (NLRC/CA only — LA doesn't offer this
-    // remark option) is an exception to the normal lock-once-filled rule:
-    // the stage's Remarks and Progress must stay editable even after the
-    // case is saved, since an MR can still be resolved/withdrawn later.
-    // Date/Status/Judgment Award (the "details" fieldset) still lock as
-    // usual — only the Remarks+Progress fieldset gets the exception.
     const nlrcHasMotionForReconsideration = item.nlrc.remarks === "Motion for Reconsideration";
     const caHasMotionForReconsideration = item.ca.remarks === "Motion for Reconsideration";
 
     setActiveCase(item);
     setDraft(cloneDraft(item));
 
-    // Admins bypass every per-stage "locked once filled" restriction below —
-    // they can still see the normal stage visibility rules (laVisible,
-    // nlrcVisible, etc. from getStageGates), but nothing is grayed out for
-    // them. Non-admins keep the existing behavior untouched.
     const bypassFieldLocks = isAdmin;
 
     /* SEnA */
@@ -443,10 +384,10 @@ export default function CasesPage() {
   };
 
   const closeModal = () => {
-    void releaseLockIfHeld(); // + NEW — release the edit lock (no-op if we never held one, e.g. closing a plain View)
+    void releaseLockIfHeld(); 
     setModal(null);
     setActiveCase(null);
-    setLockedByUsername(null); // + NEW
+    setLockedByUsername(null); 
 
     resetEditRestrictions();
   };
@@ -529,7 +470,7 @@ export default function CasesPage() {
         await setCaseClosed(updatedCase.id, !!updatedCase.closed);
       }
       setConfirmSave(null);
-      closeModal(); // releases the edit lock as part of the normal close flow
+      closeModal(); 
     } catch (error) {
       alert(error instanceof Error ? error.message : "Unable to save the case.");
     }

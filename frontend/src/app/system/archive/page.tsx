@@ -39,10 +39,6 @@ export default function ArchivePage() {
         (!filingDateStart || item.filingDate >= filingDateStart) &&
         (!filingDateEnd || item.filingDate <= filingDateEnd);
 
-      // Only constrains results when the item is actually closed; a case
-      // with no closedDate set (not closed) is excluded once either bound
-      // is set, since it has nothing to compare against. Mirrors the same
-      // logic on the dashboard's More Filters.
       const matchesClosedDateRange =
         !closedDateStart && !closedDateEnd
           ? true
@@ -86,8 +82,6 @@ export default function ArchivePage() {
 
   const confirmRestore = async () => {
     if (!restoreItem) return;
-    // Flip the archived flag through the shared context so the dashboard's
-    // active list picks up the restore immediately.
     try {
       await toggleArchive(restoreItem.id);
       setRestoreItem(null);
