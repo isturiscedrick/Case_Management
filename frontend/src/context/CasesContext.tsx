@@ -46,14 +46,6 @@ export function CasesProvider({ children }: { children: ReactNode }) {
 
   const refetch = useCallback(() => setReloadToken((t) => t + 1), []);
 
-  // + NEW — auto-refresh every 1 second instead of a manual Refresh button.
-  useEffect(() => {
-    const interval = setInterval(() => {
-      refetch();
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [refetch]);
-
   useEffect(() => {
     let cancelled = false;
 
