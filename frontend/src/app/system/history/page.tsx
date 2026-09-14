@@ -97,6 +97,20 @@ export default function HistoryPage() {
       .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
   }, [history, search, actionFilter, dateStart, dateEnd]);
 
+  // + NEW
+  const activeFilterCount =
+    (actionFilter !== "All" ? 1 : 0) +
+    (search ? 1 : 0) +
+    (dateStart || dateEnd ? 1 : 0);
+
+  // + NEW
+  const resetFilters = () => {
+    setSearch("");
+    setActionFilter("All");
+    setDateStart("");
+    setDateEnd("");
+  };
+
   return (
     <div className="flex h-full min-w-0 flex-col gap-4 overflow-hidden bg-[#F5F1E3] p-4">
       {/* HEADER */}
@@ -134,8 +148,19 @@ export default function HistoryPage() {
           <input type="date" value={dateEnd} onChange={(e) => setDateEnd(e.target.value)} aria-label="History end date" className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs text-slate-700 outline-none focus:border-[#12331F] focus:bg-white" />
         </div>
 
-        <p className="mt-2 text-[11px] text-slate-400">
-          {isLoadingHistory ? "Loading history..." : `Showing ${filtered.length} of ${history.length} events`}
+        <p className="mt-2 flex items-center justify-between text-[11px] text-slate-400">
+          <span>
+            {isLoadingHistory ? "Loading history..." : `Showing ${filtered.length} of ${history.length} events`}
+          </span>
+
+          {activeFilterCount > 0 && (
+            <button
+              onClick={resetFilters}
+              className="text-[11px] font-medium text-slate-500 underline-offset-2 hover:text-blue-950 hover:underline"
+            >
+              Reset filters
+            </button>
+          )}
         </p>
       </div>
 
