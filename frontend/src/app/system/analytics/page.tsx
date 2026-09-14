@@ -10,7 +10,6 @@ import {
   CalendarRange,
   Layers,
   Landmark,
-  RefreshCw,
 } from "lucide-react";
 
 import type { CaseItem, TotalPaidCategory } from "@/types/case";
@@ -192,7 +191,7 @@ function SectionTitle({
 }
 
 export default function AnalyticsPage() {
-  const { cases: allCases, isLoading, refetch } = useCases();
+  const { cases: allCases } = useCases();
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
 
@@ -341,17 +340,6 @@ export default function AnalyticsPage() {
             )}
           </div>
 
-          <button
-            type="button"
-            onClick={refetch}
-            disabled={isLoading}
-            aria-label="Refresh analytics"
-            title="Refresh analytics"
-            className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            <RefreshCw size={13} className={isLoading ? "animate-spin" : ""} />
-            Refresh
-          </button>
         </div>
       </div>
 
