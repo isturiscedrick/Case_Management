@@ -1,9 +1,28 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { History, Search, User as UserIcon } from "lucide-react";
-import type { HistoryAction } from "@/data/historyEvents";
+import type { HistoryAction, HistoryEntry } from "@/data/historyEvents";
 import { useCases } from "@/context/CasesContext";
+// + NEW — non-admins (handling_personnel, viewer) see only their own
+// history, fetched separately from the global log the CasesContext holds.
+import { fetchCurrentUser, fetchMyHistory, UnauthorizedError, type HistoryOut } from "@/lib/api";
+
+// + NEW — maps the backend's HistoryOut shape into the same HistoryEntry
+// shape the table already renders (mirrors CasesContext.tsx's local
+// mapHistory, which isn't exported).
+function mapHistoryOut(out: HistoryOut): HistoryEntry {
+  return {
+    id: String(out.history_id),
+    caseNo: out.case_no,
+    company: out.company,
+    action: out.action,
+    performedBy: out.performed_by_username ?? "-",
+    performedByProfilePicture: out.performed_by_profile_picture,
+    timestamp: out.created_at ?? "",
+    detail: out.detail ?? undefined,
+  };
+}
 
 const ACTION_STYLES: Record<HistoryAction, { label: string; badge: string; dot: string }> = {
   created: { label: "Created", badge: "bg-sky-50 text-sky-600 ring-sky-200", dot: "bg-sky-500" },
@@ -26,11 +45,50 @@ function formatTimestamp(iso: string) {
 }
 
 export default function HistoryPage() {
-  const { historyLog: history } = useCases();
+  const { historyLog: globalHistory } = useCases();
   const [search, setSearch] = useState("");
   const [actionFilter, setActionFilter] = useState<"All" | HistoryAction>("All");
   const [dateStart, setDateStart] = useState("");
   const [dateEnd, setDateEnd] = useState("");
+
+  // + NEW — role gate: non-admins only ever see their own history.
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+  const [ownHistory, setOwnHistory] = useState<HistoryEntry[]>([]);
+  const [ownHistoryLoading, setOwnHistoryLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function load() {
+      try {
+        const user = await fetchCurrentUser();
+        const admin = user.role === "admin";
+        if (cancelled) return;
+        setIsAdmin(admin);
+
+        if (!admin) {
+          const mine = await fetchMyHistory();
+          if (!cancelled) setOwnHistory(mine.map(mapHistoryOut));
+        }
+      } catch (error) {
+        if (!cancelled && error instanceof UnauthorizedError) {
+          window.location.href = "/login";
+        }
+      } finally {
+        if (!cancelled) setOwnHistoryLoading(false);
+      }
+    }
+
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Admins keep the full cross-user log; handling_personnel/viewer are
+  // scoped to only the actions they themselves performed.
+  const history = isAdmin === false ? ownHistory : globalHistory;
+  const isLoadingHistory = isAdmin === null || (isAdmin === false && ownHistoryLoading);
 
   const filtered = useMemo(() => {
     const keyword = search.toLowerCase();
@@ -86,12 +144,12 @@ export default function HistoryPage() {
         </div>
 
         <p className="mt-2 text-[11px] text-slate-400">
-          Showing {filtered.length} of {history.length} events
+          {isLoadingHistory ? "Loading history..." : `Showing ${filtered.length} of ${history.length} events`}
         </p>
       </div>
 
       {/* EMPTY STATE */}
-      {history.length === 0 && (
+      {!isLoadingHistory && history.length === 0 && (
         <div className="flex flex-col items-center justify-center rounded-xl border border-slate-200 bg-white p-16 text-center shadow-sm">
           <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#12331F]/5">
             <History className="h-5 w-5 text-[#12331F]/40" />
@@ -104,7 +162,7 @@ export default function HistoryPage() {
       )}
 
       {/* TABLE */}
-      {history.length > 0 && (
+      {!isLoadingHistory && history.length > 0 && (
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
           <div className="min-h-0 flex-1 overflow-auto">
             <table className="min-w-full border-separate border-spacing-0 text-[11px]">
