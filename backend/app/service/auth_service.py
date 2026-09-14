@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.manager import auth_manager
 from app.crud import user as user_crud
-from app.core.security import hash_password
+from app.core.security import hash_password, verify_password
 from app.crud import notification as notification_crud
 from app.schemas.auth import LoginRequest, UserCreate, UserPasswordReset, UserProfileUpdate, UserRoleUpdate, TokenResponse
 

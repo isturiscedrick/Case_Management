@@ -15,12 +15,17 @@ def create_password_reset_request(db: Session, user_id: int, message: str) -> No
     return notification
 
 
-def create_case_update_notification(db: Session, user_id: int, message: str) -> Notification:
+def create_case_update_notification(
+    db: Session, user_id: int, message: str, *, actor_user_id: int | None = None
+) -> Notification:
     notification = Notification(
         user_id=user_id,
         notification_type="case_update",
         message=message,
         status="unread",
+        actor_user_id=actor_user_id,  # + NEW — who performed the update, so
+        # the notification can show their profile picture instead of the
+        # recipient's own.
     )
     db.add(notification)
     db.flush()
@@ -104,3 +109,15 @@ def has_approved_password_reset(db: Session, user_id: int) -> bool:
         Notification.notification_type == "password_reset",
         Notification.status == "approved",
     ).first() is not None
+
+
+# NEW — nulls out actor_user_id on OTHER users' notifications where this
+# user was the actor (e.g. they updated someone else's case). Called from
+# crud/user.py::delete_user before that user's own notifications (as
+# recipient) are deleted, so notifications belonging to other users
+# survive the deletion intact, just without a picture/name to show for
+# the now-gone actor.
+def clear_actor_references(db: Session, actor_user_id: int) -> None:
+    db.query(Notification).filter(Notification.actor_user_id == actor_user_id).update(
+        {"actor_user_id": None}, synchronize_session=False
+    )

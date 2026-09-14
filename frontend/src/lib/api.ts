@@ -258,6 +258,10 @@ export interface PasswordResetNotification {
   status: string;
   user_full_name: string | null;
   user_profile_picture: string | null;
+  // + NEW — who performed the action (e.g. who updated the case), only
+  // populated for notification_type "case_update".
+  actor_full_name: string | null;
+  actor_profile_picture: string | null;
   created_at: string | null;
   resolved_at: string | null;
 }

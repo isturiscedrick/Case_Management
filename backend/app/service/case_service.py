@@ -119,6 +119,7 @@ def update_case(db: Session, case_id: int, payload: CaseUpdate, current_user: Us
                 db,
                 case.created_by_user_id,
                 f"{current_user.full_name} updated your case {case.case_no} ({case.company_name}).",
+                actor_user_id=current_user.user_id,   # + NEW
             )
             db.commit()
         return updated_case

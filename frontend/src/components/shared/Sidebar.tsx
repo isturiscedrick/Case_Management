@@ -153,7 +153,11 @@ export default function Sidebar() {
                   <Icon className="h-4 w-4 shrink-0" />
                   {item.label === "Notifications" &&
                     notifications.some(
-                      (notification) => notification.status === "pending" || notification.status === "unread"
+                      (notification) =>
+                        notification.status === "pending" ||
+                        notification.status === "unread" ||
+                        notification.status === "approved" ||
+                        notification.status === "declined"
                     ) && (
                       <span className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-rose-400 ring-2 ring-[#12331F]" />
                     )}

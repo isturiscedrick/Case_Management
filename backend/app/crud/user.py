@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from app.models.case import Case
 from app.models.history import CaseHistory
 from app.models.notification import Notification
+from app.crud import notification as notification_crud
 
 from app.models.user import User
 
@@ -45,6 +46,7 @@ def delete_user(db: Session, user: User) -> None:
     db.query(CaseHistory).filter(CaseHistory.performed_by_user_id == user.user_id).update(
         {CaseHistory.performed_by_user_id: None}, synchronize_session=False
     )
+    notification_crud.clear_actor_references(db, user.user_id)
     db.query(Notification).filter(Notification.user_id == user.user_id).delete(synchronize_session=False)
     db.delete(user)
     db.flush()
