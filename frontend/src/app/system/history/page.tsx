@@ -4,13 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { History, Search, User as UserIcon } from "lucide-react";
 import type { HistoryAction, HistoryEntry } from "@/data/historyEvents";
 import { useCases } from "@/context/CasesContext";
-// + NEW — non-admins (handling_personnel, viewer) see only their own
-// history, fetched separately from the global log the CasesContext holds.
 import { fetchCurrentUser, fetchMyHistory, UnauthorizedError, type HistoryOut } from "@/lib/api";
 
-// + NEW — maps the backend's HistoryOut shape into the same HistoryEntry
-// shape the table already renders (mirrors CasesContext.tsx's local
-// mapHistory, which isn't exported).
 function mapHistoryOut(out: HistoryOut): HistoryEntry {
   return {
     id: String(out.history_id),
@@ -50,8 +45,6 @@ export default function HistoryPage() {
   const [actionFilter, setActionFilter] = useState<"All" | HistoryAction>("All");
   const [dateStart, setDateStart] = useState("");
   const [dateEnd, setDateEnd] = useState("");
-
-  // + NEW — role gate: non-admins only ever see their own history.
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [ownHistory, setOwnHistory] = useState<HistoryEntry[]>([]);
   const [ownHistoryLoading, setOwnHistoryLoading] = useState(true);
@@ -85,8 +78,6 @@ export default function HistoryPage() {
     };
   }, []);
 
-  // Admins keep the full cross-user log; handling_personnel/viewer are
-  // scoped to only the actions they themselves performed.
   const history = isAdmin === false ? ownHistory : globalHistory;
   const isLoadingHistory = isAdmin === null || (isAdmin === false && ownHistoryLoading);
 

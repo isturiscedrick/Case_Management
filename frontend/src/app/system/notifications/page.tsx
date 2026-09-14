@@ -10,11 +10,9 @@ export default function NotificationsPage() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  // Date range filter — mirrors the pattern used on Activity/History pages.
   const [dateStart, setDateStart] = useState("");
   const [dateEnd, setDateEnd] = useState("");
 
-  // Notification pending a "mark as read" confirmation. Null = no dialog shown.
   const [confirmReadId, setConfirmReadId] = useState<number | null>(null);
 
   useEffect(() => {
@@ -24,10 +22,6 @@ export default function NotificationsPage() {
         const admin = user.role === "admin";
         setIsAdmin(admin);
 
-        // Always fetch the user's own notifications (this is what surfaces
-        // "X updated your case" alerts to the case creator, admin or not).
-        // Admins additionally merge in the global pending password-reset
-        // queue they're responsible for reviewing.
         const [mine, pending] = await Promise.all([
           fetchMyNotifications(),
           admin ? fetchPendingNotifications() : Promise.resolve([]),
@@ -38,9 +32,6 @@ export default function NotificationsPage() {
           ...pending.filter((p) => !mine.some((m) => m.notification_id === p.notification_id)),
         ];
 
-        // Each source list is already ordered by the backend, but merging
-        // two separately-fetched lists doesn't preserve a single combined
-        // chronological order — sort explicitly, latest first.
         merged.sort((a, b) => {
           const aTime = a.created_at ? new Date(a.created_at).getTime() : 0;
           const bTime = b.created_at ? new Date(b.created_at).getTime() : 0;
@@ -74,13 +65,9 @@ export default function NotificationsPage() {
       await markNotificationRead(id);
       setItems((current) => current.filter((item) => item.notification_id !== id));
     } catch {
-      // Leave the item in place — user can retry from the list.
     }
   }
 
-  // Matches an ISO timestamp string against the selected date range. Falls
-  // back to "no date on record -> excluded once a bound is set" so partial
-  // data can't silently bypass the filter, same as the Activity page.
   function matchesDateRange(iso: string | null | undefined) {
     if (!dateStart && !dateEnd) return true;
     if (!iso) return false;
@@ -97,7 +84,6 @@ export default function NotificationsPage() {
           const bTime = b.created_at ? new Date(b.created_at).getTime() : 0;
           return bTime - aTime;
         }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [items, dateStart, dateEnd]
   );
 

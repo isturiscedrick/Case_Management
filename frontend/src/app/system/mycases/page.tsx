@@ -20,16 +20,6 @@ import type { CaseItem } from "@/types/case";
 
 const PAGE_SIZE = 10;
 
-// ---------------------------------------------------------------------
-// "Hidden from My Cases" — purely a view-level preference, scoped to this
-// browser + this user. Hiding a case here does NOT archive, close, or
-// otherwise change it anywhere else in the app (Dashboard, Archive,
-// Analytics, History all still show it normally). Stored in localStorage
-// since this is cosmetic-only and not something the backend needs to know
-// about; if the user clears storage or switches devices, hidden cases
-// simply reappear.
-// ---------------------------------------------------------------------
-
 function hiddenStorageKey(username: string) {
   return `mycases:hidden:${username}`;
 }
@@ -51,7 +41,6 @@ function saveHiddenIds(username: string, ids: Set<number>) {
   try {
     window.localStorage.setItem(hiddenStorageKey(username), JSON.stringify(Array.from(ids)));
   } catch {
-    // Storage full/unavailable — hiding just won't persist across reloads.
   }
 }
 
@@ -66,14 +55,10 @@ export default function MyCasesPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [viewItem, setViewItem] = useState<CaseItem | null>(null);
 
-  // Hidden-from-view case ids (per current user), plus whether the "Hidden
-  // cases" panel is expanded so removed cases aren't just gone forever
-  // without a way back.
   const [hiddenIds, setHiddenIds] = useState<Set<number>>(new Set());
   const [showHiddenPanel, setShowHiddenPanel] = useState(false);
   const [hideConfirmItem, setHideConfirmItem] = useState<CaseItem | null>(null);
 
-  // Create Case modal state — same draft/save flow as the Dashboard.
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [draft, setDraft] = useState<CaseDraft>(EMPTY_CASE);
   const [confirmCreate, setConfirmCreate] = useState(false);
@@ -123,8 +108,6 @@ export default function MyCasesPage() {
     persistHidden(next);
   }
 
-  // Cases created by the logged-in user, excluding archived ones (archived
-  // cases still live under /system/archive regardless of who created them).
   const myCases = useMemo(
     () => cases.filter((item) => !item.archived && item.createdBy === currentUserName),
     [cases, currentUserName]
@@ -171,8 +154,6 @@ export default function MyCasesPage() {
   }, [totalPages]);
 
   const isBusy = isLoading || userLoading;
-
-  // ---- Create Case ----------------------------------------------------
 
   function openCreate() {
     setDraft(cloneDraft(EMPTY_CASE));
