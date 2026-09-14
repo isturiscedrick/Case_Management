@@ -39,6 +39,9 @@ import { isSenaOnlyCase } from "@/components/shared/caseTableHelpers";
 // doesn't cause the lock to be reclaimed out from under an active editor.
 const HEARTBEAT_INTERVAL_MS = 20_000;
 
+// + NEW — pagination page size for the case table.
+const PAGE_SIZE = 10;
+
 /* =========================================================
    PAGE
 ========================================================= */
@@ -172,6 +175,9 @@ export default function CasesPage() {
   const [closedDateStart, setClosedDateStart] = useState<string>("");
   const [closedDateEnd, setClosedDateEnd] = useState<string>("");
 
+  // + NEW — pagination state for the case table.
+  const [currentPage, setCurrentPage] = useState(1);
+
   /* =======================================================
      MODAL STATE
   ======================================================= */
@@ -263,6 +269,35 @@ export default function CasesPage() {
     (closedDateStart || closedDateEnd ? 1 : 0);
 
   const activeCaseCount = cases.filter((item) => item.archived === showArchived).length;
+
+  // + NEW — paginate the filtered results, 10 cases per page.
+  const totalPages = Math.max(1, Math.ceil(filteredCases.length / PAGE_SIZE));
+  const paginatedCases = filteredCases.slice(
+    (currentPage - 1) * PAGE_SIZE,
+    currentPage * PAGE_SIZE
+  );
+
+  // Snap back to page 1 whenever a filter changes, so the user isn't
+  // stranded on a now-empty page.
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [
+    search,
+    statusFilter,
+    companyFilter,
+    progressFilter,
+    stageFilter,
+    filingDateStart,
+    filingDateEnd,
+    closedDateStart,
+    closedDateEnd,
+  ]);
+
+  // Clamp the current page down if it's now past the end (e.g. an
+  // archive/restore shrinks the result set without a filter changing).
+  useEffect(() => {
+    setCurrentPage((page) => Math.min(page, totalPages));
+  }, [totalPages]);
 
   /* =======================================================
      RESET EDIT RESTRICTIONS
@@ -589,12 +624,46 @@ export default function CasesPage() {
       />
 
       <CaseTable
-        cases={filteredCases}
+        cases={paginatedCases}
         onView={openView}
         onEdit={openEdit}
         onToggleArchive={requestToggleArchive}
         canEditClosed={isAdmin}   // + NEW
       />
+
+      {/* + NEW — pagination controls (10 cases per page) */}
+      {filteredCases.length > 0 && (
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-4 py-2.5 shadow-sm">
+          <p className="text-xs text-slate-500">
+            Showing {(currentPage - 1) * PAGE_SIZE + 1}
+            –{Math.min(currentPage * PAGE_SIZE, filteredCases.length)} of {filteredCases.length}
+          </p>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+              disabled={currentPage === 1}
+              className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Previous
+            </button>
+
+            <span className="text-xs font-medium text-slate-500">
+              Page {currentPage} of {totalPages}
+            </span>
+
+            <button
+              type="button"
+              onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+              disabled={currentPage === totalPages}
+              className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* CREATE CASE MODAL */}
       {modal === "create" && (
