@@ -3,11 +3,12 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Bell, ClipboardList, LayoutDashboard, History, Archive, BarChart3, Scale, ChevronRight, ChevronsLeft, LogOut, User, UserPlus } from "lucide-react";
+import { Bell, ClipboardList, LayoutDashboard, History, Archive, BarChart3, Scale, ChevronRight, ChevronsLeft, LogOut, User, UserPlus, Briefcase } from "lucide-react";
 import { clearSessionToken, fetchCurrentUser, fetchMyNotifications, fetchPendingNotifications, UnauthorizedError, type CurrentUser, type PasswordResetNotification } from "@/lib/api";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 const NAV_ITEMS = [
   { href: "/system/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/system/mycases", label: "Cases", icon: Briefcase },
   { href: "/system/activity", label: "Activity", icon: ClipboardList },
   { href: "/system/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/system/history", label: "History", icon: History },
