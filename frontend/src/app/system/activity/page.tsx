@@ -7,6 +7,9 @@ import { fetchCurrentUser, fetchDecidedNotifications, fetchMyHistory, fetchMyNot
 export default function ActivityPage() {
   const [items, setItems] = useState<PasswordResetNotification[]>([]);
   const [caseActions, setCaseActions] = useState<HistoryOut[]>([]);
+  // + NEW — this user's own "password changed" events, shown merged into
+  // the case-actions feed below rather than the password-reset-request list.
+  const [passwordChanges, setPasswordChanges] = useState<PasswordResetNotification[]>([]);
   const [search, setSearch] = useState("");
   const [actionFilter, setActionFilter] = useState("All");
   const [statusFilter, setStatusFilter] = useState("All");
@@ -21,9 +24,18 @@ export default function ActivityPage() {
         const user = await fetchCurrentUser();
         const admin = user.role === "admin";
         setIsAdmin(admin);
-        const [notifications, history] = await Promise.all([admin ? fetchDecidedNotifications() : fetchMyNotifications(), fetchMyHistory()]);
+        // + NEW — always fetch the user's own notifications too (even for
+        // admins, who otherwise only fetch OTHER users' decided requests),
+        // so a self-initiated password change is never missed.
+        const [notifications, history, mine] = await Promise.all([
+          admin ? fetchDecidedNotifications() : fetchMyNotifications(),
+          fetchMyHistory(),
+          admin ? fetchMyNotifications() : Promise.resolve<PasswordResetNotification[]>([]),
+        ]);
         setItems(notifications);
         setCaseActions(history);
+        const ownNotifications = admin ? mine : notifications;
+        setPasswordChanges(ownNotifications.filter((n) => n.notification_type === "password_changed"));
       } catch (error) {
         if (error instanceof UnauthorizedError) window.location.href = "/login";
       } finally {
@@ -75,6 +87,17 @@ export default function ActivityPage() {
     })
     .sort((a, b) => byNewestFirst(a.created_at, b.created_at));
 
+  // + NEW — this user's own password-change events, filtered/sorted the
+  // same way as case actions so they can render in the same feed.
+  const filteredPasswordChanges = passwordChanges
+    .filter((notification) => {
+      const matchesSearch = "changed password".includes(keyword) || keyword === "";
+      const matchesAction = actionFilter === "All" || actionFilter === "changed_password";
+      const matchesDate = matchesDateRange(notification.resolved_at ?? notification.created_at);
+      return matchesSearch && matchesAction && matchesDate;
+    })
+    .sort((a, b) => byNewestFirst(a.resolved_at ?? a.created_at, b.resolved_at ?? b.created_at));
+
   const hasDateFilter = !!(dateStart || dateEnd);
 
   return (
@@ -87,7 +110,7 @@ export default function ActivityPage() {
         <div className="mt-5 flex flex-col gap-2 rounded-xl border border-slate-200 bg-white p-3 shadow-sm sm:flex-row sm:flex-wrap">
           <div className="relative flex-1"><Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" /><input aria-label="Search activity" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search activity, case number, company, or user" className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm text-slate-700 outline-none focus:border-[#12331F] focus:bg-white focus:ring-2 focus:ring-[#12331F]/10" /></div>
           <select value={actionFilter} onChange={(event) => setActionFilter(event.target.value)} aria-label="Filter case actions" className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 outline-none focus:border-[#12331F] focus:bg-white">
-            <option value="All">All case actions</option><option value="created">Created</option><option value="updated">Updated</option><option value="archived">Archived</option><option value="restored">Restored</option>
+            <option value="All">All case actions</option><option value="created">Created</option><option value="updated">Updated</option><option value="archived">Archived</option><option value="restored">Restored</option><option value="changed_password">Changed password</option>
           </select>
           <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} aria-label="Filter notification status" className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 outline-none focus:border-[#12331F] focus:bg-white">
             <option value="All">All request statuses</option><option value="pending">Pending</option><option value="approved">Approved</option><option value="declined">Declined</option><option value="resolved">Resolved</option>
@@ -158,10 +181,39 @@ export default function ActivityPage() {
         <section className="mt-5 rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
           <div className="mb-4 border-b border-slate-100 pb-4">
             <h2 className="text-sm font-semibold text-[#12331F]">Case actions</h2>
-            <p className="mt-1 text-xs text-slate-500">Cases you created, updated, archived, or restored.</p>
+            <p className="mt-1 text-xs text-slate-500">Cases you created, updated, archived, or restored — plus your own password changes.</p>
           </div>
-          {loading ? <p className="text-sm text-slate-400">Loading actions...</p> : filteredActions.length === 0 ? <p className="text-sm text-slate-400">No case actions match your filters.</p> : (
+          {loading ? (
+            <p className="text-sm text-slate-400">Loading actions...</p>
+          ) : filteredActions.length === 0 && filteredPasswordChanges.length === 0 ? (
+            <p className="text-sm text-slate-400">No case actions match your filters.</p>
+          ) : (
             <div className="space-y-2">
+              {/* + NEW — password-change events, merged and sorted alongside
+                  case actions below rather than in a separate list. */}
+              {filteredPasswordChanges.map((notification) => (
+                <div key={`pw-${notification.notification_id}`} className="flex items-start gap-3 rounded-lg bg-slate-50 p-3 sm:items-center sm:justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[#B08D57]/40 bg-[#12331F] text-white">
+                      {notification.user_profile_picture ? (
+                        <img src={notification.user_profile_picture} alt="" className="h-full w-full object-cover" />
+                      ) : (
+                        <UserIcon size={12} />
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-slate-700">Changed password</p>
+                      <p className="text-xs text-slate-500">Your account</p>
+                    </div>
+                  </div>
+                  <time className="shrink-0 text-xs text-slate-400">
+                    {notification.resolved_at || notification.created_at
+                      ? new Date(notification.resolved_at ?? notification.created_at!).toLocaleString()
+                      : ""}
+                  </time>
+                </div>
+              ))}
+
               {filteredActions.map((action) => (
                 <div key={action.history_id} className="flex items-start gap-3 rounded-lg bg-slate-50 p-3 sm:items-center sm:justify-between">
                   <div className="flex items-center gap-3">

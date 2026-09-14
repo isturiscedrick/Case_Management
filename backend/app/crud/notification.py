@@ -27,6 +27,23 @@ def create_case_update_notification(db: Session, user_id: int, message: str) -> 
     return notification
 
 
+# NEW — logs a user's own password change as an already-resolved
+# notification so it never surfaces as "pending" anywhere, but can still
+# be listed on the Activity page alongside Created/Updated/Archived case
+# actions.
+def create_password_changed_notification(db: Session, user_id: int) -> Notification:
+    notification = Notification(
+        user_id=user_id,
+        notification_type="password_changed",
+        message="Password changed.",
+        status="resolved",
+        resolved_at=datetime.utcnow(),
+    )
+    db.add(notification)
+    db.flush()
+    return notification
+
+
 def list_pending(db: Session):
     return db.query(Notification).filter(Notification.status == "pending").order_by(Notification.created_at.desc()).all()
 

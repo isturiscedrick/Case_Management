@@ -76,8 +76,10 @@ def update_profile(db: Session, user, payload: UserProfileUpdate):
         fields["hashed_password"] = hash_password(payload.password)
 
     user_crud.update_user(db, user, **fields)
-    if payload.password and approved_reset:
-        notification_crud.consume_approved_password_reset(db, user.user_id)
+    if payload.password:
+        notification_crud.create_password_changed_notification(db, user.user_id)
+        if approved_reset:
+            notification_crud.consume_approved_password_reset(db, user.user_id)
     db.commit()
     db.refresh(user)
     return user
