@@ -1,81 +1,77 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { Briefcase, EyeOff, Plus, Search, Undo2 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Briefcase, Plus } from "lucide-react";
 
-import type { CaseDraft, StageProgress } from "@/types/case";
+import type { CaseDraft, CaseItem, ModalType, StageProgress } from "@/types/case";
 import { EMPTY_CASE } from "@/constants/caseOptions";
+import { initialCompanies } from "@/data/initialCases";
 import { useCases } from "@/context/CasesContext";
-import { fetchCurrentUser, UnauthorizedError } from "@/lib/api";
+import {
+  fetchCompanies,
+  fetchCurrentUser,
+  acquireCaseLock,
+  heartbeatCaseLock,
+  releaseCaseLock,
+  LockConflictError,
+} from "@/lib/api";
+import { loadSavedIds, saveSavedIds } from "@/lib/savedCases";
 import { cloneDraft, getCaseStatusSummary, getTotalJudgmentAward, type CaseStatusSummary } from "@/lib/caseHelpers";
-import { getCaseDraftErrors } from "@/lib/caseValidation";
+import { getCaseDraftErrors, getStageGates } from "@/lib/caseValidation";
 
+import { CaseFilters, type StageFilterKey } from "@/components/dashboard/CaseFilters";
 import { CaseTable } from "@/components/dashboard/CaseTable";
 import { CaseFormModal } from "@/components/dashboard/CaseFormModal";
+import { ViewCaseModal } from "@/components/dashboard/ViewCaseModal";
 import { SaveConfirmDialog } from "@/components/dashboard/SaveConfirmDialog";
-import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
-import { Modal } from "@/components/shared/Modal";
-import { ViewCaseContent } from "@/components/shared/ViewCaseContent";
-import type { CaseItem } from "@/types/case";
+import { ArchiveConfirmDialog } from "@/components/dashboard/ArchiveConfirmDialog";
+import { isSenaOnlyCase } from "@/components/shared/caseTableHelpers";
 
+// How often we ping the server to keep an acquired edit lock alive — same
+// interval and rationale as the Dashboard (case_lock_service.py::LOCK_TIMEOUT_SECONDS = 60s).
+const HEARTBEAT_INTERVAL_MS = 20_000;
 const PAGE_SIZE = 10;
 
-function hiddenStorageKey(username: string) {
-  return `mycases:hidden:${username}`;
-}
-
-function loadHiddenIds(username: string): Set<number> {
-  if (typeof window === "undefined") return new Set();
-  try {
-    const raw = window.localStorage.getItem(hiddenStorageKey(username));
-    if (!raw) return new Set();
-    const parsed = JSON.parse(raw);
-    return new Set(Array.isArray(parsed) ? parsed : []);
-  } catch {
-    return new Set();
-  }
-}
-
-function saveHiddenIds(username: string, ids: Set<number>) {
-  if (typeof window === "undefined") return;
-  try {
-    window.localStorage.setItem(hiddenStorageKey(username), JSON.stringify(Array.from(ids)));
-  } catch {
-  }
-}
+type SourceFilter = "All" | "Created" | "Saved";
 
 export default function MyCasesPage() {
-  const { cases, addCase, isLoading, loadError, refetch } = useCases();
+  /* =======================================================
+     CASE DATA
+  ======================================================= */
+
+  const { cases, addCase, updateCase, toggleArchive, setCaseClosed, isLoading, loadError, refetch } = useCases();
+  const [companies, setCompanies] = useState<string[]>(initialCompanies);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchCompanies()
+      .then((data) => {
+        if (cancelled) return;
+        const names = data.map((c) => c.company_name);
+        if (names.length > 0) setCompanies(names);
+      })
+      .catch((err) => console.error("Failed to fetch companies, using fallback list:", err));
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const [isAdmin, setIsAdmin] = useState(false);
   const [currentUserName, setCurrentUserName] = useState<string | null>(null);
+  const [savedIds, setSavedIds] = useState<Set<number>>(new Set());
   const [userLoading, setUserLoading] = useState(true);
-
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"All" | CaseStatusSummary>("All");
-  const [progressFilter, setProgressFilter] = useState<"All" | StageProgress>("All");
-  const [currentPage, setCurrentPage] = useState(1);
-  const [viewItem, setViewItem] = useState<CaseItem | null>(null);
-
-  const [hiddenIds, setHiddenIds] = useState<Set<number>>(new Set());
-  const [showHiddenPanel, setShowHiddenPanel] = useState(false);
-  const [hideConfirmItem, setHideConfirmItem] = useState<CaseItem | null>(null);
-
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [draft, setDraft] = useState<CaseDraft>(EMPTY_CASE);
-  const [confirmCreate, setConfirmCreate] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     fetchCurrentUser()
       .then((user) => {
-        if (!cancelled) {
-          setCurrentUserName(user.full_name);
-          setHiddenIds(loadHiddenIds(user.full_name));
-        }
+        if (cancelled) return;
+        setIsAdmin(user.role === "admin");
+        setCurrentUserName(user.full_name);
+        setSavedIds(loadSavedIds(user.full_name));
       })
-      .catch((error) => {
-        if (!cancelled && error instanceof UnauthorizedError) {
-          window.location.href = "/login";
-        }
+      .catch(() => {
+        // Ignore — user stays unknown; My Cases will show nothing until login resolves.
       })
       .finally(() => {
         if (!cancelled) setUserLoading(false);
@@ -85,95 +81,350 @@ export default function MyCasesPage() {
     };
   }, []);
 
-  function persistHidden(next: Set<number>) {
-    setHiddenIds(next);
-    if (currentUserName) saveHiddenIds(currentUserName, next);
-  }
+  // Toggles a case in/out of this user's saved list. Does not touch the
+  // case itself — pure bookmark, same as the Dashboard's action.
+  const toggleSave = (item: CaseItem) => {
+    if (!currentUserName) return;
+    setSavedIds((current) => {
+      const next = new Set(current);
+      if (next.has(item.id)) next.delete(item.id);
+      else next.add(item.id);
+      saveSavedIds(currentUserName, next);
+      return next;
+    });
+  };
 
-  function requestHide(item: CaseItem) {
-    setHideConfirmItem(item);
-  }
+  /* =======================================================
+     EDIT LOCK STATE — identical mechanics to the Dashboard
+  ======================================================= */
 
-  function confirmHide() {
-    if (!hideConfirmItem) return;
-    const next = new Set(hiddenIds);
-    next.add(hideConfirmItem.id);
-    persistHidden(next);
-    setHideConfirmItem(null);
-  }
+  const [lockedByUsername, setLockedByUsername] = useState<string | null>(null);
+  const lockedCaseIdRef = useRef<number | null>(null);
+  const heartbeatIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  function unhide(id: number) {
-    const next = new Set(hiddenIds);
-    next.delete(id);
-    persistHidden(next);
-  }
+  const stopHeartbeat = () => {
+    if (heartbeatIntervalRef.current !== null) {
+      clearInterval(heartbeatIntervalRef.current);
+      heartbeatIntervalRef.current = null;
+    }
+  };
 
-  const myCases = useMemo(
-    () => cases.filter((item) => !item.archived && item.createdBy === currentUserName),
-    [cases, currentUserName]
+  const startHeartbeat = (caseId: number) => {
+    stopHeartbeat();
+    heartbeatIntervalRef.current = setInterval(async () => {
+      try {
+        await heartbeatCaseLock(caseId);
+      } catch (error) {
+        stopHeartbeat();
+        lockedCaseIdRef.current = null;
+        alert(
+          error instanceof LockConflictError
+            ? `${error.message} Your unsaved changes were not saved — please reopen the case to see the latest version.`
+            : "Lost the edit lock for this case. Please reopen it."
+        );
+        setModal(null);
+        setActiveCase(null);
+        resetEditRestrictions();
+      }
+    }, HEARTBEAT_INTERVAL_MS);
+  };
+
+  const releaseLockIfHeld = async () => {
+    const caseId = lockedCaseIdRef.current;
+    if (caseId === null) return;
+    lockedCaseIdRef.current = null;
+    stopHeartbeat();
+    try {
+      await releaseCaseLock(caseId);
+    } catch {
+      // Best-effort — lock self-expires server-side if this fails.
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      void releaseLockIfHeld();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  /* =======================================================
+     FILTER STATE — same shape as the Dashboard, plus Source
+  ======================================================= */
+
+  const [sourceFilter, setSourceFilter] = useState<SourceFilter>("All");
+  const [statusFilter, setStatusFilter] = useState<"All" | CaseStatusSummary>("All");
+  const [companyFilter, setCompanyFilter] = useState<string>("All");
+  const [progressFilter, setProgressFilter] = useState<"All" | StageProgress>("All");
+  const [stageFilter, setStageFilter] = useState<StageFilterKey>("All");
+  const [search, setSearch] = useState("");
+  const [showMoreFilters, setShowMoreFilters] = useState(false);
+  const [filingDateStart, setFilingDateStart] = useState<string>("");
+  const [filingDateEnd, setFilingDateEnd] = useState<string>("");
+  const [closedDateStart, setClosedDateStart] = useState<string>("");
+  const [closedDateEnd, setClosedDateEnd] = useState<string>("");
+  const [currentPage, setCurrentPage] = useState(1);
+
+  /* =======================================================
+     MODAL STATE
+  ======================================================= */
+
+  const [modal, setModal] = useState<ModalType>(null);
+  const [activeCase, setActiveCase] = useState<CaseItem | null>(null);
+  const [draft, setDraft] = useState<CaseDraft>(EMPTY_CASE);
+
+  /* =======================================================
+     EDIT RESTRICTIONS — identical to the Dashboard
+  ======================================================= */
+
+  const [restrictSenaEditing, setRestrictSenaEditing] = useState(false);
+  const [restrictSenaRemarksEditing, setRestrictSenaRemarksEditing] = useState(false);
+  const [restrictLaDetailsEditing, setRestrictLaDetailsEditing] = useState(false);
+  const [restrictLaProgressOnly, setRestrictLaProgressOnly] = useState(false);
+  const [restrictLaProgressEditing, setRestrictLaProgressEditing] = useState(false);
+  const [restrictNlrcDetailsEditing, setRestrictNlrcDetailsEditing] = useState(false);
+  const [restrictNlrcProgressOnly, setRestrictNlrcProgressOnly] = useState(false);
+  const [restrictNlrcProgressEditing, setRestrictNlrcProgressEditing] = useState(false);
+  const [restrictCaDetailsEditing, setRestrictCaDetailsEditing] = useState(false);
+  const [restrictCaProgressOnly, setRestrictCaProgressOnly] = useState(false);
+  const [restrictCaProgressEditing, setRestrictCaProgressEditing] = useState(false);
+
+  const resetEditRestrictions = () => {
+    setRestrictSenaEditing(false);
+    setRestrictSenaRemarksEditing(false);
+    setRestrictLaDetailsEditing(false);
+    setRestrictLaProgressOnly(false);
+    setRestrictLaProgressEditing(false);
+    setRestrictNlrcDetailsEditing(false);
+    setRestrictNlrcProgressOnly(false);
+    setRestrictNlrcProgressEditing(false);
+    setRestrictCaDetailsEditing(false);
+    setRestrictCaProgressOnly(false);
+    setRestrictCaProgressEditing(false);
+  };
+
+  /* =======================================================
+     CONFIRMATION STATE
+  ======================================================= */
+
+  const [confirmSave, setConfirmSave] = useState<"create" | "edit" | null>(null);
+  const [confirmArchiveItem, setConfirmArchiveItem] = useState<CaseItem | null>(null);
+
+  /* =======================================================
+     DERIVED VALUES
+  ======================================================= */
+
+  const companyOptions = ["All", ...companies];
+
+  // "My Cases" universe: created by me, OR explicitly saved by me.
+  // Archived cases are excluded here too — Archive has its own page.
+  const myCases = cases.filter(
+    (item) => !item.archived && (item.createdBy === currentUserName || savedIds.has(item.id))
   );
 
-  const visibleMyCases = useMemo(
-    () => myCases.filter((item) => !hiddenIds.has(item.id)),
-    [myCases, hiddenIds]
-  );
+  const filteredCases = myCases
+    .filter((item) => {
+      const isMine = item.createdBy === currentUserName;
+      const isSaved = savedIds.has(item.id);
 
-  const hiddenMyCases = useMemo(
-    () => myCases.filter((item) => hiddenIds.has(item.id)),
-    [myCases, hiddenIds]
-  );
+      const matchesSource =
+        sourceFilter === "All" ||
+        (sourceFilter === "Created" && isMine) ||
+        (sourceFilter === "Saved" && isSaved);
 
-  const filteredCases = useMemo(() => {
-    const keyword = search.toLowerCase();
-    return visibleMyCases
-      .filter((item) => {
-        const matchesStatus = statusFilter === "All" || getCaseStatusSummary(item) === statusFilter;
-        const matchesProgress =
-          progressFilter === "All" ||
-          item.remarks === progressFilter ||
-          Object.values(item.caseProgress).some((stage) => stage === progressFilter);
-        const matchesSearch =
-          item.company.toLowerCase().includes(keyword) ||
-          item.caseNo.toLowerCase().includes(keyword) ||
-          item.complainants.some((name) => name.toLowerCase().includes(keyword)) ||
-          item.cause.some((cause) => cause.toLowerCase().includes(keyword));
-        return matchesStatus && matchesProgress && matchesSearch;
-      })
-      .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
-  }, [visibleMyCases, search, statusFilter, progressFilter]);
+      const matchesStatus = statusFilter === "All" || getCaseStatusSummary(item) === statusFilter;
+      const matchesCompany = companyFilter === "All" || item.company === companyFilter;
+
+      const matchesProgress =
+        progressFilter === "All" ||
+        (stageFilter === "All"
+          ? item.remarks === progressFilter ||
+            Object.values(item.caseProgress).some((stage) => stage === progressFilter)
+          : stageFilter === "sena"
+          ? item.remarks === progressFilter
+          : item.caseProgress[stageFilter] === progressFilter);
+
+      const matchesFilingDateRange =
+        (!filingDateStart || item.filingDate >= filingDateStart) &&
+        (!filingDateEnd || item.filingDate <= filingDateEnd);
+
+      const matchesClosedDateRange =
+        !closedDateStart && !closedDateEnd
+          ? true
+          : !!item.closedDate &&
+            (!closedDateStart || item.closedDate >= closedDateStart) &&
+            (!closedDateEnd || item.closedDate <= closedDateEnd);
+
+      const keyword = search.toLowerCase();
+      const matchesSearch =
+        item.company.toLowerCase().includes(keyword) ||
+        item.caseNo.toLowerCase().includes(keyword) ||
+        item.complainants.some((name) => name.toLowerCase().includes(keyword)) ||
+        item.cause.some((cause) => cause.toLowerCase().includes(keyword));
+
+      return (
+        matchesSource &&
+        matchesStatus &&
+        matchesCompany &&
+        matchesProgress &&
+        matchesFilingDateRange &&
+        matchesClosedDateRange &&
+        matchesSearch
+      );
+    })
+    .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
+
+  const activeFilterCount =
+    [sourceFilter, statusFilter, companyFilter, progressFilter, stageFilter].filter((filter) => filter !== "All")
+      .length +
+    (search ? 1 : 0) +
+    (filingDateStart || filingDateEnd ? 1 : 0) +
+    (closedDateStart || closedDateEnd ? 1 : 0);
 
   const totalPages = Math.max(1, Math.ceil(filteredCases.length / PAGE_SIZE));
   const paginatedCases = filteredCases.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [search, statusFilter, progressFilter]);
+  }, [
+    search,
+    sourceFilter,
+    statusFilter,
+    companyFilter,
+    progressFilter,
+    stageFilter,
+    filingDateStart,
+    filingDateEnd,
+    closedDateStart,
+    closedDateEnd,
+  ]);
 
   useEffect(() => {
     setCurrentPage((page) => Math.min(page, totalPages));
   }, [totalPages]);
 
-  const isBusy = isLoading || userLoading;
+  const resetFilters = () => {
+    setSourceFilter("All");
+    setStatusFilter("All");
+    setCompanyFilter("All");
+    setProgressFilter("All");
+    setStageFilter("All");
+    setFilingDateStart("");
+    setFilingDateEnd("");
+    setClosedDateStart("");
+    setClosedDateEnd("");
+    setSearch("");
+  };
 
-  function openCreate() {
+  const handleStatusFilterChange = (value: "All" | CaseStatusSummary) => {
+    setStatusFilter(value);
+    if (value !== "Closed") {
+      setClosedDateStart("");
+      setClosedDateEnd("");
+    }
+  };
+
+  /* =======================================================
+     MODAL ACTIONS — Create / View / Edit, mirroring Dashboard
+  ======================================================= */
+
+  const openCreate = () => {
     setDraft(cloneDraft(EMPTY_CASE));
-    setShowCreateModal(true);
-  }
+    resetEditRestrictions();
+    setActiveCase(null);
+    setModal("create");
+  };
 
-  function cancelCreate() {
-    setShowCreateModal(false);
-  }
+  const openView = (item: CaseItem) => {
+    setLockedByUsername(null);
+    setActiveCase(item);
+    setModal("view");
+  };
 
-  function requestSaveCreate() {
+  const openEdit = async (item: CaseItem) => {
+    if (item.closed && !isAdmin) return;
+
+    try {
+      await acquireCaseLock(item.id);
+    } catch (error) {
+      if (error instanceof LockConflictError) {
+        setLockedByUsername(error.lockedBy);
+        setActiveCase(item);
+        setModal("view");
+        return;
+      }
+      alert(error instanceof Error ? error.message : "Unable to open this case for editing right now.");
+      return;
+    }
+
+    lockedCaseIdRef.current = item.id;
+    startHeartbeat(item.id);
+
+    const gates = getStageGates(item);
+    const laProgressIsPending = gates.laFilled && item.caseProgress.la === "";
+    const nlrcProgressIsPending = gates.nlrcFilled && item.caseProgress.nlrc === "";
+    const caProgressIsPending = gates.caFilled && item.caseProgress.ca === "";
+    const nlrcHasMotionForReconsideration = item.nlrc.remarks === "Motion for Reconsideration";
+    const caHasMotionForReconsideration = item.ca.remarks === "Motion for Reconsideration";
+
+    setActiveCase(item);
+    setDraft(cloneDraft(item));
+
+    const bypassFieldLocks = isAdmin;
+
+    setRestrictSenaEditing(!bypassFieldLocks && (isSenaOnlyCase(item) || gates.laFilled));
+    setRestrictSenaRemarksEditing(!bypassFieldLocks && gates.laFilled);
+
+    setRestrictLaDetailsEditing(!bypassFieldLocks && gates.laFilled);
+    setRestrictLaProgressOnly(!bypassFieldLocks && laProgressIsPending);
+    setRestrictLaProgressEditing(!bypassFieldLocks && gates.laFilled && !laProgressIsPending);
+
+    setRestrictNlrcDetailsEditing(!bypassFieldLocks && gates.nlrcFilled);
+    setRestrictNlrcProgressOnly(!bypassFieldLocks && nlrcProgressIsPending);
+    setRestrictNlrcProgressEditing(
+      !bypassFieldLocks && gates.nlrcFilled && !nlrcProgressIsPending && !nlrcHasMotionForReconsideration
+    );
+
+    setRestrictCaDetailsEditing(!bypassFieldLocks && gates.caFilled);
+    setRestrictCaProgressOnly(!bypassFieldLocks && caProgressIsPending);
+    setRestrictCaProgressEditing(
+      !bypassFieldLocks && gates.caFilled && !caProgressIsPending && !caHasMotionForReconsideration
+    );
+
+    setModal("edit");
+  };
+
+  const closeModal = () => {
+    void releaseLockIfHeld();
+    setModal(null);
+    setActiveCase(null);
+    setLockedByUsername(null);
+    resetEditRestrictions();
+  };
+
+  /* =======================================================
+     CREATE / EDIT VALIDATION + SAVE
+  ======================================================= */
+
+  const requestSaveCreate = () => {
     const errors = getCaseDraftErrors(draft);
     if (errors.length > 0) {
       alert(errors.join("\n"));
       return;
     }
-    setConfirmCreate(true);
-  }
+    setConfirmSave("create");
+  };
 
-  async function confirmSaveCreate() {
+  const requestSaveEdit = () => {
+    const errors = getCaseDraftErrors(draft);
+    if (errors.length > 0) {
+      alert(errors.join("\n"));
+      return;
+    }
+    setConfirmSave("edit");
+  };
+
+  const saveCreate = async () => {
     const nextId = Math.max(0, ...cases.map((item) => item.id)) + 1;
     const today = new Date().toISOString().slice(0, 10);
 
@@ -183,27 +434,77 @@ export default function MyCasesPage() {
       date: today,
       createdBy: currentUserName ?? "",
       createdAt: today,
-      totalPaid: {
-        ...draft.totalPaid,
-        amount: getTotalJudgmentAward(draft),
-      },
+      totalPaid: { ...draft.totalPaid, amount: getTotalJudgmentAward(draft) },
     };
 
     try {
       await addCase(newCase);
-      setConfirmCreate(false);
-      setShowCreateModal(false);
+      setConfirmSave(null);
+      closeModal();
     } catch (error) {
       alert(error instanceof Error ? error.message : "Unable to create the case.");
     }
-  }
+  };
+
+  const saveEdit = async () => {
+    if (!activeCase) return;
+    const today = new Date().toISOString().slice(0, 10);
+
+    const updatedCase: CaseItem = {
+      ...draft,
+      id: activeCase.id,
+      date: today,
+      totalPaid: { ...draft.totalPaid, amount: getTotalJudgmentAward(draft) },
+    };
+
+    try {
+      await updateCase(updatedCase);
+      if (!!updatedCase.closed !== !!activeCase.closed) {
+        await setCaseClosed(updatedCase.id, !!updatedCase.closed);
+      }
+      setConfirmSave(null);
+      closeModal();
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "Unable to save the case.");
+    }
+  };
+
+  const confirmSaveAction = async () => {
+    if (confirmSave === "create") {
+      saveCreate();
+      return;
+    }
+    if (confirmSave === "edit") saveEdit();
+  };
+
+  /* =======================================================
+     ARCHIVE / RESTORE
+  ======================================================= */
+
+  const requestToggleArchive = (item: CaseItem) => setConfirmArchiveItem(item);
+
+  const confirmToggleArchive = async () => {
+    if (!confirmArchiveItem) return;
+    try {
+      await toggleArchive(confirmArchiveItem.id);
+      setConfirmArchiveItem(null);
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "Unable to update the archive status.");
+    }
+  };
+
+  const isBusy = isLoading || userLoading;
+
+  /* =======================================================
+     RENDER
+  ======================================================= */
 
   return (
     <div className="flex h-full min-w-0 flex-col gap-4 overflow-hidden bg-[#F5F1E3] p-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="font-serif text-lg font-medium tracking-tight text-[#12331F] md:text-xl">My Cases</h1>
-          <p className="mt-0.5 text-xs text-slate-500">Cases you created.</p>
+          <p className="mt-0.5 text-xs text-slate-500">Cases you created or have saved.</p>
         </div>
 
         <button
@@ -226,102 +527,66 @@ export default function MyCasesPage() {
       )}
 
       {/* SUMMARY */}
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:max-w-xs">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100 text-slate-700">
-            <Briefcase size={18} />
-          </div>
-          <div>
-            <p className="text-[11px] uppercase tracking-wide text-slate-400">Cases Created by You</p>
-            <p className="text-lg font-semibold tabular-nums text-[#12331F]">{myCases.length}</p>
-          </div>
+      <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:max-w-xs">
+        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100 text-slate-700">
+          <Briefcase size={18} />
         </div>
+        <div>
+          <p className="text-[11px] uppercase tracking-wide text-slate-400">My Cases</p>
+          <p className="text-lg font-semibold tabular-nums text-[#12331F]">{myCases.length}</p>
+        </div>
+      </div>
 
-        {hiddenMyCases.length > 0 && (
+      {/* SOURCE FILTER — extra chip row above the shared CaseFilters */}
+      <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white p-2 shadow-sm">
+        <span className="ml-1 text-[11px] font-medium uppercase tracking-wide text-slate-400">Show</span>
+        {(["All", "Created", "Saved"] as SourceFilter[]).map((option) => (
           <button
+            key={option}
             type="button"
-            onClick={() => setShowHiddenPanel((v) => !v)}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-4 text-xs font-medium text-slate-600 shadow-sm transition hover:bg-slate-50"
+            onClick={() => setSourceFilter(option)}
+            className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${
+              sourceFilter === option
+                ? "bg-[#12331F] text-white"
+                : "text-slate-600 hover:bg-slate-100"
+            }`}
           >
-            <EyeOff size={14} className="text-slate-400" />
-            {hiddenMyCases.length} hidden from this view
-            <span className="ml-1 text-slate-400 underline">{showHiddenPanel ? "Hide" : "Show"}</span>
+            {option === "All" ? "All My Cases" : option === "Created" ? "Created by me" : "Saved"}
           </button>
-        )}
+        ))}
       </div>
 
-      {/* HIDDEN CASES PANEL */}
-      {showHiddenPanel && hiddenMyCases.length > 0 && (
-        <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
-          <p className="mb-2 text-xs font-medium text-slate-500">
-            Hidden from My Cases only — still active everywhere else in the app.
-          </p>
-          <div className="flex flex-col divide-y divide-slate-100">
-            {hiddenMyCases.map((item) => (
-              <div key={item.id} className="flex items-center justify-between gap-3 py-2">
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-medium text-slate-700">{item.caseNo}</p>
-                  <p className="truncate text-xs text-slate-400">{item.company}</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => unhide(item.id)}
-                  className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-slate-50"
-                >
-                  <Undo2 size={13} />
-                  Unhide
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      {/* SAME FILTERS AS THE DASHBOARD */}
+      <CaseFilters
+        search={search}
+        onSearchChange={setSearch}
+        statusFilter={statusFilter}
+        onStatusFilterChange={handleStatusFilterChange}
+        companyFilter={companyFilter}
+        onCompanyFilterChange={setCompanyFilter}
+        companyOptions={companyOptions}
+        progressFilter={progressFilter}
+        onProgressFilterChange={setProgressFilter}
+        stageFilter={stageFilter}
+        onStageFilterChange={setStageFilter}
+        showMoreFilters={showMoreFilters}
+        onToggleMoreFilters={() => setShowMoreFilters((current) => !current)}
+        filingDateStart={filingDateStart}
+        onFilingDateStartChange={setFilingDateStart}
+        filingDateEnd={filingDateEnd}
+        onFilingDateEndChange={setFilingDateEnd}
+        closedDateStart={closedDateStart}
+        onClosedDateStartChange={setClosedDateStart}
+        closedDateEnd={closedDateEnd}
+        onClosedDateEndChange={setClosedDateEnd}
+        filteredCount={filteredCases.length}
+        totalCount={myCases.length}
+        showArchived={false}
+        activeFilterCount={activeFilterCount}
+        onResetFilters={resetFilters}
+      />
 
-      {/* FILTERS */}
-      <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm sm:p-4">
-        <div className="flex flex-col gap-2 sm:flex-row">
-          <div className="relative flex-1">
-            <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input
-              aria-label="Search my cases"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search company, case no., complainant, or cause"
-              className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-8 pr-3 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#12331F] focus:bg-white focus:ring-2 focus:ring-[#12331F]/10"
-            />
-          </div>
-
-          <select
-            value={statusFilter}
-            onChange={(event) => setStatusFilter(event.target.value as "All" | CaseStatusSummary)}
-            className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-[#12331F] focus:bg-white focus:ring-2 focus:ring-[#12331F]/10"
-          >
-            <option value="All">All Status</option>
-            <option value="Settled">Settled</option>
-            <option value="Not Settled">Not Settled</option>
-            <option value="Pending">Pending</option>
-            <option value="Closed">Closed</option>
-          </select>
-
-          <select
-            value={progressFilter}
-            onChange={(event) => setProgressFilter(event.target.value as "All" | StageProgress)}
-            className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-[#12331F] focus:bg-white focus:ring-2 focus:ring-[#12331F]/10"
-          >
-            <option value="All">Any Progress</option>
-            <option value="Settled">Any stage: Settled</option>
-            <option value="Not Settled">Any stage: Not Settled</option>
-            <option value="Others">Any stage: Others</option>
-          </select>
-        </div>
-
-        <p className="mt-2 text-[11px] text-slate-400">
-          Showing {filteredCases.length} of {visibleMyCases.length} cases
-          {hiddenMyCases.length > 0 ? ` (${hiddenMyCases.length} hidden)` : ""}
-        </p>
-      </div>
-
-      {/* EMPTY STATE */}
+      {/* EMPTY STATES */}
       {!isBusy && myCases.length === 0 && (
         <div className="flex flex-col items-center justify-center rounded-xl border border-slate-200 bg-white p-16 text-center shadow-sm">
           <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#12331F]/5">
@@ -329,19 +594,7 @@ export default function MyCasesPage() {
           </div>
           <p className="mt-4 text-sm font-medium text-slate-700">No cases yet</p>
           <p className="mt-1 max-w-xs text-xs text-slate-400">
-            Create a case here, or from the Dashboard, and it will appear in this list.
-          </p>
-        </div>
-      )}
-
-      {!isBusy && myCases.length > 0 && visibleMyCases.length === 0 && (
-        <div className="flex flex-col items-center justify-center rounded-xl border border-slate-200 bg-white p-16 text-center shadow-sm">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#12331F]/5">
-            <EyeOff className="h-5 w-5 text-[#12331F]/40" />
-          </div>
-          <p className="mt-4 text-sm font-medium text-slate-700">All your cases are hidden from this view</p>
-          <p className="mt-1 max-w-xs text-xs text-slate-400">
-            Use "Show" above to bring them back.
+            Create a case here, or save one from the Dashboard, and it will appear in this list.
           </p>
         </div>
       )}
@@ -352,16 +605,18 @@ export default function MyCasesPage() {
         </div>
       )}
 
-      {/* TABLE — Update stays off here (edits happen from the Dashboard);
-          Archive column's action is repurposed as "Remove from My Cases",
-          a view-only hide, via onToggleArchive. */}
-      {visibleMyCases.length > 0 && (
+      {/* TABLE — same actions as the Dashboard: View, Update, Save toggle
+          (rendered as Unsave for anything currently saved), Archive. */}
+      {myCases.length > 0 && (
         <>
           <CaseTable
             cases={paginatedCases}
-            onView={(item) => setViewItem(item)}
-            onEdit={() => {}}
-            onToggleArchive={requestHide}
+            onView={openView}
+            onEdit={openEdit}
+            onToggleArchive={requestToggleArchive}
+            canEditClosed={isAdmin}
+            onToggleSave={toggleSave}
+            savedIds={savedIds}
           />
 
           {filteredCases.length > 0 && (
@@ -397,43 +652,69 @@ export default function MyCasesPage() {
         </>
       )}
 
-      {viewItem && (
-        <Modal title={`${viewItem.caseNo} · ${viewItem.company}`} onClose={() => setViewItem(null)} wide>
-          <ViewCaseContent item={viewItem} />
-        </Modal>
-      )}
-
       {/* CREATE CASE MODAL */}
-      {showCreateModal && (
+      {modal === "create" && (
         <CaseFormModal
           mode="create"
           activeCase={null}
           draft={draft}
           onChange={setDraft}
-          companies={[]}
-          onCancel={cancelCreate}
+          companies={companies}
+          onCancel={closeModal}
           onSave={requestSaveCreate}
         />
       )}
 
-      {confirmCreate && (
-        <SaveConfirmDialog
-          mode="create"
+      {/* VIEW CASE MODAL (also the read-only "locked by X" view) */}
+      {modal === "view" && activeCase && (
+        <ViewCaseModal item={activeCase} onClose={closeModal} lockedByUsername={lockedByUsername ?? undefined} />
+      )}
+
+      {/* EDIT CASE MODAL */}
+      {modal === "edit" && activeCase && (
+        <CaseFormModal
+          key={activeCase.id}
+          mode="edit"
+          activeCase={activeCase}
           draft={draft}
-          activeCase={null}
-          onConfirm={confirmSaveCreate}
-          onCancel={() => setConfirmCreate(false)}
+          onChange={setDraft}
+          companies={companies}
+          isAdmin={isAdmin}
+          editRestrictions={{
+            restrictSenaEditing,
+            restrictSenaRemarksEditing,
+            restrictLaDetailsEditing,
+            restrictLaProgressOnly,
+            restrictLaProgressEditing,
+            restrictNlrcDetailsEditing,
+            restrictNlrcProgressOnly,
+            restrictNlrcProgressEditing,
+            restrictCaDetailsEditing,
+            restrictCaProgressOnly,
+            restrictCaProgressEditing,
+          }}
+          onCancel={closeModal}
+          onSave={requestSaveEdit}
         />
       )}
 
-      {/* HIDE (REMOVE FROM MY CASES) CONFIRMATION */}
-      {hideConfirmItem && (
-        <ConfirmDialog
-          title="Remove from My Cases"
-          message={`Remove "${hideConfirmItem.caseNo} · ${hideConfirmItem.company}" from this My Cases view? It will stay active everywhere else (Dashboard, Archive, Analytics) and you can unhide it anytime.`}
-          confirmLabel="Remove from view"
-          onConfirm={confirmHide}
-          onCancel={() => setHideConfirmItem(null)}
+      {/* CREATE / EDIT CONFIRMATION */}
+      {confirmSave && (
+        <SaveConfirmDialog
+          mode={confirmSave}
+          draft={draft}
+          activeCase={activeCase}
+          onConfirm={confirmSaveAction}
+          onCancel={() => setConfirmSave(null)}
+        />
+      )}
+
+      {/* ARCHIVE / RESTORE CONFIRMATION */}
+      {confirmArchiveItem && (
+        <ArchiveConfirmDialog
+          item={confirmArchiveItem}
+          onConfirm={confirmToggleArchive}
+          onCancel={() => setConfirmArchiveItem(null)}
         />
       )}
     </div>

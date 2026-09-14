@@ -1,4 +1,4 @@
-import { Archive, ArchiveRestore, Eye, RefreshCw } from "lucide-react";
+import { Archive, ArchiveRestore, Bookmark, BookmarkCheck, Eye, RefreshCw } from "lucide-react";
 
 import type { CaseItem } from "@/types/case";
 import { formatCurrency, formatDate, formatTotalPaidCategory, getCaseStatusSummary } from "@/lib/caseHelpers";
@@ -34,7 +34,10 @@ export function CaseTableRow({
   onEdit,
   onToggleArchive,
   hideEdit = false,
-  canEditClosed = false,   // + NEW
+  canEditClosed = false,
+  onToggleSave,       // + NEW — bookmark toggle; omit to hide the action entirely
+  isSaved = false,    // + NEW — controls Save vs Unsave icon/label
+  saveActionLabel,    // + NEW — override label ("Save to My Cases" / "Remove from My Cases")
 }: {
   item: CaseItem;
   onView: (item: CaseItem) => void;
@@ -44,14 +47,22 @@ export function CaseTableRow({
   // are read-only until restored.
   hideEdit?: boolean;
   // Admins can still edit a closed case (server enforces this too).
-  canEditClosed?: boolean;   // + NEW
+  canEditClosed?: boolean;
+  // + NEW — bookmark ("Save to My Cases") action. Optional so pages that
+  // don't support saving (e.g. Archive) don't render the button at all.
+  onToggleSave?: (item: CaseItem) => void;
+  isSaved?: boolean;
+  saveActionLabel?: string;
 }) {
   // Update is locked only once a case has been explicitly closed via
   // "Close Case" in the form. Being resolved (having a Total Paid category)
   // no longer auto-locks editing — Close Case is the sole lock mechanism.
   // Admins are exempt from the closed lock.
-  const isLocked = !!item.closed && !canEditClosed;   // + exemption
+  const isLocked = !!item.closed && !canEditClosed;
   const lockReason = "This case is closed and can no longer be updated.";
+
+  const defaultSaveLabel = isSaved ? "Remove from My Cases" : "Save to My Cases";
+  const saveLabel = saveActionLabel ?? defaultSaveLabel;
 
   return (
     <tr className="group border-b border-slate-100 last:border-0 hover:bg-slate-50">
@@ -200,6 +211,21 @@ export function CaseTableRow({
               }`}
             >
               <RefreshCw size={13} />
+            </button>
+          )}
+
+          {onToggleSave && (
+            <button
+              aria-label={saveLabel}
+              title={saveLabel}
+              onClick={() => onToggleSave(item)}
+              className={`rounded-md border p-1.5 transition ${
+                isSaved
+                  ? "border-[#B08D57]/40 bg-[#B08D57]/10 text-[#B08D57] hover:bg-[#B08D57]/20"
+                  : "border-slate-200 text-slate-500 hover:border-[#B08D57]/40 hover:bg-[#B08D57]/10 hover:text-[#B08D57]"
+              }`}
+            >
+              {isSaved ? <BookmarkCheck size={13} /> : <Bookmark size={13} />}
             </button>
           )}
 

@@ -5,6 +5,7 @@ import type { CaseDraft, CaseItem, ModalType, StageProgress, EditRestrictions } 
 import { CURRENT_USER, EMPTY_CASE } from "@/constants/caseOptions";
 import { initialCompanies } from "@/data/initialCases";
 import { useCases } from "@/context/CasesContext";
+import { loadSavedIds, saveSavedIds } from "@/lib/savedCases";  
 import {
   fetchCompanies,
   fetchCurrentUser,
@@ -64,12 +65,18 @@ export default function CasesPage() {
 
   const [isAdmin, setIsAdmin] = useState(false);
 
+  const [currentUserName, setCurrentUserName] = useState<string | null>(null);
+  const [savedIds, setSavedIds] = useState<Set<number>>(new Set());
+
   useEffect(() => {
     let cancelled = false;
 
     fetchCurrentUser()
       .then((user) => {
-        if (!cancelled) setIsAdmin(user.role === "admin");
+        if (cancelled) return;
+        setIsAdmin(user.role === "admin");
+        setCurrentUserName(user.full_name);
+        setSavedIds(loadSavedIds(user.full_name));
       })
       .catch(() => {
       });
@@ -79,6 +86,16 @@ export default function CasesPage() {
     };
   }, []);
 
+  const toggleSave = (item: CaseItem) => {
+    if (!currentUserName) return;
+    setSavedIds((current) => {
+      const next = new Set(current);
+      if (next.has(item.id)) next.delete(item.id);
+      else next.add(item.id);
+      saveSavedIds(currentUserName, next);
+      return next;
+    });
+  };
   /* =======================================================
      EDIT LOCK STATE  (+ NEW)
   ======================================================= */
@@ -569,7 +586,9 @@ export default function CasesPage() {
         onView={openView}
         onEdit={openEdit}
         onToggleArchive={requestToggleArchive}
-        canEditClosed={isAdmin}   // + NEW
+        canEditClosed={isAdmin}
+        onToggleSave={toggleSave}  
+        savedIds={savedIds}      
       />
 
       {/* + NEW — pagination controls (10 cases per page) */}

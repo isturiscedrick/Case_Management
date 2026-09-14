@@ -6,13 +6,19 @@ export function CaseTable({
   onView,
   onEdit,
   onToggleArchive,
-  canEditClosed = false,   // + NEW
+  canEditClosed = false,
+  onToggleSave,        // + NEW
+  savedIds,            // + NEW
+  saveActionLabel,     // + NEW
 }: {
   cases: CaseItem[];
   onView: (item: CaseItem) => void;
   onEdit: (item: CaseItem) => void;
   onToggleArchive: (item: CaseItem) => void;
-  canEditClosed?: boolean;   // + NEW
+  canEditClosed?: boolean;
+  onToggleSave?: (item: CaseItem) => void;   // + NEW
+  savedIds?: Set<number>;                    // + NEW
+  saveActionLabel?: string;                  // + NEW
 }) {
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
@@ -166,7 +172,10 @@ export function CaseTable({
                 onView={onView}
                 onEdit={onEdit}
                 onToggleArchive={onToggleArchive}
-                canEditClosed={canEditClosed}   // + NEW
+                canEditClosed={canEditClosed}
+                onToggleSave={onToggleSave}
+                isSaved={savedIds?.has(item.id) ?? false}
+                saveActionLabel={saveActionLabel}
               />
             ))}
 
