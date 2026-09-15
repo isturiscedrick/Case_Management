@@ -1,3 +1,6 @@
+from datetime import datetime, timezone
+from math import ceil
+
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
@@ -9,7 +12,19 @@ from app.schemas.auth import LoginRequest, UserCreate, UserPasswordReset, UserPr
 
 
 def login(db: Session, payload: LoginRequest) -> TokenResponse:
-    user = auth_manager.authenticate_user(db, payload.username, payload.password)
+    try:
+        user = auth_manager.authenticate_user(db, payload.username, payload.password)
+    except auth_manager.AccountLockedError as exc:
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
+        minutes_left = max(1, ceil((exc.unlock_at - now).total_seconds() / 60))
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=(
+                f"Too many failed login attempts. Try again in {minutes_left} "
+                f"minute{'s' if minutes_left != 1 else ''}."
+            ),
+        )
+
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect username or password.")
     if user.is_active != "Y":
@@ -74,6 +89,10 @@ def update_profile(db: Session, user, payload: UserProfileUpdate):
 
     if payload.password:
         fields["hashed_password"] = hash_password(payload.password)
+        # A self-service password change is as good as proving identity —
+        # clear any lockout/failed-attempt streak too.
+        fields["failed_login_attempts"] = 0
+        fields["locked_until"] = None
 
     user_crud.update_user(db, user, **fields)
     if payload.password:
@@ -89,6 +108,14 @@ def reset_password(db: Session, user_id: int, payload: UserPasswordReset):
     user = user_crud.get_user_by_id(db, user_id)
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found.")
-    user_crud.update_user(db, user, hashed_password=hash_password(payload.password))
+    # An admin-issued reset also clears any active lockout — otherwise a
+    # locked-out user with a brand new password would still be stuck
+    # waiting out the timer.
+    user_crud.update_user(
+        db, user,
+        hashed_password=hash_password(payload.password),
+        failed_login_attempts=0,
+        locked_until=None,
+    )
     notification_crud.resolve_for_user(db, user_id)
     db.commit()

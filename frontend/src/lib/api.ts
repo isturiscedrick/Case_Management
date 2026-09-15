@@ -47,6 +47,13 @@ export class LoginError extends Error {
   }
 }
 
+// NOTE: the backend now enforces a login-attempt lockout (3 wrong
+// passwords -> 15 minute lock, see auth_manager.py). Both the "wrong
+// password" case and the "account is locked" case come back as
+// different statuses (401 vs 403) with a specific `detail` message, so
+// this reads that message instead of hardcoding generic 403 text -
+// otherwise a locked-out user would only ever see "This account has
+// been deactivated," which is wrong and confusing.
 export async function login(username: string, password: string): Promise<LoginResponse> {
   const res = await fetch(`${API_BASE_URL}/api/auth/login`, {
     method: "POST",
@@ -55,13 +62,18 @@ export async function login(username: string, password: string): Promise<LoginRe
   });
 
   if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    const serverMessage = typeof body?.detail === "string" && body.detail.trim() ? body.detail : null;
+
     if (res.status === 401) {
-      throw new LoginError("Incorrect username or password.");
+      throw new LoginError(serverMessage ?? "Incorrect username or password.");
     }
     if (res.status === 403) {
-      throw new LoginError("This account has been deactivated.");
+      // Covers both "account deactivated" and "account locked out" -
+      // the backend's detail text already distinguishes the two.
+      throw new LoginError(serverMessage ?? "This account has been deactivated.");
     }
-    throw new LoginError("Unable to sign in right now. Please try again.");
+    throw new LoginError(serverMessage ?? "Unable to sign in right now. Please try again.");
   }
 
   return res.json();
