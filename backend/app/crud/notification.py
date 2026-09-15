@@ -3,6 +3,10 @@ from sqlalchemy.orm import Session
 from app.models.notification import Notification
 
 
+def get_notification(db: Session, notification_id: int) -> Notification | None:
+    return db.query(Notification).filter(Notification.notification_id == notification_id).first()
+
+
 def create_password_reset_request(db: Session, user_id: int, message: str) -> Notification:
     notification = Notification(
         user_id=user_id,
@@ -47,6 +51,38 @@ def create_password_changed_notification(db: Session, user_id: int) -> Notificat
     db.add(notification)
     db.flush()
     return notification
+
+
+# NEW — sent to ONE admin when a user's account gets newly locked out.
+# actor_user_id holds the locked-out user's id, reusing the existing
+# "actor" field to mean "who this notification concerns" rather than
+# strictly "who performed an action" — same field, same convention as
+# case_update notifications, just a different relationship.
+def create_account_lockout_notification(
+    db: Session, admin_user_id: int, message: str, actor_user_id: int
+) -> Notification:
+    notification = Notification(
+        user_id=admin_user_id,
+        notification_type="account_lockout",
+        message=message,
+        status="pending",
+        actor_user_id=actor_user_id,
+    )
+    db.add(notification)
+    db.flush()
+    return notification
+
+
+# NEW — when one admin disregards a lockout offense, every OTHER admin's
+# copy of that same lockout alert should also stop showing as pending,
+# so nobody double-handles (or gets confused by) a stale notification for
+# an offense that's already been cleared.
+def resolve_lockout_notifications_for_user(db: Session, actor_user_id: int) -> None:
+    db.query(Notification).filter(
+        Notification.notification_type == "account_lockout",
+        Notification.actor_user_id == actor_user_id,
+        Notification.status == "pending",
+    ).update({"status": "resolved", "resolved_at": datetime.utcnow()}, synchronize_session=False)
 
 
 def list_pending(db: Session):
@@ -112,11 +148,12 @@ def has_approved_password_reset(db: Session, user_id: int) -> bool:
 
 
 # NEW — nulls out actor_user_id on OTHER users' notifications where this
-# user was the actor (e.g. they updated someone else's case). Called from
+# user was the actor (e.g. they updated someone else's case, or this was
+# the locked-out user in an account_lockout notification). Called from
 # crud/user.py::delete_user before that user's own notifications (as
 # recipient) are deleted, so notifications belonging to other users
-# survive the deletion intact, just without a picture/name to show for
-# the now-gone actor.
+# survive the deletion intact, just without a picture/name/target to show
+# for the now-gone actor.
 def clear_actor_references(db: Session, actor_user_id: int) -> None:
     db.query(Notification).filter(Notification.actor_user_id == actor_user_id).update(
         {"actor_user_id": None}, synchronize_session=False

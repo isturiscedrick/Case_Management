@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Bell, User as UserIcon } from "lucide-react";
-import { decideNotification, fetchCurrentUser, fetchMyNotifications, fetchPendingNotifications, markNotificationRead, UnauthorizedError, type PasswordResetNotification } from "@/lib/api";
+import { decideNotification, disregardLockout, fetchCurrentUser, fetchMyNotifications, fetchPendingNotifications, markNotificationRead, UnauthorizedError, type PasswordResetNotification } from "@/lib/api";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 
 export default function NotificationsPage() {
@@ -14,6 +14,9 @@ export default function NotificationsPage() {
   const [dateEnd, setDateEnd] = useState("");
 
   const [confirmReadId, setConfirmReadId] = useState<number | null>(null);
+  // NEW — confirmation before clearing a user's lockout strike, since
+  // this is a meaningful account-security action.
+  const [confirmDisregardId, setConfirmDisregardId] = useState<number | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -68,6 +71,24 @@ export default function NotificationsPage() {
     }
   }
 
+  // NEW — "Disregard offense" flow for account_lockout alerts.
+  function requestDisregard(id: number) {
+    setConfirmDisregardId(id);
+  }
+
+  async function confirmDisregard() {
+    if (confirmDisregardId === null) return;
+    const id = confirmDisregardId;
+    setConfirmDisregardId(null);
+    try {
+      await disregardLockout(id);
+      // The backend also resolves every other admin's copy of this same
+      // alert, but this session only needs to drop its own.
+      setItems((current) => current.filter((item) => item.notification_id !== id));
+    } catch {
+    }
+  }
+
   function matchesDateRange(iso: string | null | undefined) {
     if (!dateStart && !dateEnd) return true;
     if (!iso) return false;
@@ -90,6 +111,8 @@ export default function NotificationsPage() {
   const hasDateFilter = !!(dateStart || dateEnd);
   const pendingReadItem =
     confirmReadId !== null ? items.find((item) => item.notification_id === confirmReadId) ?? null : null;
+  const pendingDisregardItem =
+    confirmDisregardId !== null ? items.find((item) => item.notification_id === confirmDisregardId) ?? null : null;
 
   return (
     <div className="min-h-full bg-[#F5F1E3] p-4 sm:p-6">
@@ -97,7 +120,7 @@ export default function NotificationsPage() {
         <p className="text-xs font-medium uppercase tracking-wide text-[#B08D57]">Account</p>
         <h1 className="mt-1 font-serif text-2xl font-medium text-[#12331F]">Notifications</h1>
         <p className="mt-1 text-sm text-slate-500">
-          {isAdmin ? "Review requests from users, and updates to cases you created." : "View notifications about your account."}
+          {isAdmin ? "Review requests from users, updates to cases you created, and account lockout alerts." : "View notifications about your account."}
         </p>
 
         {/* DATE RANGE FILTER */}
@@ -153,85 +176,105 @@ export default function NotificationsPage() {
             </p>
           ) : (
             <div className="space-y-2">
-              {filteredItems.map((item) => (
-                <div
-                  key={item.notification_id}
-                  className="flex flex-col gap-3 rounded-lg bg-slate-50 p-3 sm:flex-row sm:items-center sm:justify-between"
-                >
-                  <div className="flex items-start gap-3">
-                    <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[#B08D57]/40 bg-[#12331F] text-white">
-                      {/* Case-update alerts show the picture of whoever made the
-                          update (the actor), not the recipient's own picture. */}
-                      {item.notification_type === "case_update" && item.actor_profile_picture ? (
-                        <img src={item.actor_profile_picture} alt="" className="h-full w-full object-cover" />
-                      ) : item.notification_type !== "case_update" && item.user_profile_picture ? (
-                        <img src={item.user_profile_picture} alt="" className="h-full w-full object-cover" />
-                      ) : (
-                        <UserIcon size={12} />
-                      )}
-                    </div>
-                    <div>
-                      <p className="text-sm text-slate-600">{item.message}</p>
-                      <p
-                        className={`mt-1 text-xs font-medium ${
-                          item.status === "approved"
-                            ? "text-emerald-600"
-                            : item.status === "declined"
-                            ? "text-rose-600"
-                            : "text-amber-600"
-                        }`}
-                      >
-                        {item.status === "pending"
-                          ? "Pending"
-                          : item.status === "unread"
-                          ? "Unread"
-                          : item.status === "approved"
-                          ? "Approved"
-                          : item.status === "declined"
-                          ? "Declined"
-                          : item.status}
-                      </p>
-                      {item.created_at && (
-                        <p className="mt-0.5 text-[11px] text-slate-400">
-                          {new Date(item.created_at).toLocaleString()}
-                        </p>
-                      )}
-                    </div>
-                  </div>
+              {filteredItems.map((item) => {
+                const isLockoutAlert = item.notification_type === "account_lockout";
 
-                  {(item.notification_type === "case_update" && item.status === "unread") ||
-                  (item.notification_type === "password_reset" &&
-                    (item.status === "approved" || item.status === "declined")) ? (
-                    <button
-                      type="button"
-                      onClick={() => requestMarkRead(item.notification_id)}
-                      className="shrink-0 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-600 hover:bg-slate-50"
-                    >
-                      Mark as read
-                    </button>
-                  ) : (
-                    isAdmin &&
-                    item.status === "pending" && (
-                      <div className="flex gap-2">
-                        <button
-                          type="button"
-                          onClick={() => decide(item.notification_id, "decline")}
-                          className="rounded-lg border border-rose-200 px-3 py-2 text-xs font-medium text-rose-600 hover:bg-rose-50"
-                        >
-                          Decline
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => decide(item.notification_id, "approve")}
-                          className="rounded-lg bg-[#12331F] px-3 py-2 text-xs font-medium text-white hover:bg-[#1B4A2C]"
-                        >
-                          Approve
-                        </button>
+                return (
+                  <div
+                    key={item.notification_id}
+                    className={`flex flex-col gap-3 rounded-lg p-3 sm:flex-row sm:items-center sm:justify-between ${
+                      isLockoutAlert && item.status === "pending" ? "bg-rose-50" : "bg-slate-50"
+                    }`}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[#B08D57]/40 bg-[#12331F] text-white">
+                        {/* Case-update alerts show the picture of whoever made the
+                            update (the actor), not the recipient's own picture. */}
+                        {item.notification_type === "case_update" && item.actor_profile_picture ? (
+                          <img src={item.actor_profile_picture} alt="" className="h-full w-full object-cover" />
+                        ) : item.notification_type !== "case_update" && item.user_profile_picture ? (
+                          <img src={item.user_profile_picture} alt="" className="h-full w-full object-cover" />
+                        ) : (
+                          <UserIcon size={12} />
+                        )}
                       </div>
-                    )
-                  )}
-                </div>
-              ))}
+                      <div>
+                        <p className="text-sm text-slate-600">{item.message}</p>
+                        <p
+                          className={`mt-1 text-xs font-medium ${
+                            item.status === "approved"
+                              ? "text-emerald-600"
+                              : item.status === "declined"
+                              ? "text-rose-600"
+                              : isLockoutAlert && item.status === "pending"
+                              ? "text-rose-600"
+                              : "text-amber-600"
+                          }`}
+                        >
+                          {item.status === "pending"
+                            ? isLockoutAlert
+                              ? "Account locked"
+                              : "Pending"
+                            : item.status === "unread"
+                            ? "Unread"
+                            : item.status === "approved"
+                            ? "Approved"
+                            : item.status === "declined"
+                            ? "Declined"
+                            : item.status}
+                        </p>
+                        {item.created_at && (
+                          <p className="mt-0.5 text-[11px] text-slate-400">
+                            {new Date(item.created_at).toLocaleString()}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    {isLockoutAlert && item.status === "pending" ? (
+                      isAdmin && (
+                        <button
+                          type="button"
+                          onClick={() => requestDisregard(item.notification_id)}
+                          className="shrink-0 rounded-lg border border-rose-200 bg-white px-3 py-2 text-xs font-medium text-rose-700 hover:bg-rose-100"
+                        >
+                          Disregard offense
+                        </button>
+                      )
+                    ) : (item.notification_type === "case_update" && item.status === "unread") ||
+                      (item.notification_type === "password_reset" &&
+                        (item.status === "approved" || item.status === "declined")) ? (
+                      <button
+                        type="button"
+                        onClick={() => requestMarkRead(item.notification_id)}
+                        className="shrink-0 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-600 hover:bg-slate-50"
+                      >
+                        Mark as read
+                      </button>
+                    ) : (
+                      isAdmin &&
+                      item.status === "pending" && (
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => decide(item.notification_id, "decline")}
+                            className="rounded-lg border border-rose-200 px-3 py-2 text-xs font-medium text-rose-600 hover:bg-rose-50"
+                          >
+                            Decline
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => decide(item.notification_id, "approve")}
+                            className="rounded-lg bg-[#12331F] px-3 py-2 text-xs font-medium text-white hover:bg-[#1B4A2C]"
+                          >
+                            Approve
+                          </button>
+                        </div>
+                      )
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
         </section>
@@ -248,6 +291,20 @@ export default function NotificationsPage() {
           confirmLabel="Mark as read"
           onConfirm={confirmMarkRead}
           onCancel={() => setConfirmReadId(null)}
+        />
+      )}
+
+      {confirmDisregardId !== null && (
+        <ConfirmDialog
+          title="Disregard lockout offense"
+          message={
+            pendingDisregardItem
+              ? `Clear this offense and unlock the account now? This resets their strike count back to zero, so their next lockout starts over at 5 minutes.\n\n"${pendingDisregardItem.message}"`
+              : "Clear this offense and unlock the account now? This resets their strike count back to zero."
+          }
+          confirmLabel="Disregard offense"
+          onConfirm={confirmDisregard}
+          onCancel={() => setConfirmDisregardId(null)}
         />
       )}
     </div>

@@ -307,6 +307,13 @@ export async function markNotificationRead(id: number): Promise<PasswordResetNot
   return res.json();
 }
 
+// Admin-only — clears a user's login-lockout offense count and unlocks
+// them immediately. See backend/app/router/notification_router.py.
+export async function disregardLockout(id: number): Promise<PasswordResetNotification> {
+  const res = await authMutation(`/api/notifications/${id}/disregard-lockout`, "POST");
+  return res.json();
+}
+
 export async function fetchMyHistory(): Promise<HistoryOut[]> {
   const res = await authFetch("/api/history/me?page_size=100");
   return res.json();

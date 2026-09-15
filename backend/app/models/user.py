@@ -16,6 +16,8 @@ class User(Base):
     role = Column(SAEnum(UserRole), nullable=False, default=UserRole.handling_personnel)
     is_active = Column(String(1), nullable=False, default="Y")
     created_at = Column(DateTime, server_default=func.now())
-    
+
     failed_login_attempts = Column(Integer, nullable=False, default=0)
+
     locked_until = Column(DateTime, nullable=True)
+    lockout_offense_count = Column(Integer, nullable=False, default=0)
