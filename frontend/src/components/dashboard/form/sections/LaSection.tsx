@@ -380,20 +380,21 @@ export function LaSection({
           >
             <div className="mt-3 grid gap-4 sm:grid-cols-3">
               <Field label="Specify LA Progress">
-                <input
-                  className={inputCls}
-                  placeholder="Enter progress"
-                  value={
-                    value.caseProgress
-                      .laSpecification ?? ""
-                  }
-                  onChange={(e) =>
-                    setProgressSpecification(
-                      "la",
-                      e.target.value
-                    )
-                  }
-                />
+               <textarea
+                 rows={3}
+                 className={inputCls}
+                 placeholder="Enter progress"
+                 value={
+                   value.caseProgress
+                     .laSpecification ?? ""
+                 }
+                 onChange={(e) =>
+                   setProgressSpecification(
+                     "la",
+                     e.target.value
+                  )
+                 }
+               />
               </Field>
             </div>
           </fieldset>

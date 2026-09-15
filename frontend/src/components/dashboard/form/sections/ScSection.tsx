@@ -234,7 +234,8 @@ export function ScSection({
           ) && (
             <div className="mt-3 grid gap-4 sm:grid-cols-3">
               <Field label="Specify SC Progress">
-                <input
+                <textarea
+                  rows={3}
                   className={inputCls}
                   placeholder="Enter progress"
                   value={
@@ -244,7 +245,7 @@ export function ScSection({
                   onChange={(e) =>
                     setProgressSpecification(
                       "sc",
-                      e.target.value
+                     e.target.value
                     )
                   }
                 />

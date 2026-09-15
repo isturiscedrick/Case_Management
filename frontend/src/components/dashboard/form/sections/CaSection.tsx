@@ -425,7 +425,8 @@ export function CaSection({
           >
             <div className="mt-3 grid gap-4 sm:grid-cols-3">
               <Field label="Specify CA Progress">
-                <input
+                <textarea
+                  rows={3}
                   className={inputCls}
                   placeholder="Enter progress"
                   value={
@@ -439,8 +440,8 @@ export function CaSection({
                       e.target.value,
                     )
                   }
-                />
-              </Field>
+               />
+             </Field>
             </div>
           </fieldset>
         )}
