@@ -53,6 +53,10 @@ export default function ProfilePage() {
     reader.readAsDataURL(file);
   }
 
+  function handleRemovePicture() {
+    setProfilePicture(null);
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!isEditing || !isDirty) return;
@@ -150,7 +154,19 @@ export default function ProfilePage() {
               </label>
               <input id="profile-picture" type="file" accept="image/*" disabled={!isEditing} className="sr-only" onChange={handlePictureChange} />
             </div>
-            <div><h2 className="text-sm font-semibold text-[#12331F]">Profile picture</h2><p className="mt-1 text-xs text-slate-500">Use an image up to 2 MB.</p></div>
+            <div>
+              <h2 className="text-sm font-semibold text-[#12331F]">Profile picture</h2>
+              <p className="mt-1 text-xs text-slate-500">Use an image up to 2 MB.</p>
+              {isEditing && profilePicture && (
+                <button
+                  type="button"
+                  onClick={handleRemovePicture}
+                  className="mt-2 text-xs font-medium text-rose-600 underline-offset-2 hover:text-rose-700 hover:underline"
+                >
+                  Remove picture
+                </button>
+              )}
+            </div>
           </div>
 
           <div className="mt-6 grid gap-4 sm:grid-cols-2">
