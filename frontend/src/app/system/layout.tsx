@@ -4,9 +4,11 @@ import { CasesProvider } from "@/context/CasesContext";
 export default function SystemLayout({ children }: { children: React.ReactNode }) {
   return (
     <CasesProvider>
-      <div className="min-h-screen w-full bg-[#F5F1E3]">
+      <div className="flex h-screen w-full flex-col bg-[#F5F1E3] md:flex-row">
         <Sidebar />
-        <main className="min-h-screen min-w-0 overflow-y-auto pl-0 md:pl-60">{children}</main>
+        <main className="h-full min-w-0 flex-1 overflow-hidden pl-0 pt-14 md:pl-60 md:pt-0">
+          {children}
+        </main>
       </div>
     </CasesProvider>
   );
