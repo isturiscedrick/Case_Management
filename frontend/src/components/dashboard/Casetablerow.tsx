@@ -118,9 +118,13 @@ export function CaseTableRow({
       <td className="bg-yellow-50/30 p-2 text-slate-600">{formatDate(item.filingDate)}</td>
 
       {/* Remarks */}
-      <td className="truncate border-r border-slate-100 bg-yellow-50/30 p-2 text-slate-600">
-        {item.remarks}
-        {item.remarkSpecification && <div className="text-[10px] text-slate-500">({item.remarkSpecification})</div>}
+      <td className="border-r border-slate-100 bg-yellow-50/30 p-2 text-slate-600">
+        <div className="truncate">{item.remarks}</div>
+      {item.remarkSpecification && (
+        <div className="whitespace-pre-wrap break-words text-[10px] text-slate-500">
+      ({item.remarkSpecification})
+    </div>
+       )}
       </td>
 
          {/* LABOR ARBITER */}
