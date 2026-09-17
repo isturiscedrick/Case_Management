@@ -6,7 +6,7 @@ from app.crud import case_lock as case_lock_crud
 from app.models.case_lock import CaseLock
 from app.models.user import User
 
-LOCK_TIMEOUT_SECONDS = 300
+LOCK_TIMEOUT_SECONDS = 60
 
 def _naive_utcnow() -> datetime:
     # DB columns are naive DATETIME (server_default now()); compare naive-to-naive.

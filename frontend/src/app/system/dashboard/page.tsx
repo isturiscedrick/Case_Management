@@ -12,8 +12,9 @@ import {
   acquireCaseLock,
   heartbeatCaseLock,
   releaseCaseLock,
+  releaseCaseLockOnUnload,
   LockConflictError,
-} from "@/lib/api"; 
+} from "@/lib/api";
 
 import { cloneDraft, getCaseStatusSummary, getTotalJudgmentAward, type CaseStatusSummary } from "@/lib/caseHelpers";
 import { getCaseDraftErrors, getStageGates } from "@/lib/caseValidation";
@@ -142,11 +143,24 @@ export default function CasesPage() {
     }
   };
 
-  useEffect(() => {
-    return () => {
-      void releaseLockIfHeld();
-    };
-  }, []);
+useEffect(() => {
+  const handleUnload = () => {
+    if (lockedCaseIdRef.current !== null) {
+      releaseCaseLockOnUnload(lockedCaseIdRef.current);
+    }
+  };
+
+  // pagehide covers tab close, refresh, and back/forward nav more reliably
+  // than beforeunload alone across browsers (especially mobile Safari).
+  window.addEventListener("pagehide", handleUnload);
+  window.addEventListener("beforeunload", handleUnload);
+
+  return () => {
+    window.removeEventListener("pagehide", handleUnload);
+    window.removeEventListener("beforeunload", handleUnload);
+    void releaseLockIfHeld();
+  };
+}, []);
 
   /* =======================================================
      FILTER STATE

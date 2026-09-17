@@ -403,3 +403,15 @@ export async function heartbeatCaseLock(caseId: number): Promise<CaseLockOut> {
 export async function releaseCaseLock(caseId: number): Promise<void> {
   await lockMutation(`/api/cases/${caseId}/lock`, "DELETE");
 }
+
+export function releaseCaseLockOnUnload(caseId: number) {
+  try {
+    fetch(`${API_BASE_URL}/api/cases/${caseId}/lock`, {
+      method: "DELETE",
+      keepalive: true,
+      headers: { "Content-Type": "application/json", ...authHeaders() },
+    });
+  } catch {
+    // ignore — best-effort
+  }
+}

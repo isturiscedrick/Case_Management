@@ -13,6 +13,7 @@ import {
   acquireCaseLock,
   heartbeatCaseLock,
   releaseCaseLock,
+  releaseCaseLockOnUnload,
   LockConflictError,
 } from "@/lib/api";
 import { loadSavedIds, saveSavedIds } from "@/lib/savedCases";
@@ -161,13 +162,23 @@ export default function MyCasesPage() {
     }
   };
 
-  useEffect(() => {
-    return () => {
-      void releaseLockIfHeld();
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+useEffect(() => {
+  const handleUnload = () => {
+    if (lockedCaseIdRef.current !== null) {
+      releaseCaseLockOnUnload(lockedCaseIdRef.current);
+    }
+  };
 
+  window.addEventListener("pagehide", handleUnload);
+  window.addEventListener("beforeunload", handleUnload);
+
+  return () => {
+    window.removeEventListener("pagehide", handleUnload);
+    window.removeEventListener("beforeunload", handleUnload);
+    void releaseLockIfHeld();
+  };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, []);
   /* =======================================================
      FILTER STATE — same shape as the Dashboard, plus Source
   ======================================================= */
