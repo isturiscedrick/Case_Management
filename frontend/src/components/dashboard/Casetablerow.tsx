@@ -137,7 +137,7 @@ export function CaseTableRow({
           <div className="text-[10px] text-slate-500">({item.la.remarksSpecification})</div>
         )}
       </td>
-      <td className="truncate bg-sky-50/30 p-2 text-slate-600">
+      <td className="whitespace-pre-wrap break-words bg-sky-50/30 p-2 text-slate-600">
         {formatProgress(item.caseProgress.la, item.caseProgress.laSpecification)}
       </td>
 
@@ -151,7 +151,7 @@ export function CaseTableRow({
           <div className="text-[10px] text-slate-500">({item.nlrc.remarksSpecification})</div>
         )}
       </td>
-      <td className="truncate bg-violet-50/30 p-2 text-slate-600">
+      <td className="whitespace-pre-wrap break-words bg-violet-50/30 p-2 text-slate-600">
         {formatProgress(item.caseProgress.nlrc, item.caseProgress.nlrcSpecification)}
       </td>
 
@@ -165,7 +165,7 @@ export function CaseTableRow({
           <div className="text-[10px] text-slate-500">({item.ca.remarksSpecification})</div>
         )}
       </td>
-      <td className="truncate bg-green-50/30 p-2 text-slate-600">
+      <td className="whitespace-pre-wrap break-words bg-green-50/30 p-2 text-slate-600">
         {formatProgress(item.caseProgress.ca, item.caseProgress.caSpecification)}
       </td>
 
@@ -179,7 +179,7 @@ export function CaseTableRow({
           <div className="text-[10px] text-slate-500">({item.sc.remarksSpecification})</div>
         )}
       </td>
-      <td className="truncate bg-pink-50/30 p-2 text-slate-600">
+      <td className="whitespace-pre-wrap break-words bg-pink-50/30 p-2 text-slate-600">
         {formatProgress(item.caseProgress.sc, item.caseProgress.scSpecification)}
       </td>
 
