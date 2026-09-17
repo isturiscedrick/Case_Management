@@ -1,8 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ClipboardList, Search, User as UserIcon } from "lucide-react";
 import { fetchCurrentUser, fetchDecidedNotifications, fetchMyHistory, fetchMyNotifications, UnauthorizedError, type HistoryOut, type PasswordResetNotification } from "@/lib/api";
+
+const PAGE_SIZE = 9;
+
+type CaseActionItem =
+  | { kind: "password"; sortKey: string; data: PasswordResetNotification }
+  | { kind: "history"; sortKey: string; data: HistoryOut };
+
+type SectionFilter = "All" | "Case actions" | "Request decisions";
+const SECTION_FILTERS: SectionFilter[] = ["All", "Case actions", "Request decisions"];
 
 export default function ActivityPage() {
   const [items, setItems] = useState<PasswordResetNotification[]>([]);
@@ -17,6 +26,14 @@ export default function ActivityPage() {
   const [dateEnd, setDateEnd] = useState("");
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+
+  // + NEW — which section(s) to show: mirrors the "SHOW" pill filter used
+  // on My Cases (All My Cases / Created by me / Saved).
+  const [sectionFilter, setSectionFilter] = useState<SectionFilter>("All");
+
+  // + NEW — independent pagination for each section, 9 items per page.
+  const [casePage, setCasePage] = useState(1);
+  const [requestPage, setRequestPage] = useState(1);
 
   useEffect(() => {
     async function load() {
@@ -83,23 +100,87 @@ export default function ActivityPage() {
     })
     .sort((a, b) => byNewestFirst(a.resolved_at ?? a.created_at, b.resolved_at ?? b.created_at));
 
+  // + NEW — merge case actions and password-change events into one
+  // newest-first feed so pagination covers the section as a whole rather
+  // than two separately-paginated lists stacked on top of each other.
+  const combinedCaseActions: CaseActionItem[] = useMemo(() => {
+    const passwordItems: CaseActionItem[] = filteredPasswordChanges.map((notification) => ({
+      kind: "password",
+      sortKey: notification.resolved_at ?? notification.created_at ?? "",
+      data: notification,
+    }));
+    const historyItems: CaseActionItem[] = filteredActions.map((action) => ({
+      kind: "history",
+      sortKey: action.created_at ?? "",
+      data: action,
+    }));
+    return [...passwordItems, ...historyItems].sort((a, b) => byNewestFirst(a.sortKey, b.sortKey));
+  }, [filteredPasswordChanges, filteredActions]);
+
   const hasDateFilter = !!(dateStart || dateEnd);
 
+  const showCaseActions = sectionFilter === "All" || sectionFilter === "Case actions";
+  const showRequestDecisions = sectionFilter === "All" || sectionFilter === "Request decisions";
+
+  // + NEW — reset both pages whenever a filter changes, so a stale page
+  // number never leaves someone staring at an empty page after filtering.
+  useEffect(() => {
+    setCasePage(1);
+    setRequestPage(1);
+  }, [search, actionFilter, statusFilter, dateStart, dateEnd, sectionFilter]);
+
+  const caseTotalPages = Math.max(1, Math.ceil(combinedCaseActions.length / PAGE_SIZE));
+  const paginatedCaseActions = combinedCaseActions.slice((casePage - 1) * PAGE_SIZE, casePage * PAGE_SIZE);
+
+  const requestTotalPages = Math.max(1, Math.ceil(filteredNotifications.length / PAGE_SIZE));
+  const paginatedNotifications = filteredNotifications.slice((requestPage - 1) * PAGE_SIZE, requestPage * PAGE_SIZE);
+
+  useEffect(() => {
+    setCasePage((page) => Math.min(page, caseTotalPages));
+  }, [caseTotalPages]);
+
+  useEffect(() => {
+    setRequestPage((page) => Math.min(page, requestTotalPages));
+  }, [requestTotalPages]);
+
   return (
-    <div className="min-h-full bg-[#F5F1E3] p-4 sm:p-6">
+    <div className="h-full overflow-y-auto bg-[#F5F1E3] p-4 sm:p-6">
       <div className="mx-auto max-w-3xl">
         <p className="text-xs font-medium uppercase tracking-wide text-[#B08D57]">Account</p>
         <h1 className="mt-1 font-serif text-2xl font-medium text-[#12331F]">My Activity</h1>
         <p className="mt-1 text-sm text-slate-500">{isAdmin ? "Review decisions made on password reset requests." : "Only actions and account events performed by you are shown here."}</p>
 
-        <div className="mt-5 flex flex-col gap-2 rounded-xl border border-slate-200 bg-white p-3 shadow-sm sm:flex-row sm:flex-wrap">
+        {/* + NEW — SHOW pill filter, same pattern as My Cases' source filter */}
+        <div className="mt-5 flex items-center gap-2 rounded-xl border border-slate-200 bg-white p-2 shadow-sm">
+          <span className="ml-1 text-[11px] font-medium uppercase tracking-wide text-slate-400">Show</span>
+          {SECTION_FILTERS.map((option) => (
+            <button
+              key={option}
+              type="button"
+              onClick={() => setSectionFilter(option)}
+              className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${
+                sectionFilter === option
+                  ? "bg-[#12331F] text-white"
+                  : "text-slate-600 hover:bg-slate-100"
+              }`}
+            >
+              {option === "All" ? "All Activities" : option}
+            </button>
+          ))}
+        </div>
+
+        <div className="mt-3 flex flex-col gap-2 rounded-xl border border-slate-200 bg-white p-3 shadow-sm sm:flex-row sm:flex-wrap">
           <div className="relative flex-1"><Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" /><input aria-label="Search activity" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search activity, case number, company, or user" className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm text-slate-700 outline-none focus:border-[#12331F] focus:bg-white focus:ring-2 focus:ring-[#12331F]/10" /></div>
-          <select value={actionFilter} onChange={(event) => setActionFilter(event.target.value)} aria-label="Filter case actions" className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 outline-none focus:border-[#12331F] focus:bg-white">
-            <option value="All">All case actions</option><option value="created">Created</option><option value="updated">Updated</option><option value="archived">Archived</option><option value="restored">Restored</option><option value="changed_password">Changed password</option>
-          </select>
-          <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} aria-label="Filter notification status" className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 outline-none focus:border-[#12331F] focus:bg-white">
-            <option value="All">All request statuses</option><option value="pending">Pending</option><option value="approved">Approved</option><option value="declined">Declined</option><option value="resolved">Resolved</option>
-          </select>
+          {showCaseActions && (
+            <select value={actionFilter} onChange={(event) => setActionFilter(event.target.value)} aria-label="Filter case actions" className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 outline-none focus:border-[#12331F] focus:bg-white">
+              <option value="All">All case actions</option><option value="created">Created</option><option value="updated">Updated</option><option value="archived">Archived</option><option value="restored">Restored</option><option value="changed_password">Changed password</option>
+            </select>
+          )}
+          {showRequestDecisions && (
+            <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} aria-label="Filter notification status" className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 outline-none focus:border-[#12331F] focus:bg-white">
+              <option value="All">All request statuses</option><option value="pending">Pending</option><option value="approved">Approved</option><option value="declined">Declined</option><option value="resolved">Resolved</option>
+            </select>
+          )}
 
           <div className="flex items-center gap-1.5">
             <label className="text-xs font-medium text-slate-500">Date</label>
@@ -135,89 +216,153 @@ export default function ActivityPage() {
           </div>
         </div>
 
-        <section className="mt-5 rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-          <div className="mb-4 flex items-center gap-3 border-b border-slate-100 pb-4">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#12331F] text-[#B08D57]"><ClipboardList className="h-4 w-4" /></div>
-            <div><h2 className="text-sm font-semibold text-[#12331F]">{isAdmin ? "Request decisions" : "Password reset requests"}</h2><p className="mt-1 text-xs text-slate-500">{isAdmin ? "Approved and declined requests appear here." : "Requests sent to an administrator appear here."}</p></div>
-          </div>
-          {loading ? <p className="text-sm text-slate-400">Loading activity...</p> : filteredNotifications.length === 0 ? <p className="text-sm text-slate-400">No password reset activity matches your filters.</p> : (
-            <div className="space-y-2">
-              {filteredNotifications.map((item) => (
-                <div key={item.notification_id} className="flex items-center justify-between rounded-lg bg-slate-50 p-3">
-                  <div className="flex items-center gap-2.5">
-                    <div className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[#B08D57]/40 bg-[#12331F] text-white">
-                      {item.user_profile_picture ? (
-                        <img src={item.user_profile_picture} alt="" className="h-full w-full object-cover" />
-                      ) : (
-                        <UserIcon size={11} />
-                      )}
-                    </div>
-                    <p className="text-sm text-slate-600">{item.message}</p>
-                  </div>
-                  <span className={`ml-3 shrink-0 text-xs font-medium ${item.status === "pending" ? "text-amber-600" : item.status === "approved" ? "text-emerald-600" : item.status === "declined" ? "text-rose-600" : "text-slate-500"}`}>
-                    {item.status === "pending" ? "Pending" : item.status === "approved" ? "Approved" : item.status === "declined" ? "Declined" : "Resolved"}
-                  </span>
-                </div>
-              ))}
+        {/* CASE ACTIONS */}
+        {showCaseActions && (
+          <section className="mt-5 rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+            <div className="mb-4 flex items-center gap-3 border-b border-slate-100 pb-4">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#12331F] text-[#B08D57]"><ClipboardList className="h-4 w-4" /></div>
+              <div><h2 className="text-sm font-semibold text-[#12331F]">Case actions</h2><p className="mt-1 text-xs text-slate-500">Cases you created, updated, archived, or restored — plus your own password changes.</p></div>
             </div>
-          )}
-        </section>
+            {loading ? (
+              <p className="text-sm text-slate-400">Loading actions...</p>
+            ) : combinedCaseActions.length === 0 ? (
+              <p className="text-sm text-slate-400">No case actions match your filters.</p>
+            ) : (
+              <>
+                <div className="space-y-2">
+                  {paginatedCaseActions.map((entry) =>
+                    entry.kind === "password" ? (
+                      <div key={`pw-${entry.data.notification_id}`} className="flex items-start gap-3 rounded-lg bg-slate-50 p-3 sm:items-center sm:justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[#B08D57]/40 bg-[#12331F] text-white">
+                            {entry.data.user_profile_picture ? (
+                              <img src={entry.data.user_profile_picture} alt="" className="h-full w-full object-cover" />
+                            ) : (
+                              <UserIcon size={12} />
+                            )}
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-slate-700">Changed password</p>
+                            <p className="text-xs text-slate-500">Your account</p>
+                          </div>
+                        </div>
+                        <time className="shrink-0 text-xs text-slate-400">
+                          {entry.data.resolved_at || entry.data.created_at
+                            ? new Date(entry.data.resolved_at ?? entry.data.created_at!).toLocaleString()
+                            : ""}
+                        </time>
+                      </div>
+                    ) : (
+                      <div key={entry.data.history_id} className="flex items-start gap-3 rounded-lg bg-slate-50 p-3 sm:items-center sm:justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[#B08D57]/40 bg-[#12331F] text-white">
+                            {entry.data.performed_by_profile_picture ? (
+                              <img src={entry.data.performed_by_profile_picture} alt="" className="h-full w-full object-cover" />
+                            ) : (
+                              <UserIcon size={12} />
+                            )}
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium capitalize text-slate-700">{entry.data.action} case {entry.data.case_no}</p>
+                            <p className="text-xs text-slate-500">{entry.data.company}{entry.data.detail ? ` - ${entry.data.detail}` : ""}</p>
+                          </div>
+                        </div>
+                        <time className="shrink-0 text-xs text-slate-400">{entry.data.created_at ? new Date(entry.data.created_at).toLocaleString() : ""}</time>
+                      </div>
+                    )
+                  )}
+                </div>
 
-        <section className="mt-5 rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-          <div className="mb-4 border-b border-slate-100 pb-4">
-            <h2 className="text-sm font-semibold text-[#12331F]">Case actions</h2>
-            <p className="mt-1 text-xs text-slate-500">Cases you created, updated, archived, or restored — plus your own password changes.</p>
-          </div>
-          {loading ? (
-            <p className="text-sm text-slate-400">Loading actions...</p>
-          ) : filteredActions.length === 0 && filteredPasswordChanges.length === 0 ? (
-            <p className="text-sm text-slate-400">No case actions match your filters.</p>
-          ) : (
-            <div className="space-y-2">
-              {filteredPasswordChanges.map((notification) => (
-                <div key={`pw-${notification.notification_id}`} className="flex items-start gap-3 rounded-lg bg-slate-50 p-3 sm:items-center sm:justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[#B08D57]/40 bg-[#12331F] text-white">
-                      {notification.user_profile_picture ? (
-                        <img src={notification.user_profile_picture} alt="" className="h-full w-full object-cover" />
-                      ) : (
-                        <UserIcon size={12} />
-                      )}
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-slate-700">Changed password</p>
-                      <p className="text-xs text-slate-500">Your account</p>
+                {combinedCaseActions.length > PAGE_SIZE && (
+                  <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3">
+                    <p className="text-xs text-slate-500">
+                      Showing {(casePage - 1) * PAGE_SIZE + 1}–{Math.min(casePage * PAGE_SIZE, combinedCaseActions.length)} of {combinedCaseActions.length}
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setCasePage((page) => Math.max(1, page - 1))}
+                        disabled={casePage === 1}
+                        className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        Previous
+                      </button>
+                      <span className="text-xs font-medium text-slate-500">Page {casePage} of {caseTotalPages}</span>
+                      <button
+                        type="button"
+                        onClick={() => setCasePage((page) => Math.min(caseTotalPages, page + 1))}
+                        disabled={casePage === caseTotalPages}
+                        className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        Next
+                      </button>
                     </div>
                   </div>
-                  <time className="shrink-0 text-xs text-slate-400">
-                    {notification.resolved_at || notification.created_at
-                      ? new Date(notification.resolved_at ?? notification.created_at!).toLocaleString()
-                      : ""}
-                  </time>
-                </div>
-              ))}
+                )}
+              </>
+            )}
+          </section>
+        )}
 
-              {filteredActions.map((action) => (
-                <div key={action.history_id} className="flex items-start gap-3 rounded-lg bg-slate-50 p-3 sm:items-center sm:justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[#B08D57]/40 bg-[#12331F] text-white">
-                      {action.performed_by_profile_picture ? (
-                        <img src={action.performed_by_profile_picture} alt="" className="h-full w-full object-cover" />
-                      ) : (
-                        <UserIcon size={12} />
-                      )}
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium capitalize text-slate-700">{action.action} case {action.case_no}</p>
-                      <p className="text-xs text-slate-500">{action.company}{action.detail ? ` - ${action.detail}` : ""}</p>
-                    </div>
-                  </div>
-                  <time className="shrink-0 text-xs text-slate-400">{action.created_at ? new Date(action.created_at).toLocaleString() : ""}</time>
-                </div>
-              ))}
+        {/* REQUEST DECISIONS / PASSWORD RESET REQUESTS */}
+        {showRequestDecisions && (
+          <section className="mt-5 rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+            <div className="mb-4 flex items-center gap-3 border-b border-slate-100 pb-4">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#12331F] text-[#B08D57]"><ClipboardList className="h-4 w-4" /></div>
+              <div><h2 className="text-sm font-semibold text-[#12331F]">{isAdmin ? "Request decisions" : "Password reset requests"}</h2><p className="mt-1 text-xs text-slate-500">{isAdmin ? "Approved and declined requests appear here." : "Requests sent to an administrator appear here."}</p></div>
             </div>
-          )}
-        </section>
+            {loading ? <p className="text-sm text-slate-400">Loading activity...</p> : filteredNotifications.length === 0 ? <p className="text-sm text-slate-400">No password reset activity matches your filters.</p> : (
+              <>
+                <div className="space-y-2">
+                  {paginatedNotifications.map((item) => (
+                    <div key={item.notification_id} className="flex items-center justify-between rounded-lg bg-slate-50 p-3">
+                      <div className="flex items-center gap-2.5">
+                        <div className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[#B08D57]/40 bg-[#12331F] text-white">
+                          {item.user_profile_picture ? (
+                            <img src={item.user_profile_picture} alt="" className="h-full w-full object-cover" />
+                          ) : (
+                            <UserIcon size={11} />
+                          )}
+                        </div>
+                        <p className="text-sm text-slate-600">{item.message}</p>
+                      </div>
+                      <span className={`ml-3 shrink-0 text-xs font-medium ${item.status === "pending" ? "text-amber-600" : item.status === "approved" ? "text-emerald-600" : item.status === "declined" ? "text-rose-600" : "text-slate-500"}`}>
+                        {item.status === "pending" ? "Pending" : item.status === "approved" ? "Approved" : item.status === "declined" ? "Declined" : "Resolved"}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+
+                {filteredNotifications.length > PAGE_SIZE && (
+                  <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3">
+                    <p className="text-xs text-slate-500">
+                      Showing {(requestPage - 1) * PAGE_SIZE + 1}–{Math.min(requestPage * PAGE_SIZE, filteredNotifications.length)} of {filteredNotifications.length}
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setRequestPage((page) => Math.max(1, page - 1))}
+                        disabled={requestPage === 1}
+                        className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        Previous
+                      </button>
+                      <span className="text-xs font-medium text-slate-500">Page {requestPage} of {requestTotalPages}</span>
+                      <button
+                        type="button"
+                        onClick={() => setRequestPage((page) => Math.min(requestTotalPages, page + 1))}
+                        disabled={requestPage === requestTotalPages}
+                        className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        Next
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </section>
+        )}
       </div>
     </div>
   );

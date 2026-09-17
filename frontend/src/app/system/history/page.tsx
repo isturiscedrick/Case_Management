@@ -28,6 +28,8 @@ const ACTION_STYLES: Record<HistoryAction, { label: string; badge: string; dot: 
 
 const ACTION_FILTERS: Array<"All" | HistoryAction> = ["All", "created", "updated", "archived", "restored"];
 
+const PAGE_SIZE = 18;
+
 function formatTimestamp(iso: string) {
   const d = new Date(iso);
   return d.toLocaleString(undefined, {
@@ -48,6 +50,7 @@ export default function HistoryPage() {
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [ownHistory, setOwnHistory] = useState<HistoryEntry[]>([]);
   const [ownHistoryLoading, setOwnHistoryLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     let cancelled = false;
@@ -96,6 +99,17 @@ export default function HistoryPage() {
       })
       .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
   }, [history, search, actionFilter, dateStart, dateEnd]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const paginated = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, actionFilter, dateStart, dateEnd]);
+
+  useEffect(() => {
+    setCurrentPage((page) => Math.min(page, totalPages));
+  }, [totalPages]);
 
   // + NEW
   const activeFilterCount =
@@ -193,7 +207,7 @@ export default function HistoryPage() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((entry) => {
+                {paginated.map((entry) => {
                   const style = ACTION_STYLES[entry.action];
                   return (
                     <tr key={entry.id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50">
@@ -235,6 +249,39 @@ export default function HistoryPage() {
               </tbody>
             </table>
           </div>
+
+          {filtered.length > 0 && (
+            <div className="flex items-center justify-between gap-3 border-t border-slate-100 bg-white px-4 py-2.5">
+              <p className="text-xs text-slate-500">
+                Showing {(currentPage - 1) * PAGE_SIZE + 1}
+                –{Math.min(currentPage * PAGE_SIZE, filtered.length)} of {filtered.length}
+              </p>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+                  disabled={currentPage === 1}
+                  className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Previous
+                </button>
+
+                <span className="text-xs font-medium text-slate-500">
+                  Page {currentPage} of {totalPages}
+                </span>
+
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+                  disabled={currentPage === totalPages}
+                  className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Archive, Search } from "lucide-react";
 
 import type { CaseItem, StageProgress } from "@/types/case";
@@ -12,6 +12,8 @@ import { Modal } from "@/components/shared/Modal";
 import { ArchiveConfirmDialog } from "@/components/dashboard/ArchiveConfirmDialog";
 import { ViewCaseContent } from "@/components/shared/ViewCaseContent";
 import { CaseTableRow } from "@/components/dashboard/CaseTableRow";
+
+const PAGE_SIZE = 9;
 
 export default function ArchivePage() {
   const { cases, toggleArchive } = useCases();
@@ -25,6 +27,7 @@ export default function ArchivePage() {
 
   const [viewItem, setViewItem] = useState<CaseItem | null>(null);
   const [restoreItem, setRestoreItem] = useState<CaseItem | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const archivedCases = useMemo(() => cases.filter((item) => item.archived), [cases]);
 
@@ -61,6 +64,20 @@ export default function ArchivePage() {
       );
     });
   }, [archivedCases, search, progressFilter, statusFilter, filingDateStart, filingDateEnd, closedDateStart, closedDateEnd]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredCases.length / PAGE_SIZE));
+  const paginatedCases = filteredCases.slice(
+    (currentPage - 1) * PAGE_SIZE,
+    currentPage * PAGE_SIZE
+  );
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, progressFilter, statusFilter, filingDateStart, filingDateEnd, closedDateStart, closedDateEnd]);
+
+  useEffect(() => {
+    setCurrentPage((page) => Math.min(page, totalPages));
+  }, [totalPages]);
 
   const activeFilterCount =
     [progressFilter, statusFilter].filter((filter) => filter !== "All").length +
@@ -361,7 +378,7 @@ export default function ArchivePage() {
               </thead>
 
               <tbody>
-                {filteredCases.map((item) => (
+                {paginatedCases.map((item) => (
                   <CaseTableRow
                     key={item.id}
                     item={item}
@@ -382,6 +399,39 @@ export default function ArchivePage() {
               </tbody>
             </table>
           </div>
+
+          {filteredCases.length > 0 && (
+            <div className="flex items-center justify-between gap-3 border-t border-slate-100 bg-white px-4 py-2.5">
+              <p className="text-xs text-slate-500">
+                Showing {(currentPage - 1) * PAGE_SIZE + 1}
+                –{Math.min(currentPage * PAGE_SIZE, filteredCases.length)} of {filteredCases.length}
+              </p>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+                  disabled={currentPage === 1}
+                  className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Previous
+                </button>
+
+                <span className="text-xs font-medium text-slate-500">
+                  Page {currentPage} of {totalPages}
+                </span>
+
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+                  disabled={currentPage === totalPages}
+                  className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

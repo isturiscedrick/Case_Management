@@ -5,6 +5,8 @@ import { Bell, User as UserIcon } from "lucide-react";
 import { decideNotification, disregardLockout, fetchCurrentUser, fetchMyNotifications, fetchPendingNotifications, markNotificationRead, UnauthorizedError, type PasswordResetNotification } from "@/lib/api";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 
+const PAGE_SIZE = 9;
+
 export default function NotificationsPage() {
   const [items, setItems] = useState<PasswordResetNotification[]>([]);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -14,9 +16,9 @@ export default function NotificationsPage() {
   const [dateEnd, setDateEnd] = useState("");
 
   const [confirmReadId, setConfirmReadId] = useState<number | null>(null);
-  // NEW — confirmation before clearing a user's lockout strike, since
-  // this is a meaningful account-security action.
   const [confirmDisregardId, setConfirmDisregardId] = useState<number | null>(null);
+
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     async function load() {
@@ -71,7 +73,6 @@ export default function NotificationsPage() {
     }
   }
 
-  // NEW — "Disregard offense" flow for account_lockout alerts.
   function requestDisregard(id: number) {
     setConfirmDisregardId(id);
   }
@@ -82,8 +83,6 @@ export default function NotificationsPage() {
     setConfirmDisregardId(null);
     try {
       await disregardLockout(id);
-      // The backend also resolves every other admin's copy of this same
-      // alert, but this session only needs to drop its own.
       setItems((current) => current.filter((item) => item.notification_id !== id));
     } catch {
     }
@@ -108,6 +107,17 @@ export default function NotificationsPage() {
     [items, dateStart, dateEnd]
   );
 
+  const totalPages = Math.max(1, Math.ceil(filteredItems.length / PAGE_SIZE));
+  const paginatedItems = filteredItems.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [dateStart, dateEnd]);
+
+  useEffect(() => {
+    setCurrentPage((page) => Math.min(page, totalPages));
+  }, [totalPages]);
+
   const hasDateFilter = !!(dateStart || dateEnd);
   const pendingReadItem =
     confirmReadId !== null ? items.find((item) => item.notification_id === confirmReadId) ?? null : null;
@@ -115,53 +125,55 @@ export default function NotificationsPage() {
     confirmDisregardId !== null ? items.find((item) => item.notification_id === confirmDisregardId) ?? null : null;
 
   return (
-    <div className="min-h-full bg-[#F5F1E3] p-4 sm:p-6">
-      <div className="mx-auto max-w-3xl">
-        <p className="text-xs font-medium uppercase tracking-wide text-[#B08D57]">Account</p>
-        <h1 className="mt-1 font-serif text-2xl font-medium text-[#12331F]">Notifications</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          {isAdmin ? "Review requests from users, updates to cases you created, and account lockout alerts." : "View notifications about your account."}
-        </p>
+    <div className="flex h-full min-w-0 flex-col overflow-hidden bg-[#F5F1E3] p-4 sm:p-6">
+      <div className="mx-auto flex h-full w-full max-w-3xl min-h-0 flex-col">
+        <div className="shrink-0">
+          <p className="text-xs font-medium uppercase tracking-wide text-[#B08D57]">Account</p>
+          <h1 className="mt-1 font-serif text-2xl font-medium text-[#12331F]">Notifications</h1>
+          <p className="mt-1 text-sm text-slate-500">
+            {isAdmin ? "Review requests from users, updates to cases you created, and account lockout alerts." : "View notifications about your account."}
+          </p>
 
-        {/* DATE RANGE FILTER */}
-        <div className="mt-5 flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
-          <label className="text-xs font-medium text-slate-500">Date</label>
-          <input
-            type="date"
-            value={dateStart}
-            onChange={(event) => setDateStart(event.target.value)}
-            max={dateEnd || undefined}
-            aria-label="Notifications start date"
-            className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs text-slate-700 outline-none transition focus:border-[#12331F] focus:bg-white"
-          />
-          <span className="text-xs text-slate-400">to</span>
-          <input
-            type="date"
-            value={dateEnd}
-            onChange={(event) => setDateEnd(event.target.value)}
-            min={dateStart || undefined}
-            aria-label="Notifications end date"
-            className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs text-slate-700 outline-none transition focus:border-[#12331F] focus:bg-white"
-          />
-          {hasDateFilter && (
-            <button
-              type="button"
-              onClick={() => {
-                setDateStart("");
-                setDateEnd("");
-              }}
-              className="text-xs text-slate-400 underline hover:text-slate-600"
-            >
-              Clear
-            </button>
-          )}
-          <span className="ml-auto text-[11px] text-slate-400">
-            Showing {filteredItems.length} of {items.length}
-          </span>
+          {/* DATE RANGE FILTER */}
+          <div className="mt-5 flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+            <label className="text-xs font-medium text-slate-500">Date</label>
+            <input
+              type="date"
+              value={dateStart}
+              onChange={(event) => setDateStart(event.target.value)}
+              max={dateEnd || undefined}
+              aria-label="Notifications start date"
+              className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs text-slate-700 outline-none transition focus:border-[#12331F] focus:bg-white"
+            />
+            <span className="text-xs text-slate-400">to</span>
+            <input
+              type="date"
+              value={dateEnd}
+              onChange={(event) => setDateEnd(event.target.value)}
+              min={dateStart || undefined}
+              aria-label="Notifications end date"
+              className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs text-slate-700 outline-none transition focus:border-[#12331F] focus:bg-white"
+            />
+            {hasDateFilter && (
+              <button
+                type="button"
+                onClick={() => {
+                  setDateStart("");
+                  setDateEnd("");
+                }}
+                className="text-xs text-slate-400 underline hover:text-slate-600"
+              >
+                Clear
+              </button>
+            )}
+            <span className="ml-auto text-[11px] text-slate-400">
+              Showing {filteredItems.length} of {items.length}
+            </span>
+          </div>
         </div>
 
-        <section className="mt-3 rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-          <div className="mb-4 flex items-center gap-3 border-b border-slate-100 pb-4">
+        <section className="mt-3 flex min-h-0 flex-1 flex-col rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+          <div className="mb-4 flex shrink-0 items-center gap-3 border-b border-slate-100 pb-4">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#12331F] text-[#B08D57]">
               <Bell className="h-4 w-4" />
             </div>
@@ -175,8 +187,8 @@ export default function NotificationsPage() {
               {items.length === 0 ? "No notifications." : "No notifications match the selected date range."}
             </p>
           ) : (
-            <div className="space-y-2">
-              {filteredItems.map((item) => {
+            <div className="min-h-0 flex-1 space-y-2 overflow-y-auto pr-1">
+              {paginatedItems.map((item) => {
                 const isLockoutAlert = item.notification_type === "account_lockout";
 
                 return (
@@ -188,8 +200,6 @@ export default function NotificationsPage() {
                   >
                     <div className="flex items-start gap-3">
                       <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[#B08D57]/40 bg-[#12331F] text-white">
-                        {/* Case-update alerts show the picture of whoever made the
-                            update (the actor), not the recipient's own picture. */}
                         {item.notification_type === "case_update" && item.actor_profile_picture ? (
                           <img src={item.actor_profile_picture} alt="" className="h-full w-full object-cover" />
                         ) : item.notification_type !== "case_update" && item.user_profile_picture ? (
@@ -277,36 +287,41 @@ export default function NotificationsPage() {
               })}
             </div>
           )}
+
+          {filteredItems.length > 0 && (
+            <div className="mt-4 flex shrink-0 items-center justify-between gap-3 border-t border-slate-100 pt-3">
+              <p className="text-xs text-slate-500">
+                Showing {(currentPage - 1) * PAGE_SIZE + 1}
+                –{Math.min(currentPage * PAGE_SIZE, filteredItems.length)} of {filteredItems.length}
+              </p>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+                  disabled={currentPage === 1}
+                  className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Previous
+                </button>
+
+                <span className="text-xs font-medium text-slate-500">
+                  Page {currentPage} of {totalPages}
+                </span>
+
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+                  disabled={currentPage === totalPages}
+                  className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          )}
         </section>
       </div>
-
-      {confirmReadId !== null && (
-        <ConfirmDialog
-          title="Mark as read"
-          message={
-            pendingReadItem
-              ? `Mark "${pendingReadItem.message}" as read? It will be removed from this list.`
-              : "Mark this notification as read? It will be removed from this list."
-          }
-          confirmLabel="Mark as read"
-          onConfirm={confirmMarkRead}
-          onCancel={() => setConfirmReadId(null)}
-        />
-      )}
-
-      {confirmDisregardId !== null && (
-        <ConfirmDialog
-          title="Disregard lockout offense"
-          message={
-            pendingDisregardItem
-              ? `Clear this offense and unlock the account now? This resets their strike count back to zero, so their next lockout starts over at 5 minutes.\n\n"${pendingDisregardItem.message}"`
-              : "Clear this offense and unlock the account now? This resets their strike count back to zero."
-          }
-          confirmLabel="Disregard offense"
-          onConfirm={confirmDisregard}
-          onCancel={() => setConfirmDisregardId(null)}
-        />
-      )}
     </div>
   );
 }
