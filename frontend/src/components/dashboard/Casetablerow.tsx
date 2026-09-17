@@ -121,7 +121,7 @@ export function CaseTableRow({
       <td className="border-r border-slate-100 bg-yellow-50/30 p-2 text-slate-600">
         <div className="truncate">{item.remarks}</div>
       {item.remarkSpecification && (
-        <div className="whitespace-pre-wrap break-words text-[10px] text-slate-500">
+        <div className="whitespace-pre-wrap wrap-break-word text-[10px] text-slate-500">
       ({item.remarkSpecification})
     </div>
        )}
@@ -137,7 +137,7 @@ export function CaseTableRow({
           <div className="text-[10px] text-slate-500">({item.la.remarksSpecification})</div>
         )}
       </td>
-      <td className="whitespace-pre-wrap break-words bg-sky-50/30 p-2 text-slate-600">
+      <td className="whitespace-pre-wrap wrap-break-word bg-sky-50/30 p-2 text-slate-600">
         {formatProgress(item.caseProgress.la, item.caseProgress.laSpecification)}
       </td>
 
@@ -151,7 +151,7 @@ export function CaseTableRow({
           <div className="text-[10px] text-slate-500">({item.nlrc.remarksSpecification})</div>
         )}
       </td>
-      <td className="whitespace-pre-wrap break-words bg-violet-50/30 p-2 text-slate-600">
+      <td className="whitespace-pre-wrap wrap-break-word bg-violet-50/30 p-2 text-slate-600">
         {formatProgress(item.caseProgress.nlrc, item.caseProgress.nlrcSpecification)}
       </td>
 
@@ -165,7 +165,7 @@ export function CaseTableRow({
           <div className="text-[10px] text-slate-500">({item.ca.remarksSpecification})</div>
         )}
       </td>
-      <td className="whitespace-pre-wrap break-words bg-green-50/30 p-2 text-slate-600">
+      <td className="whitespace-pre-wrap wrap-break-word bg-green-50/30 p-2 text-slate-600">
         {formatProgress(item.caseProgress.ca, item.caseProgress.caSpecification)}
       </td>
 
@@ -179,7 +179,7 @@ export function CaseTableRow({
           <div className="text-[10px] text-slate-500">({item.sc.remarksSpecification})</div>
         )}
       </td>
-      <td className="whitespace-pre-wrap break-words bg-pink-50/30 p-2 text-slate-600">
+      <td className="whitespace-pre-wrap wrap-break-word bg-pink-50/30 p-2 text-slate-600">
         {formatProgress(item.caseProgress.sc, item.caseProgress.scSpecification)}
       </td>
 
