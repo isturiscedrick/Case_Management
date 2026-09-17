@@ -46,17 +46,15 @@ const CATEGORY_META: Record<TotalPaidCategory, { label: string; dot: string; hex
   Settlement: { label: "Settlement", dot: "bg-amber-500", hex: "#f59e0b", text: "text-amber-700" },
 };
 
-// Cycled through for the per-company chart, since the number of companies
-// is dynamic and can't be given fixed Tailwind classes ahead of time.
 const COMPANY_CHART_COLORS = [
-  "#0ea5e9", // sky
-  "#f59e0b", // amber
-  "#10b981", // emerald
-  "#f43f5e", // rose
-  "#8b5cf6", // violet
-  "#ec4899", // fuchsia
-  "#14b8a6", // teal
-  "#64748b", // slate
+  "#0ea5e9",
+  "#f59e0b", 
+  "#10b981", 
+  "#f43f5e", 
+  "#8b5cf6", 
+  "#ec4899", 
+  "#14b8a6", 
+  "#64748b", 
 ];
 
 function isStageFilled(stage: CaseItem["la"]) {
@@ -89,11 +87,6 @@ function getStageProgressValue(item: CaseItem, stage: StageKey): string {
   return item.caseProgress[stage];
 }
 
-// "Closed" is the case-level lock flag (set via "Close Case" in the form,
-// see CaseForm.tsx -> setTop("closed", true)). It takes priority over
-// stage/remarks progress, mirroring how getCaseStatusSummary() in
-// caseHelpers.ts treats it — a closed case's current stage should read
-// "Closed" regardless of what progress value that stage was left at.
 function classifyStatus(item: CaseItem, stage: StageKey): StatusBucket {
   if (item.closed) return "Closed";
 
@@ -108,8 +101,6 @@ function parseAmount(value: string | number | undefined | null) {
   return Number.isFinite(n) ? n : 0;
 }
 
-// Date range comparison assumes ISO-ish (yyyy-mm-dd) strings, which is what
-// the date inputs elsewhere in the app (filingDate, stage dates) produce.
 function isWithinRange(dateStr: string | undefined, start: string, end: string) {
   if (!dateStr) return !start && !end;
   if (start && dateStr < start) return false;
@@ -117,10 +108,6 @@ function isWithinRange(dateStr: string | undefined, start: string, end: string) 
   return true;
 }
 
-// Renders a set of value/color segments as a crisp SVG ring — used in place
-// of a CSS conic-gradient string so edges stay sharp at any size/zoom and
-// there's a single source of truth (no separate gradient string to keep in
-// sync with the segment data).
 function DonutChart({
   segments,
   size = 144,
@@ -164,10 +151,6 @@ function DonutChart({
   );
 }
 
-// Shared section header — icon chip + serif title + one-line subtitle.
-// Matches the pattern already used elsewhere in the app (Add User form,
-// Notifications panel) instead of the three different ad hoc header
-// treatments this page previously had.
 function SectionTitle({
   icon: Icon,
   title,
@@ -263,7 +246,6 @@ export default function AnalyticsPage() {
     [categoryTotals]
   );
 
-  // Case count per company, for the "Cases by Company" chart below.
   const companyBreakdown = useMemo(() => {
     const map = new Map<string, number>();
     cases.forEach((item) => {
@@ -284,7 +266,6 @@ export default function AnalyticsPage() {
     [companyBreakdown]
   );
 
-  // Cases handled per personnel — name plus the case titles they're on
   const personnelBreakdown = useMemo(() => {
     const map = new Map<string, { caseTitle: string; caseNo: string }[]>();
     cases.forEach((item) => {

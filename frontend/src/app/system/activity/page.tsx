@@ -16,8 +16,6 @@ const SECTION_FILTERS: SectionFilter[] = ["All", "Case actions", "Request decisi
 export default function ActivityPage() {
   const [items, setItems] = useState<PasswordResetNotification[]>([]);
   const [caseActions, setCaseActions] = useState<HistoryOut[]>([]);
-  // + NEW — this user's own "password changed" events, shown merged into
-  // the case-actions feed below rather than the password-reset-request list.
   const [passwordChanges, setPasswordChanges] = useState<PasswordResetNotification[]>([]);
   const [search, setSearch] = useState("");
   const [actionFilter, setActionFilter] = useState("All");
@@ -26,12 +24,7 @@ export default function ActivityPage() {
   const [dateEnd, setDateEnd] = useState("");
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
-
-  // + NEW — which section(s) to show: mirrors the "SHOW" pill filter used
-  // on My Cases (All My Cases / Created by me / Saved).
   const [sectionFilter, setSectionFilter] = useState<SectionFilter>("All");
-
-  // + NEW — independent pagination for each section, 9 items per page.
   const [casePage, setCasePage] = useState(1);
   const [requestPage, setRequestPage] = useState(1);
 
@@ -122,8 +115,6 @@ export default function ActivityPage() {
   const showCaseActions = sectionFilter === "All" || sectionFilter === "Case actions";
   const showRequestDecisions = sectionFilter === "All" || sectionFilter === "Request decisions";
 
-  // + NEW — reset both pages whenever a filter changes, so a stale page
-  // number never leaves someone staring at an empty page after filtering.
   useEffect(() => {
     setCasePage(1);
     setRequestPage(1);

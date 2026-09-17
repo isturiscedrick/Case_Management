@@ -150,8 +150,6 @@ useEffect(() => {
     }
   };
 
-  // pagehide covers tab close, refresh, and back/forward nav more reliably
-  // than beforeunload alone across browsers (especially mobile Safari).
   window.addEventListener("pagehide", handleUnload);
   window.addEventListener("beforeunload", handleUnload);
 
