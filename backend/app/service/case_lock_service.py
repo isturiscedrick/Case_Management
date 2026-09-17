@@ -6,10 +6,7 @@ from app.crud import case_lock as case_lock_crud
 from app.models.case_lock import CaseLock
 from app.models.user import User
 
-# Frontend heartbeats every ~20s (per product decision) — 60s gives it two
-# missed beats of grace before another user can reclaim the lock.
-LOCK_TIMEOUT_SECONDS = 60
-
+LOCK_TIMEOUT_SECONDS = 300
 
 def _naive_utcnow() -> datetime:
     # DB columns are naive DATETIME (server_default now()); compare naive-to-naive.

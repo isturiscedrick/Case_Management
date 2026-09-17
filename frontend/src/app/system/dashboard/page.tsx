@@ -29,8 +29,7 @@ import { ArchiveConfirmDialog } from "@/components/dashboard/ArchiveConfirmDialo
 import { isSenaOnlyCase } from "@/components/shared/caseTableHelpers";
 
 const HEARTBEAT_INTERVAL_MS = 20_000;
-
-// + NEW — pagination page size for the case table.
+const LOCK_TIMEOUT_MS = 5 * 60 * 1000;
 const PAGE_SIZE = 10;
 
 /* =========================================================

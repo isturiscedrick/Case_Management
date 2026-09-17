@@ -27,9 +27,8 @@ import { SaveConfirmDialog } from "@/components/dashboard/SaveConfirmDialog";
 import { ArchiveConfirmDialog } from "@/components/dashboard/ArchiveConfirmDialog";
 import { isSenaOnlyCase } from "@/components/shared/caseTableHelpers";
 
-// How often we ping the server to keep an acquired edit lock alive — same
-// interval and rationale as the Dashboard (case_lock_service.py::LOCK_TIMEOUT_SECONDS = 60s).
 const HEARTBEAT_INTERVAL_MS = 20_000;
+const LOCK_TIMEOUT_MS = 5 * 60 * 1000;
 const PAGE_SIZE = 10;
 
 type SourceFilter = "All" | "Created" | "Saved";
@@ -99,8 +98,14 @@ export default function MyCasesPage() {
   ======================================================= */
 
   const [lockedByUsername, setLockedByUsername] = useState<string | null>(null);
+
   const lockedCaseIdRef = useRef<number | null>(null);
   const heartbeatIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Timestamp of the last heartbeat that actually succeeded. Used to give
+  // heartbeat failures a grace period instead of exiting on the very first
+  // missed beat (a single dropped request shouldn't kick someone out of a
+  // form they're actively filling in).
+  const lastHeartbeatSuccessRef = useRef<number>(0);
 
   const stopHeartbeat = () => {
     if (heartbeatIntervalRef.current !== null) {
@@ -111,14 +116,29 @@ export default function MyCasesPage() {
 
   const startHeartbeat = (caseId: number) => {
     stopHeartbeat();
+    lastHeartbeatSuccessRef.current = Date.now();
     heartbeatIntervalRef.current = setInterval(async () => {
       try {
         await heartbeatCaseLock(caseId);
+        lastHeartbeatSuccessRef.current = Date.now();
       } catch (error) {
+        // A LockConflictError is a definitive server response — someone
+        // else has already reclaimed the lock, so there's no point waiting.
+        // Any other error (network blip, transient 5xx, tab asleep, etc.)
+        // is ambiguous, so only give up once LOCK_TIMEOUT_MS has passed
+        // without a single successful heartbeat — matching the server's
+        // own staleness window (case_lock_service.py::LOCK_TIMEOUT_SECONDS).
+        const isDefiniteLoss = error instanceof LockConflictError;
+        const timedOut = Date.now() - lastHeartbeatSuccessRef.current >= LOCK_TIMEOUT_MS;
+
+        if (!isDefiniteLoss && !timedOut) {
+          return;
+        }
+
         stopHeartbeat();
         lockedCaseIdRef.current = null;
         alert(
-          error instanceof LockConflictError
+          isDefiniteLoss
             ? `${error.message} Your unsaved changes were not saved — please reopen the case to see the latest version.`
             : "Lost the edit lock for this case. Please reopen it."
         );
