@@ -1,5 +1,5 @@
 import type { CaseItem } from "@/types/case";
-import { Archive, ArchiveRestore, Lock, RefreshCw } from "lucide-react";
+import { Archive, ArchiveRestore, Bookmark, BookmarkCheck, Lock, RefreshCw } from "lucide-react";
 import { Modal } from "@/components/shared/Modal";
 import { ViewCaseContent } from "@/components/shared/ViewCaseContent";
 
@@ -10,6 +10,9 @@ export function ViewCaseModal({
   onEdit,
   onToggleArchive,
   canEditClosed = false,
+  onToggleSave,
+  isSaved = false,
+  saveActionLabel,
 }: {
   item: CaseItem;
   onClose: () => void;
@@ -22,10 +25,16 @@ export function ViewCaseModal({
   onToggleArchive?: (item: CaseItem) => void;
   // Admins can still update a closed case (mirrors CaseTableRow).
   canEditClosed?: boolean;
+  // + NEW — bookmark ("Save to My Cases") action, same shape as CaseTableRow.
+  onToggleSave?: (item: CaseItem) => void;
+  isSaved?: boolean;
+  saveActionLabel?: string;
 }) {
   const isUpdateLocked = !!item.closed && !canEditClosed;
+  const defaultSaveLabel = isSaved ? "Remove from My Cases" : "Save to My Cases";
+  const saveLabel = saveActionLabel ?? defaultSaveLabel;
 
-  const headerActions = (onEdit || onToggleArchive) && (
+  const headerActions = (onEdit || onToggleSave || onToggleArchive) && (
     <div className="flex items-center gap-2">
       {onEdit && (
         <button
@@ -41,6 +50,22 @@ export function ViewCaseModal({
         >
           <RefreshCw size={13} />
           Update
+        </button>
+      )}
+
+      {onToggleSave && (
+        <button
+          type="button"
+          onClick={() => onToggleSave(item)}
+          title={saveLabel}
+          className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition ${
+            isSaved
+              ? "border-[#B08D57]/40 bg-[#B08D57]/10 text-[#B08D57] hover:bg-[#B08D57]/20"
+              : "border-slate-200 text-slate-600 hover:border-[#B08D57]/40 hover:bg-[#B08D57]/10 hover:text-[#B08D57]"
+          }`}
+        >
+          {isSaved ? <BookmarkCheck size={13} /> : <Bookmark size={13} />}
+          {isSaved ? "Saved" : "Save"}
         </button>
       )}
 

@@ -658,6 +658,8 @@ useEffect(() => {
           onEdit={openEdit}
           onToggleArchive={requestToggleArchive}
           canEditClosed={isAdmin}
+          onToggleSave={toggleSave}
+          isSaved={savedIds.has(activeCase.id)}
         />
       )}
 
