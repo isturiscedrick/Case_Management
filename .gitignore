@@ -12,3 +12,4 @@ frontend/out/
 # System files
 .DS_Store
 Thumbs.db
+backend/credentials_output.csv
