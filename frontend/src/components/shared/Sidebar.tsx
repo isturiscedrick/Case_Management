@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Bell, ClipboardList, LayoutDashboard, History, Archive, BarChart3, Scale, ChevronRight, ChevronsLeft, LogOut, User, UserPlus, Briefcase, Menu } from "lucide-react";
@@ -248,15 +249,18 @@ export default function Sidebar() {
           </button>
         </div>
 
-        {showLogoutDialog && (
-          <ConfirmDialog
-            title="Log out"
-            message="Are you sure you want to log out of CMI Case Management?"
-            confirmLabel="Log out"
-            onConfirm={handleLogout}
-            onCancel={() => setShowLogoutDialog(false)}
-          />
-        )}
+        {showLogoutDialog &&
+          typeof document !== "undefined" &&
+          createPortal(
+            <ConfirmDialog
+              title="Log out"
+              message="Are you sure you want to log out of CMI Case Management?"
+              confirmLabel="Log out"
+              onConfirm={handleLogout}
+              onCancel={() => setShowLogoutDialog(false)}
+            />,
+            document.body
+          )}
       </aside>
     </>
   );
