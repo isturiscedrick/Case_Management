@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Archive, Search } from "lucide-react";
+import { Archive, ArchiveRestore, Search } from "lucide-react";
 
 import type { CaseItem, StageProgress } from "@/types/case";
 import { TABLE_COLUMN_COUNT } from "@/constants/caseOptions";
@@ -437,7 +437,24 @@ export default function ArchivePage() {
 
       {/* VIEW MODAL */}
       {viewItem && (
-        <Modal title={`${viewItem.caseNo} · ${viewItem.company}`} onClose={() => setViewItem(null)} wide>
+        <Modal
+          title={`${viewItem.caseNo} · ${viewItem.company}`}
+          onClose={() => setViewItem(null)}
+          wide
+          headerActions={
+            <button
+              type="button"
+              onClick={() => {
+                setRestoreItem(viewItem);
+                setViewItem(null);
+              }}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:border-amber-200 hover:bg-amber-50 hover:text-amber-600"
+            >
+              <ArchiveRestore size={13} />
+              Restore
+            </button>
+          }
+        >
           <ViewCaseContent item={viewItem} />
         </Modal>
       )}

@@ -655,6 +655,9 @@ useEffect(() => {
           item={activeCase}
           onClose={closeModal}
           lockedByUsername={lockedByUsername ?? undefined}
+          onEdit={openEdit}
+          onToggleArchive={requestToggleArchive}
+          canEditClosed={isAdmin}
         />
       )}
 

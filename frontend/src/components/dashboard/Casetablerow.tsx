@@ -65,7 +65,10 @@ export function CaseTableRow({
   const saveLabel = saveActionLabel ?? defaultSaveLabel;
 
   return (
-    <tr className="group border-b border-slate-100 last:border-0 hover:bg-slate-50">
+    <tr
+      className="group cursor-pointer border-b border-slate-100 last:border-0 hover:bg-slate-50"
+      onDoubleClick={() => onView(item)}
+    >
       {/* Case ID */}
       <td className="sticky left-0 z-10 border-r border-slate-200 bg-white p-2 font-mono text-[11px] text-slate-500 group-hover:bg-slate-50">
       {item.id}

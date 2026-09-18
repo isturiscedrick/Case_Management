@@ -73,6 +73,28 @@ export default function NotificationsPage() {
     }
   }
 
+  // + NEW — same eligibility rule as the per-item "Mark as read" button:
+  // unread case updates, plus already-decided password reset requests.
+  const readableItems = useMemo(
+    () =>
+      items.filter(
+        (item) =>
+          (item.notification_type === "case_update" && item.status === "unread") ||
+          (item.notification_type === "password_reset" &&
+            (item.status === "approved" || item.status === "declined"))
+      ),
+    [items]
+  );
+
+  async function markAllAsRead() {
+    const ids = readableItems.map((item) => item.notification_id);
+    try {
+      await Promise.all(ids.map((id) => markNotificationRead(id)));
+      setItems((current) => current.filter((item) => !ids.includes(item.notification_id)));
+    } catch {
+    }
+  }
+
   function requestDisregard(id: number) {
     setConfirmDisregardId(id);
   }
@@ -166,9 +188,20 @@ export default function NotificationsPage() {
                 Clear
               </button>
             )}
-            <span className="ml-auto text-[11px] text-slate-400">
-              Showing {filteredItems.length} of {items.length}
-            </span>
+            <div className="ml-auto flex items-center gap-3">
+              {readableItems.length > 0 && (
+                <button
+                  type="button"
+                  onClick={markAllAsRead}
+                  className="text-xs font-medium text-[#12331F] underline-offset-2 hover:text-[#B08D57] hover:underline"
+                >
+                  Mark all as read ({readableItems.length})
+                </button>
+              )}
+              <span className="text-[11px] text-slate-400">
+                Showing {filteredItems.length} of {items.length}
+              </span>
+            </div>
           </div>
         </div>
 

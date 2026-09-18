@@ -7,12 +7,14 @@ export function Modal({
   children,
   footer,
   wide,
+  headerActions,
 }: {
   title: string;
   onClose: () => void;
   children: React.ReactNode;
   footer?: React.ReactNode;
   wide?: boolean;
+  headerActions?: React.ReactNode;
 }) {
   const titleId = useId();
   const closeButtonRef = useRef<HTMLButtonElement>(null);
@@ -38,11 +40,14 @@ export function Modal({
         className={`flex max-h-[92vh] w-full ${wide ? "max-w-4xl" : "max-w-lg"} flex-col overflow-hidden rounded-2xl border border-white/70 bg-white shadow-2xl`}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+        <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-6 py-4">
           <h2 id={titleId} className="font-serif text-lg font-medium text-[#12331F]">{title}</h2>
-          <button ref={closeButtonRef} type="button" onClick={onClose} aria-label="Close dialog" className="rounded-lg p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700">
-            <X size={18} />
-          </button>
+          <div className="flex items-center gap-2">
+            {headerActions}
+            <button ref={closeButtonRef} type="button" onClick={onClose} aria-label="Close dialog" className="rounded-lg p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700">
+              <X size={18} />
+            </button>
+          </div>
         </div>
         <div className="flex-1 overflow-y-auto px-6 py-5">{children}</div>
         {footer && <div className="flex justify-end gap-2 border-t border-slate-100 px-6 py-4">{footer}</div>}

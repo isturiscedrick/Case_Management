@@ -681,7 +681,14 @@ useEffect(() => {
 
       {/* VIEW CASE MODAL (also the read-only "locked by X" view) */}
       {modal === "view" && activeCase && (
-        <ViewCaseModal item={activeCase} onClose={closeModal} lockedByUsername={lockedByUsername ?? undefined} />
+        <ViewCaseModal
+          item={activeCase}
+          onClose={closeModal}
+          lockedByUsername={lockedByUsername ?? undefined}
+          onEdit={openEdit}
+          onToggleArchive={requestToggleArchive}
+          canEditClosed={isAdmin}
+        />
       )}
 
       {/* EDIT CASE MODAL */}
