@@ -263,7 +263,7 @@ export default function ActivityPage() {
               <p className="text-sm text-slate-400">No activity matches your filters.</p>
             ) : (
               <>
-                <div className="max-h-[28rem] space-y-2 overflow-y-auto pr-1">
+                <div className="max-h-112 space-y-2 overflow-y-auto pr-1">
                   {paginatedAllItems.map((entry) => {
                     if (entry.kind === "password") {
                       return (
@@ -374,7 +374,7 @@ export default function ActivityPage() {
               <p className="text-sm text-slate-400">No case actions match your filters.</p>
             ) : (
               <>
-                <div className="max-h-[28rem] space-y-2 overflow-y-auto pr-1">
+                <div className="max-h-112 space-y-2 overflow-y-auto pr-1">
                   {paginatedCaseActions.map((entry) =>
                     entry.kind === "password" ? (
                       <div key={`pw-${entry.data.notification_id}`} className="flex items-start gap-3 rounded-lg bg-slate-50 p-3 sm:items-center sm:justify-between">
@@ -458,7 +458,7 @@ export default function ActivityPage() {
             </div>
             {loading ? <p className="text-sm text-slate-400">Loading activity...</p> : filteredNotifications.length === 0 ? <p className="text-sm text-slate-400">No password reset activity matches your filters.</p> : (
               <>
-                <div className="max-h-[28rem] space-y-2 overflow-y-auto pr-1">
+                <div className="max-h-112 space-y-2 overflow-y-auto pr-1">
                   {paginatedNotifications.map((item) => (
                     <div key={item.notification_id} className="flex items-center justify-between rounded-lg bg-slate-50 p-3">
                       <div className="flex items-center gap-2.5">

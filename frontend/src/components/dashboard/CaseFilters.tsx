@@ -76,7 +76,7 @@ export function CaseFilters({
       {/* MAIN FILTER ROW */}
       <div className="flex flex-wrap gap-2">
         {/* Search */}
-        <div className="relative min-w-[180px] flex-1 basis-full sm:basis-[220px]">
+        <div className="relative min-w-45 flex-1 basis-full sm:basis-55">
           <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
 
           <input
