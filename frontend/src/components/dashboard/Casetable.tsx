@@ -3,6 +3,50 @@ import { TABLE_COLUMN_COUNT } from "@/constants/caseOptions";
 import { CaseTableRow } from "@/components/dashboard/CaseTableRow";
 import { CaseCardList } from "@/components/dashboard/CaseCardList";
 
+export type CaseTablePagination = {
+  currentPage: number;
+  totalPages: number;
+  onPrevious: () => void;
+  onNext: () => void;
+  rangeStart: number;
+  rangeEnd: number;
+  totalCount: number;
+};
+
+function PaginationFooter({ pagination }: { pagination: CaseTablePagination }) {
+  return (
+    <div className="flex items-center justify-between gap-3 border-t border-slate-100 bg-white px-4 py-2.5">
+      <p className="text-xs text-slate-500">
+        Showing {pagination.rangeStart}–{pagination.rangeEnd} of {pagination.totalCount}
+      </p>
+
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={pagination.onPrevious}
+          disabled={pagination.currentPage === 1}
+          className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          Previous
+        </button>
+
+        <span className="text-xs font-medium text-slate-500">
+          Page {pagination.currentPage} of {pagination.totalPages}
+        </span>
+
+        <button
+          type="button"
+          onClick={pagination.onNext}
+          disabled={pagination.currentPage === pagination.totalPages}
+          className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          Next
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function CaseTable({
   cases,
   onView,
@@ -12,6 +56,7 @@ export function CaseTable({
   onToggleSave,
   savedIds,
   saveActionLabel,
+  pagination,
 }: {
   cases: CaseItem[];
   onView: (item: CaseItem) => void;
@@ -21,21 +66,29 @@ export function CaseTable({
   onToggleSave?: (item: CaseItem) => void;
   savedIds?: Set<number>;
   saveActionLabel?: string;
+  // When provided, a "Showing X–Y of Z / Previous · Page N of M · Next"
+  // footer is attached flush to the bottom of the table/card list — same
+  // treatment as the Archive page — instead of the caller rendering its
+  // own separate pagination card below CaseTable.
+  pagination?: CaseTablePagination;
 }) {
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
       {/* MOBILE: card list (below sm breakpoint) */}
-      <div className="min-h-0 flex-1 overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-sm sm:hidden">
-        <CaseCardList
-          cases={cases}
-          onView={onView}
-          onEdit={onEdit}
-          onToggleArchive={onToggleArchive}
-          canEditClosed={canEditClosed}
-          onToggleSave={onToggleSave}
-          savedIds={savedIds}
-          saveActionLabel={saveActionLabel}
-        />
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm sm:hidden">
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          <CaseCardList
+            cases={cases}
+            onView={onView}
+            onEdit={onEdit}
+            onToggleArchive={onToggleArchive}
+            canEditClosed={canEditClosed}
+            onToggleSave={onToggleSave}
+            savedIds={savedIds}
+            saveActionLabel={saveActionLabel}
+          />
+        </div>
+        {pagination && <PaginationFooter pagination={pagination} />}
       </div>
 
       {/* DESKTOP / TABLET: full table (sm breakpoint and up) */}
@@ -207,6 +260,8 @@ export function CaseTable({
             </tbody>
           </table>
         </div>
+
+        {pagination && <PaginationFooter pagination={pagination} />}
       </div>
     </div>
   );

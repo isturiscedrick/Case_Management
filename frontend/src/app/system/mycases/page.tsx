@@ -631,38 +631,20 @@ useEffect(() => {
             canEditClosed={isAdmin}
             onToggleSave={toggleSave}
             savedIds={savedIds}
+            pagination={
+              filteredCases.length > 0
+                ? {
+                    currentPage,
+                    totalPages,
+                    onPrevious: () => setCurrentPage((page) => Math.max(1, page - 1)),
+                    onNext: () => setCurrentPage((page) => Math.min(totalPages, page + 1)),
+                    rangeStart: (currentPage - 1) * PAGE_SIZE + 1,
+                    rangeEnd: Math.min(currentPage * PAGE_SIZE, filteredCases.length),
+                    totalCount: filteredCases.length,
+                  }
+                : undefined
+            }
           />
-
-          {filteredCases.length > 0 && (
-            <div className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-4 py-2.5 shadow-sm">
-              <p className="text-xs text-slate-500">
-                Showing {(currentPage - 1) * PAGE_SIZE + 1}
-                –{Math.min(currentPage * PAGE_SIZE, filteredCases.length)} of {filteredCases.length}
-              </p>
-
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
-                  disabled={currentPage === 1}
-                  className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  Previous
-                </button>
-                <span className="text-xs font-medium text-slate-500">
-                  Page {currentPage} of {totalPages}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
-                  disabled={currentPage === totalPages}
-                  className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  Next
-                </button>
-              </div>
-            </div>
-          )}
         </>
       )}
 
