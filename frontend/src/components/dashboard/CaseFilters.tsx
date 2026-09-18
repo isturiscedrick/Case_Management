@@ -74,9 +74,9 @@ export function CaseFilters({
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm sm:p-4">
       {/* MAIN FILTER ROW */}
-      <div className="flex flex-col gap-2 sm:flex-row">
+      <div className="flex flex-wrap gap-2">
         {/* Search */}
-        <div className="relative flex-1">
+        <div className="relative min-w-[180px] flex-1 basis-full sm:basis-[220px]">
           <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
 
           <input
@@ -92,7 +92,7 @@ export function CaseFilters({
         <select
           value={statusFilter}
           onChange={(event) => onStatusFilterChange(event.target.value as "All" | CaseStatusSummary)}
-          className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-[#12331F] focus:bg-white focus:ring-2 focus:ring-[#12331F]/10"
+          className="min-w-0 flex-1 shrink-0 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-[#12331F] focus:bg-white focus:ring-2 focus:ring-[#12331F]/10 sm:w-36 sm:flex-none"
         >
           {CASE_STATUS_SUMMARY_OPTIONS.map((status) => (
             <option key={status} value={status}>
@@ -105,7 +105,7 @@ export function CaseFilters({
         <select
           value={companyFilter}
           onChange={(event) => onCompanyFilterChange(event.target.value)}
-          className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-[#12331F] focus:bg-white focus:ring-2 focus:ring-[#12331F]/10"
+          className="min-w-0 flex-1 shrink-0 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-[#12331F] focus:bg-white focus:ring-2 focus:ring-[#12331F]/10 sm:w-44 sm:flex-none"
         >
           {companyOptions.map((company) => (
             <option key={company} value={company}>
@@ -118,7 +118,7 @@ export function CaseFilters({
         <button
           type="button"
           onClick={onToggleMoreFilters}
-          className={`inline-flex items-center justify-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition ${
+          className={`inline-flex shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border px-2.5 py-1.5 text-xs font-medium transition ${
             showMoreFilters
               ? "border-[#12331F] bg-[#12331F] text-white"
               : "border-slate-200 bg-slate-50 text-slate-700 hover:bg-white"
@@ -131,7 +131,7 @@ export function CaseFilters({
 
       {/* MORE FILTERS */}
       {showMoreFilters && (
-        <div className="mt-2 flex flex-col gap-2 border-t border-slate-100 pt-2 sm:flex-row sm:items-center">
+        <div className="mt-2 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-2">
           {/* Stage */}
           <select
             value={stageFilter}
