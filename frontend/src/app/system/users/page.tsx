@@ -195,16 +195,16 @@ export default function UsersPage() {
   }
 
   return (
-    <div className="min-h-full bg-[#F5F1E3] p-4 sm:p-5 lg:h-screen lg:overflow-hidden">
-      <div className="mx-auto flex h-full max-w-7xl flex-col">
+    <div className="min-h-full bg-[#F5F1E3] p-4 sm:p-5">
+      <div className="mx-auto flex max-w-7xl flex-col">
         <div className="mb-4 shrink-0">
           <p className="text-xs font-medium uppercase tracking-wide text-[#B08D57]">Administration</p>
           <h1 className="mt-1 font-serif text-2xl font-medium text-[#12331F]">User Management</h1>
           <p className="mt-1 text-sm text-slate-500">Create accounts and assign their access role.</p>
         </div>
 
-        <div className="grid min-h-0 flex-1 gap-4 lg:grid-cols-[minmax(300px,0.72fr)_minmax(0,1.5fr)]">
-        <div className="min-h-0 space-y-4 overflow-y-auto pr-1">
+        <div className="grid gap-4 lg:grid-cols-[minmax(300px,0.72fr)_minmax(0,1.5fr)]">
+        <div className="space-y-4">
         <form onSubmit={handleSubmit} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
           <div className="mb-5 flex items-center gap-3 border-b border-slate-100 pb-4">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#12331F] text-[#B08D57]">
@@ -287,7 +287,7 @@ export default function UsersPage() {
         </section>
         </div>
 
-        <div className="min-h-0 space-y-4 overflow-y-auto pr-1">
+        <div className="space-y-4">
         <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
           <div className="mb-4 flex items-center justify-between border-b border-slate-100 pb-4">
             <div>
