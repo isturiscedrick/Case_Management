@@ -121,7 +121,7 @@ export default function LoginPage() {
                     {stage.code}
                   </span>
                   {i < CASE_STAGES.length - 1 && (
-                    <span className="h-4 w-px bg-gradient-to-b from-white/15 to-white/5" />
+                    <span className="h-4 w-px bg-linear-to-b from-white/15 to-white/5" />
                   )}
                 </div>
                 <p className="pt-0.5 text-xs text-white/70 xl:text-sm">{stage.label}</p>
