@@ -6,7 +6,7 @@ export default async function Home() {
   const token = cookieStore.get("session")?.value; // adjust cookie name to match your backend
 
   if (token) {
-    redirect("/cases");
+    redirect("/system/dashboard");
   } else {
     redirect("/login");
   }

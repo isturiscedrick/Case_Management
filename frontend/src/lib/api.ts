@@ -47,8 +47,10 @@ export class LoginError extends Error {
   }
 }
 
+/* CHANGE TO */
 // NOTE: the backend now enforces a login-attempt lockout (3 wrong
-// passwords -> 15 minute lock, see auth_manager.py). Both the "wrong
+// passwords -> tiered lock: 5 min, then 1 hour, then 24 hours, see
+// auth_manager.py). Both the "wrong
 // password" case and the "account is locked" case come back as
 // different statuses (401 vs 403) with a specific `detail` message, so
 // this reads that message instead of hardcoding generic 403 text -
