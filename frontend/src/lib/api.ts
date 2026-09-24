@@ -157,9 +157,23 @@ async function authFetch(path: string): Promise<Response> {
   return res;
 }
 
+const CASES_PAGE_SIZE = 500;
+
 export async function fetchCases(archived: boolean): Promise<CaseOut[]> {
-  const res = await authFetch(`/api/cases?archived=${archived}&page_size=500`);
-  return res.json();
+  const all: CaseOut[] = [];
+
+  for (let page = 1; ; page++) {
+    const res = await authFetch(
+      `/api/cases?archived=${archived}&page=${page}&page_size=${CASES_PAGE_SIZE}`
+    );
+    const batch: CaseOut[] = await res.json();
+    all.push(...batch);
+
+    // A short page means we've reached the end.
+    if (batch.length < CASES_PAGE_SIZE) break;
+  }
+
+  return all;
 }
 
 export interface HistoryOut {

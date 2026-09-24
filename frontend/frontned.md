@@ -27,8 +27,9 @@ bun dev             # or npm run dev
 Open [http://localhost:3000](http://localhost:3000). `NEXT_PUBLIC_API_URL`
 is baked in at build time (not read at runtime) — set it before `bun run
 build` and rebuild if it changes. Unauthenticated users are redirected to
-`/login`; authenticated users (via a non-httpOnly `session` cookie holding
-the JWT access token) land on `/cases` → `/system/dashboard`.
+`/login` (by `src/proxy.ts` for `/system/*`, and by `app/page.tsx` for `/`);
+authenticated users (via a non-httpOnly `session` cookie holding the JWT
+access token) land on `/system/dashboard`.
 
 ## Scripts
 
@@ -47,7 +48,6 @@ frontend/
 │   ├── app/
 │   │   ├── login/page.tsx           # Sign-in screen (real auth against /api/auth/login)
 │   │   ├── page.tsx                 # Root redirect (session cookie check)
-│   │   ├── middleware.ts            # Currently a no-op (empty matcher)
 │   │   └── system/
 │   │       ├── layout.tsx           # Sidebar + CasesProvider wrapper
 │   │       ├── page.tsx             # Redirects to /system/dashboard
@@ -61,6 +61,7 @@ frontend/
 │   │       ├── users/page.tsx       # Admin-only user management (create, role, reset, delete)
 │   │       └── profile/page.tsx     # Own profile (name, username, password, picture)
 │   │   └── globals.css
+│   ├── proxy.ts                     # Route guard: /system/* without a session cookie -> /login
 │   ├── components/
 │   │   ├── dashboard/                # Header, filters, table, card list, modals
 │   │   │   └── form/                 # Multi-step CaseForm + per-stage sections + shared UI
@@ -153,15 +154,13 @@ See `backend.md`'s "Concurrent edit locking" section for the server side.
 - "Saved" cases (`/system/mycases`) are tracked client-side only, per
   username, in `localStorage` via `lib/savedCases.ts` — not persisted on the
   backend.
-- `middleware.ts` is currently a no-op (empty matcher) — auth gating happens
-  via a cookie check in `app/page.tsx`, not real middleware-based redirects
-  yet.
+- `src/proxy.ts` (Next.js 16's replacement for `middleware.ts`) redirects any
+  `/system/*` request without a `session` cookie to `/login`. It only checks
+  that the cookie exists; token validity is still decided by the backend, and
+  each page's 401 handling covers expired tokens.
 
 ## TODO / Known Gaps
 
-- `middleware.ts` still doesn't do real redirect-based auth gating; a user
-  who manually navigates to a `/system/*` route without a valid cookie
-  relies on the page's own `fetchCurrentUser()` 401 handling, not middleware.
 - `CURRENT_USER` in `constants/caseOptions.ts` is a stale placeholder — no
   longer read by the create/update flow, which relies on the backend's
   authenticated user for `createdBy`/`updatedBy`. Safe to remove once

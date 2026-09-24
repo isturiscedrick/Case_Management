@@ -95,6 +95,7 @@ Open http://localhost:3000. Logged-out users are sent to `/login`; logged-in use
 ## Behavior notes
 
 - **Deleting a user keeps their cases.** `created_by_user_id` / `updated_by_user_id` are set to `NULL`, and history entries keep their snapshot usernames. Only that user's own notifications are removed.
+- **Route guard.** `frontend/src/proxy.ts` (Next.js 16's replacement for `middleware.ts`) redirects any `/system/*` request without a `session` cookie to `/login`. It only checks that the cookie exists; the backend still decides whether the token is valid, and each page's 401 handling covers expired tokens.
 - **Closed cases** cannot be edited by non-admins, on both the frontend and the backend.
 - **Total Judgment Award** is the latest stage's award (SC, then CA, NLRC, LA), not a sum.
 - **Saved cases** (My Cases) are stored per username in the browser's `localStorage`, not on the server.
@@ -115,5 +116,4 @@ These are deliberate, one-time tools. Do not run them against a live database wi
 ## Known gaps
 
 - JWT is stored in a non-httpOnly cookie until a backend-for-frontend proxy exists.
-- `frontend/src/middleware.ts` is a no-op; auth gating relies on a cookie check in `app/page.tsx` and each page's own 401 handling.
-- The Analytics page still needs a check that it reads live data everywhere.
+- The frontend loads at most 500 active and 500 archived cases (`page_size=500` in `lib/api.ts`), so Analytics and the dashboard would miss cases beyond that.

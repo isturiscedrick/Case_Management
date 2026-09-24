@@ -27,7 +27,7 @@ def list_cases(
         like = f"%{search}%"
         query = query.filter(or_(Case.company_name.ilike(like), Case.case_no.ilike(like)))
 
-    return query.order_by(Case.created_at.desc()).offset((page - 1) * page_size).limit(page_size).all()
+    return query.order_by(Case.created_at.desc(), Case.case_id.desc()).offset((page - 1) * page_size).limit(page_size).all()
 
 
 def create_case(db: Session, **fields) -> Case:
