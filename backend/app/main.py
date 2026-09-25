@@ -3,7 +3,13 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
 from app.core.database import engine
-from app.router import auth_router, case_router, company_router, history_router, notification_router
+from app.router import (
+    auth_router,
+    case_router,
+    company_router,
+    history_router,
+    notification_router,
+)
 
 app = FastAPI(title="Case Management API")
 
@@ -27,7 +33,4 @@ def health_check():
     return {
         "status": "ok",
         "system": "Case Management Backend",
-        "database": str(engine.url).replace(
-            f":{settings.DB_PASSWORD}@" if settings.DB_PASSWORD else "@", "@"
-        ),
     }
