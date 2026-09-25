@@ -5,12 +5,57 @@ export function cloneDraft(draft: CaseDraft): CaseDraft {
 
 // Dates are stored as ISO strings ("YYYY-MM-DD") so <input type="date"> can bind
 // to them directly. This formats them as MM/DD/YYYY for display in the table/view.
+// Some callers (e.g. the "Last Updated" column) pass a full timestamp
+// (created_at/updated_at) instead of a plain date — those are detected via
+// the "T" separator and rendered as a Philippine calendar date instead of
+// being naively split on "-", which previously produced garbled output.
 export function formatDate(iso: string): string {
   if (!iso) return "-";
+
+  if (iso.includes("T")) {
+    return formatDateTime(iso, { dateOnly: true });
+  }
+
   const parts = iso.split("-");
   if (parts.length !== 3) return iso; // fallback for legacy non-ISO values
   const [y, m, d] = parts;
   return `${m}/${d}/${y}`;
+}
+
+// Full timestamps (created_at/updated_at/history/notification times) are
+// stored and returned by the backend as UTC clock values (see
+// database.py's `SET time_zone = '+00:00'`) but without an explicit UTC
+// marker, since MySQL DATETIME columns are naive. A no-offset ISO string
+// is treated as UTC here, then always rendered in Philippine time
+// (Asia/Manila) regardless of the viewer's own device timezone.
+export function formatDateTime(
+  iso: string | null | undefined,
+  options?: { dateOnly?: boolean }
+): string {
+  if (!iso) return "-";
+
+  const hasOffset = /Z$|[+-]\d{2}:\d{2}$/.test(iso);
+  const utcIso = hasOffset ? iso : `${iso}Z`;
+  const date = new Date(utcIso);
+  if (Number.isNaN(date.getTime())) return iso;
+
+  if (options?.dateOnly) {
+    return date.toLocaleString("en-PH", {
+      timeZone: "Asia/Manila",
+      month: "2-digit",
+      day: "2-digit",
+      year: "numeric",
+    });
+  }
+
+  return date.toLocaleString("en-PH", {
+    timeZone: "Asia/Manila",
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 export function formatCurrency(value: string): string {

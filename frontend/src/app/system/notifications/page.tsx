@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Bell, User as UserIcon } from "lucide-react";
 import { decideNotification, disregardLockout, fetchCurrentUser, fetchMyNotifications, fetchPendingNotifications, markNotificationRead, UnauthorizedError, type PasswordResetNotification } from "@/lib/api";
+import { formatDateTime } from "@/lib/caseHelpers";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 
 const PAGE_SIZE = 9;
@@ -268,7 +269,7 @@ export default function NotificationsPage() {
                         </p>
                         {item.created_at && (
                           <p className="mt-0.5 text-[11px] text-slate-400">
-                            {new Date(item.created_at).toLocaleString()}
+                            {formatDateTime(item.created_at)}
                           </p>
                         )}
                       </div>

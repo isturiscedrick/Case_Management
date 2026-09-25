@@ -5,6 +5,7 @@ import { History, Search, User as UserIcon } from "lucide-react";
 import type { HistoryAction, HistoryEntry } from "@/data/historyEvents";
 import { useCases } from "@/context/CasesContext";
 import { fetchCurrentUser, fetchMyHistory, UnauthorizedError, type HistoryOut } from "@/lib/api";
+import { formatDateTime } from "@/lib/caseHelpers";
 
 function mapHistoryOut(out: HistoryOut): HistoryEntry {
   return {
@@ -31,14 +32,7 @@ const ACTION_FILTERS: Array<"All" | HistoryAction> = ["All", "created", "updated
 const PAGE_SIZE = 18;
 
 function formatTimestamp(iso: string) {
-  const d = new Date(iso);
-  return d.toLocaleString(undefined, {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  return formatDateTime(iso);
 }
 
 export default function HistoryPage() {

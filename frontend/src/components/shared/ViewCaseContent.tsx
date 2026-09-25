@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Clock3, Landmark, User as UserIcon } from "lucide-react";
 import type { CaseItem } from "@/types/case";
-import { formatDate, formatCurrency, formatTotalPaidCategory, getTotalJudgmentAward } from "@/lib/caseHelpers";
+import { formatDate, formatDateTime, formatCurrency, formatTotalPaidCategory, getTotalJudgmentAward } from "@/lib/caseHelpers";
 import { isStageFilled } from "@/lib/caseValidation";
 import { fetchCaseHistory, type HistoryOut } from "@/lib/api";
 import { DetailRow } from "@/components/shared/DetailRow";
@@ -245,7 +245,7 @@ export function ViewCaseContent({ item }: { item: CaseItem }) {
                   <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between sm:gap-4">
                     <p className="text-sm font-medium capitalize text-slate-700">{entry.action}</p>
                     <time className="text-xs text-slate-400">
-                      {entry.created_at ? new Date(entry.created_at).toLocaleString() : "-"}
+                      {formatDateTime(entry.created_at)}
                     </time>
                   </div>
                   <p className="mt-0.5 text-xs text-slate-500">

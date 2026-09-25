@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { ClipboardList, Search, User as UserIcon } from "lucide-react";
 import { fetchCurrentUser, fetchDecidedNotifications, fetchMyHistory, fetchMyNotifications, UnauthorizedError, type HistoryOut, type PasswordResetNotification } from "@/lib/api";
+import { formatDateTime } from "@/lib/caseHelpers";
 
 const PAGE_SIZE = 9;
 
@@ -282,9 +283,7 @@ export default function ActivityPage() {
                             </div>
                           </div>
                           <time className="shrink-0 text-xs text-slate-400">
-                            {entry.data.resolved_at || entry.data.created_at
-                              ? new Date(entry.data.resolved_at ?? entry.data.created_at!).toLocaleString()
-                              : ""}
+                            {formatDateTime(entry.data.resolved_at ?? entry.data.created_at)}
                           </time>
                         </div>
                       );
@@ -306,7 +305,7 @@ export default function ActivityPage() {
                               <p className="text-xs text-slate-500">{entry.data.company}{entry.data.detail ? ` - ${entry.data.detail}` : ""}</p>
                             </div>
                           </div>
-                          <time className="shrink-0 text-xs text-slate-400">{entry.data.created_at ? new Date(entry.data.created_at).toLocaleString() : ""}</time>
+                          <time className="shrink-0 text-xs text-slate-400">{formatDateTime(entry.data.created_at)}</time>
                         </div>
                       );
                     }
@@ -392,9 +391,7 @@ export default function ActivityPage() {
                           </div>
                         </div>
                         <time className="shrink-0 text-xs text-slate-400">
-                          {entry.data.resolved_at || entry.data.created_at
-                            ? new Date(entry.data.resolved_at ?? entry.data.created_at!).toLocaleString()
-                            : ""}
+                          {formatDateTime(entry.data.resolved_at ?? entry.data.created_at)}
                         </time>
                       </div>
                     ) : (
@@ -412,7 +409,7 @@ export default function ActivityPage() {
                             <p className="text-xs text-slate-500">{entry.data.company}{entry.data.detail ? ` - ${entry.data.detail}` : ""}</p>
                           </div>
                         </div>
-                        <time className="shrink-0 text-xs text-slate-400">{entry.data.created_at ? new Date(entry.data.created_at).toLocaleString() : ""}</time>
+                        <time className="shrink-0 text-xs text-slate-400">{formatDateTime(entry.data.created_at)}</time>
                       </div>
                     )
                   )}
