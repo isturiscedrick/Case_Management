@@ -1,10 +1,11 @@
 from datetime import date, datetime
 from decimal import Decimal
 from typing import List, Optional
-from pydantic import BaseModel, ConfigDict, field_validator
+from pydantic import BaseModel, ConfigDict, field_validator, field_validator
 
 from app.models.enums import CaseStatus, StageProgress, TotalPaidCategory
 from app.schemas.decision import DecisionIn, DecisionOut
+from app.schemas.base import as_utc
 
 
 class CaseStagePayload(BaseModel):
@@ -81,6 +82,11 @@ class CaseOut(BaseModel):
     complainants: List[str] = []
     causes: List[str] = []
     decisions: List[DecisionOut] = []
+
+    @field_validator("created_at", "updated_at", mode="before")
+    @classmethod
+    def _tag_utc(cls, value):
+        return as_utc(value)
 
 
 class CaseListParams(BaseModel):

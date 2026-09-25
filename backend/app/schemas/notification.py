@@ -1,6 +1,8 @@
 from datetime import datetime
 from typing import Optional
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, field_validator
+
+from app.schemas.base import as_utc
 
 
 class NotificationOut(BaseModel):
@@ -20,3 +22,8 @@ class NotificationOut(BaseModel):
     actor_profile_picture: Optional[str] = None
     created_at: datetime | None = None
     resolved_at: datetime | None = None
+
+    @field_validator("created_at", "resolved_at", mode="before")
+    @classmethod
+    def _tag_utc(cls, value):
+        return as_utc(value)
