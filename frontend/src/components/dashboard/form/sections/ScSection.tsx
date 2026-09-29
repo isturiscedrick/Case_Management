@@ -12,18 +12,42 @@ import {
 } from "@/constants/caseOptions";
 
 import { Field } from "@/components/cases/Field";
-
 import {
-  JudgmentAwardField,
   inputCls,
+  JudgmentAwardField,
 } from "@/components/cases/CurrencyField";
-
 import { InfoBanner } from "@/components/dashboard/form/shared/InfoBanner";
+import { SectionHeader, STAGE_STYLES } from "@/components/dashboard/form/shared/SectionHeader";
 
-import {
-  SectionHeader,
-  STAGE_STYLES,
-} from "@/components/dashboard/form/shared/SectionHeader";
+type ScSectionProps = {
+  value: CaseDraft;
+  onChange: (next: CaseDraft) => void;
+
+  setSc: <K extends keyof ScInfo>(
+    key: K,
+    value: ScInfo[K]
+  ) => void;
+
+  setProgress: (
+    key: "la" | "nlrc" | "ca" | "sc",
+    value: StageProgress
+  ) => void;
+
+  setProgressSpecification: (
+    key: "la" | "nlrc" | "ca" | "sc",
+    value: string
+  ) => void;
+
+  setTotalPaidCategory: (
+    category: TotalPaidCategory | ""
+  ) => void;
+
+  senaFilled: boolean;
+  caEnabled: boolean;
+  caFilled: boolean;
+  scEnabled: boolean;
+  scVisible: boolean;
+};
 
 export function ScSection({
   value,
@@ -37,30 +61,7 @@ export function ScSection({
   caFilled,
   scEnabled,
   scVisible,
-}: {
-  value: CaseDraft;
-  onChange: (next: CaseDraft) => void;
-  setSc: <K extends keyof ScInfo>(
-    key: K,
-    v: ScInfo[K]
-  ) => void;
-  setProgress: (
-    key: "la" | "nlrc" | "ca" | "sc",
-    v: StageProgress
-  ) => void;
-  setProgressSpecification: (
-    key: "la" | "nlrc" | "ca" | "sc",
-    v: string
-  ) => void;
-  setTotalPaidCategory: (
-    category: TotalPaidCategory | ""
-  ) => void;
-  senaFilled: boolean;
-  caEnabled: boolean;
-  caFilled: boolean;
-  scEnabled: boolean;
-  scVisible: boolean;
-}) {
+}: ScSectionProps) {
   return (
     <div
       className={`rounded-xl border ${STAGE_STYLES.sc.ring} bg-white p-4 shadow-sm sm:p-5`}
@@ -71,6 +72,7 @@ export function ScSection({
         status={!scVisible ? "locked" : "progress"}
       />
 
+      {/* SC DISABLED */}
       {senaFilled && !caEnabled && (
         <InfoBanner tone="info">
           Disabled while CA Progress is "Select Progress" or "Settled".
@@ -91,9 +93,13 @@ export function ScSection({
         </InfoBanner>
       )}
 
+      {/* ================================================ */}
+      {/* SC DETAILS */}
+      {/* ================================================ */}
+
       {scVisible && (
         <>
-          <div className="grid gap-4 sm:grid-cols-5">
+          <div className="grid gap-4">
             <Field label="Date">
               <input
                 type="date"
@@ -113,7 +119,9 @@ export function ScSection({
                   setSc("status", e.target.value)
                 }
               >
-                <option value="">Select Status</option>
+                <option value="">
+                  Select Status
+                </option>
 
                 {STAGE_STATUS_OPTIONS.map((status) => (
                   <option key={status} value={status}>
@@ -139,8 +147,7 @@ export function ScSection({
                 )
               }
               computedSpecValue={
-                value.sc
-                  .judgmentAwardComputedSpecification
+                value.sc.judgmentAwardComputedSpecification
               }
               onComputedSpecChange={(v) =>
                 setSc(
@@ -149,6 +156,10 @@ export function ScSection({
                 )
               }
             />
+
+            {/* ================================================= */}
+            {/* SC REMARKS */}
+            {/* ================================================= */}
 
             <Field label="Remarks">
               <select
@@ -167,56 +178,45 @@ export function ScSection({
                       remarksSpecification:
                         selected === "Other"
                           ? value.sc
-                              .remarksSpecification ?? ""
+                              .remarksSpecification ??
+                            ""
                           : "",
                     },
                   });
                 }}
               >
-                <option value="">Select Remarks</option>
+                <option value="">
+                  Select Remarks
+                </option>
 
-                {APPEAL_STAGE_REMARKS_OPTIONS.map((option) => (
-  <option key={option} value={option}>
-    {option}
-  </option>
-))}
+                {APPEAL_STAGE_REMARKS_OPTIONS.map(
+                  (option) => (
+                    <option
+                      key={option}
+                      value={option}
+                    >
+                      {option}
+                    </option>
+                  )
+                )}
               </select>
             </Field>
-
-            <Field label="SC Progress">
-  <select
-    className={inputCls}
-    value={value.caseProgress.sc}
-    onChange={(e) => {
-      const selected = e.target.value as StageProgress;
-
-      setProgress("sc", selected);
-    }}
-  >
-    <option value="">
-      Select Progress
-    </option>
-
-    {PROGRESS_OPTIONS.filter(
-      (p): p is StageProgress => p !== "All",
-    ).map((p) => (
-      <option key={p} value={p}>
-        {p}
-      </option>
-    ))}
-  </select>
-</Field>
           </div>
 
+          {/* ================================================ */}
+          {/* SPECIFY SC REMARKS */}
+          {/* ================================================ */}
+
           {value.sc.remarks === "Other" && (
-            <div className="mt-3 grid gap-4 sm:grid-cols-3">
+            <div className="mt-4 grid gap-4">
               <Field label="Specify Remarks">
                 <textarea
                   rows={3}
                   className={inputCls}
                   placeholder="Enter remarks"
                   value={
-                    value.sc.remarksSpecification ?? ""
+                    value.sc.remarksSpecification ??
+                    ""
                   }
                   onChange={(e) =>
                     setSc(
@@ -225,35 +225,73 @@ export function ScSection({
                     )
                   }
                 />
-              </Field>            </div>
-          )}
-
-          {(
-            value.caseProgress.sc === "Others" ||
-            value.caseProgress.sc === "Not Settled"
-          ) && (
-            <div className="mt-3 grid gap-4 sm:grid-cols-3">
-              <Field label="Specify SC Progress">
-                <textarea
-                  rows={3}
-                  className={inputCls}
-                  placeholder="Enter progress"
-                  value={
-                    value.caseProgress
-                      .scSpecification ?? ""
-                  }
-                  onChange={(e) =>
-                    setProgressSpecification(
-                      "sc",
-                     e.target.value
-                    )
-                  }
-                />
               </Field>
             </div>
           )}
         </>
       )}
+
+      {/* ================================================ */}
+      {/* SC PROGRESS */}
+      {/* ================================================ */}
+
+      {scVisible && (
+        <div className="mt-4">
+          <Field label="SC Progress">
+            <select
+              className={inputCls}
+              value={value.caseProgress.sc}
+              onChange={(e) => {
+                const selected =
+                  e.target.value as StageProgress;
+
+                setProgress("sc", selected);
+              }}
+            >
+              <option value="">
+                Select Progress
+              </option>
+
+              {PROGRESS_OPTIONS.filter(
+                (p): p is StageProgress =>
+                  p !== "All"
+              ).map((p) => (
+                <option key={p} value={p}>
+                  {p}
+                </option>
+              ))}
+            </select>
+          </Field>
+        </div>
+      )}
+
+      {/* ================================================ */}
+      {/* SPECIFY SC PROGRESS */}
+      {/* ================================================ */}
+
+      {scVisible &&
+        (value.caseProgress.sc === "Others" ||
+          value.caseProgress.sc === "Not Settled") && (
+          <div className="mt-4 grid gap-4">
+            <Field label="Specify SC Progress">
+              <textarea
+                rows={3}
+                className={inputCls}
+                placeholder="Enter progress"
+                value={
+                  value.caseProgress
+                    .scSpecification ?? ""
+                }
+                onChange={(e) =>
+                  setProgressSpecification(
+                    "sc",
+                    e.target.value
+                  )
+                }
+              />
+            </Field>
+          </div>
+        )}
     </div>
   );
 }
