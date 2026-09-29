@@ -16,7 +16,10 @@ import {
   JudgmentAwardField,
 } from "@/components/cases/CurrencyField";
 import { InfoBanner } from "@/components/dashboard/form/shared/InfoBanner";
-import { SectionHeader, STAGE_STYLES } from "@/components/dashboard/form/shared/SectionHeader";
+import {
+  SectionHeader,
+  STAGE_STYLES,
+} from "@/components/dashboard/form/shared/SectionHeader";
 
 type LaSectionProps = {
   value: CaseDraft;
@@ -57,7 +60,7 @@ export function LaSection({
 }: LaSectionProps) {
   return (
     <div
-      className={`rounded-xl border ${STAGE_STYLES.la.ring} bg-white p-4 shadow-sm sm:p-5`}
+      className={`mx-auto w-full max-w-3xl rounded-xl border ${STAGE_STYLES.la.ring} bg-white p-5 shadow-sm sm:p-8`}
     >
       <SectionHeader
         stage="la"
@@ -72,7 +75,7 @@ export function LaSection({
       />
 
       {/* LA REQUIRED WARNING */}
-        {senaFilled && laRequired && !laFilled && (
+      {senaFilled && laRequired && !laFilled && (
         <InfoBanner tone="warning">
           SEnA Remarks is "Not Settled" or "Others" — LA fields
           (Date, Status, Judgment Award) are now required
@@ -99,8 +102,7 @@ export function LaSection({
 
       {laVisible && (
         <>
-
-          <div className="grid gap-4 sm:grid-cols-4">
+          <div className="mt-6 grid grid-cols-1 gap-4">
             <fieldset
               disabled={restrictLaDetailsEditing}
               className="contents"
@@ -223,7 +225,7 @@ export function LaSection({
               disabled={restrictLaProgressEditing}
               className="contents"
             >
-              <div className="mt-3 grid gap-4 sm:grid-cols-3">
+              <div className="mt-3 grid grid-cols-1 gap-4">
                 <Field label="Specify Remarks">
                   <textarea
                     rows={3}
@@ -240,7 +242,8 @@ export function LaSection({
                         e.target.value
                       )
                     }
-                  />                </Field>
+                  />
+                </Field>
               </div>
             </fieldset>
           )}
@@ -252,7 +255,7 @@ export function LaSection({
       {/* ================================================ */}
 
       {laVisible && (
-        <div className="mt-3">
+        <div className="mt-4">
           <Field label="LA Progress">
             <select
               className={inputCls}
@@ -378,23 +381,23 @@ export function LaSection({
             disabled={restrictLaProgressEditing}
             className="contents"
           >
-            <div className="mt-3 grid gap-4 sm:grid-cols-3">
+            <div className="mt-3 grid grid-cols-1 gap-4">
               <Field label="Specify LA Progress">
-               <textarea
-                 rows={3}
-                 className={inputCls}
-                 placeholder="Enter progress"
-                 value={
-                   value.caseProgress
-                     .laSpecification ?? ""
-                 }
-                 onChange={(e) =>
-                   setProgressSpecification(
-                     "la",
-                     e.target.value
-                  )
-                 }
-               />
+                <textarea
+                  rows={3}
+                  className={inputCls}
+                  placeholder="Enter progress"
+                  value={
+                    value.caseProgress
+                      .laSpecification ?? ""
+                  }
+                  onChange={(e) =>
+                    setProgressSpecification(
+                      "la",
+                      e.target.value
+                    )
+                  }
+                />
               </Field>
             </div>
           </fieldset>
