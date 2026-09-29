@@ -12,11 +12,37 @@ import {
 
 import { Field } from "@/components/cases/Field";
 import {
-  JudgmentAwardField,
   inputCls,
+  JudgmentAwardField,
 } from "@/components/cases/CurrencyField";
 import { InfoBanner } from "@/components/dashboard/form/shared/InfoBanner";
 import { SectionHeader, STAGE_STYLES } from "@/components/dashboard/form/shared/SectionHeader";
+
+type CaSectionProps = {
+  value: CaseDraft;
+  onChange: (next: CaseDraft) => void;
+
+  setCa: <K extends keyof CaInfo>(
+    key: K,
+    value: CaInfo[K]
+  ) => void;
+
+  setProgressSpecification: (
+    key: "la" | "nlrc" | "ca" | "sc",
+    value: string
+  ) => void;
+
+  senaFilled: boolean;
+  nlrcEnabled: boolean;
+  nlrcFilled: boolean;
+  caEnabled: boolean;
+  caFilled: boolean;
+  caVisible: boolean;
+
+  restrictCaDetailsEditing: boolean;
+  restrictCaProgressOnly: boolean;
+  restrictCaProgressEditing: boolean;
+};
 
 export function CaSection({
   value,
@@ -32,27 +58,7 @@ export function CaSection({
   restrictCaDetailsEditing,
   restrictCaProgressOnly,
   restrictCaProgressEditing,
-}: {
-  value: CaseDraft;
-  onChange: (next: CaseDraft) => void;
-  setCa: <K extends keyof CaInfo>(
-    key: K,
-    v: CaInfo[K],
-  ) => void;
-  setProgressSpecification: (
-    key: "la" | "nlrc" | "ca" | "sc",
-    v: string,
-  ) => void;
-  senaFilled: boolean;
-  nlrcEnabled: boolean;
-  nlrcFilled: boolean;
-  caEnabled: boolean;
-  caFilled: boolean;
-  caVisible: boolean;
-  restrictCaDetailsEditing: boolean;
-  restrictCaProgressOnly: boolean;
-  restrictCaProgressEditing: boolean;
-}) {
+}: CaSectionProps) {
   return (
     <div
       className={`rounded-xl border ${STAGE_STYLES.ca.ring} bg-white p-4 shadow-sm sm:p-5`}
@@ -64,15 +70,12 @@ export function CaSection({
           !caVisible
             ? "locked"
             : caFilled
-            ? "done"
-            : "progress"
+              ? "done"
+              : "progress"
         }
       />
 
-      {/* -----------------------------------------------------------
-          INFORMATION BANNERS
-         ----------------------------------------------------------- */}
-
+      {/* CA DISABLED */}
       {senaFilled && !nlrcEnabled && (
         <InfoBanner tone="info">
           Disabled while NLRC Progress is "Select Progress"
@@ -80,7 +83,7 @@ export function CaSection({
         </InfoBanner>
       )}
 
-     {senaFilled &&
+      {senaFilled &&
         nlrcEnabled &&
         !nlrcFilled && (
           <InfoBanner tone="info">
@@ -101,6 +104,7 @@ export function CaSection({
           </InfoBanner>
         )}
 
+      {/* CA DETAILS LOCKED */}
       {restrictCaProgressOnly && (
         <InfoBanner tone="warning">
           CA details are saved and locked. Update CA Progress
@@ -108,15 +112,13 @@ export function CaSection({
         </InfoBanner>
       )}
 
-      {/* -----------------------------------------------------------
-          CA DETAILS
-         ----------------------------------------------------------- */}
+      {/* ================================================ */}
+      {/* CA DETAILS */}
+      {/* ================================================ */}
 
       {caVisible && (
         <>
-          <div className="grid gap-4 sm:grid-cols-4">
-            {/* Date + Status */}
-
+          <div className="grid gap-4">
             <fieldset
               disabled={restrictCaDetailsEditing}
               className="contents"
@@ -127,10 +129,7 @@ export function CaSection({
                   className={inputCls}
                   value={value.ca.date}
                   onChange={(e) =>
-                    setCa(
-                      "date",
-                      e.target.value,
-                    )
+                    setCa("date", e.target.value)
                   }
                 />
               </Field>
@@ -140,64 +139,51 @@ export function CaSection({
                   className={inputCls}
                   value={value.ca.status}
                   onChange={(e) =>
-                    setCa(
-                      "status",
-                      e.target.value,
-                    )
+                    setCa("status", e.target.value)
                   }
                 >
                   <option value="">
                     Select Status
                   </option>
 
-                  {STAGE_STATUS_OPTIONS.map(
-                    (status) => (
-                      <option
-                        key={status}
-                        value={status}
-                      >
-                        {status}
-                      </option>
-                    ),
-                  )}
+                  {STAGE_STATUS_OPTIONS.map((status) => (
+                    <option key={status} value={status}>
+                      {status}
+                    </option>
+                  ))}
                 </select>
               </Field>
             </fieldset>
 
             <JudgmentAwardField
               label="Judgment Award"
-              value={
-                value.ca.judgmentAward
-              }
+              value={value.ca.judgmentAward}
               onChange={(v) =>
-                setCa(
-                  "judgmentAward",
-                  v,
-                )
+                setCa("judgmentAward", v)
               }
               amountSpecValue={
-                value.ca
-                  .judgmentAwardSpecification
+                value.ca.judgmentAwardSpecification
               }
               onAmountSpecChange={(v) =>
                 setCa(
                   "judgmentAwardSpecification",
-                  v,
+                  v
                 )
               }
               computedSpecValue={
-                value.ca
-                  .judgmentAwardComputedSpecification
+                value.ca.judgmentAwardComputedSpecification
               }
               onComputedSpecChange={(v) =>
                 setCa(
                   "judgmentAwardComputedSpecification",
-                  v,
+                  v
                 )
               }
             />
 
-            {/* Remarks */}
+            {/* ================================================= */}
+            {/* CA REMARKS */}
+            {/* ================================================= */}
 
             <fieldset
               disabled={restrictCaProgressEditing}
@@ -208,8 +194,7 @@ export function CaSection({
                   className={inputCls}
                   value={value.ca.remarks}
                   onChange={(e) => {
-                    const selected =
-                      e.target.value;
+                    const selected = e.target.value;
 
                     onChange({
                       ...value,
@@ -217,6 +202,7 @@ export function CaSection({
                       ca: {
                         ...value.ca,
                         remarks: selected,
+
                         remarksSpecification:
                           selected === "Other"
                             ? value.ca
@@ -232,30 +218,30 @@ export function CaSection({
                   </option>
 
                   {APPEAL_STAGE_REMARKS_OPTIONS.map(
-  (option) => (
-    <option
-      key={option}
-      value={option}
-    >
-      {option}
-    </option>
-  ),
-)}
+                    (option) => (
+                      <option
+                        key={option}
+                        value={option}
+                      >
+                        {option}
+                      </option>
+                    )
+                  )}
                 </select>
               </Field>
             </fieldset>
           </div>
 
-          {/* -------------------------------------------------------
-              CA REMARK SPECIFICATION
-             ------------------------------------------------------- */}
+          {/* ================================================ */}
+          {/* SPECIFY CA REMARKS */}
+          {/* ================================================ */}
 
           {value.ca.remarks === "Other" && (
             <fieldset
               disabled={restrictCaProgressEditing}
               className="contents"
             >
-              <div className="mt-3 grid gap-4 sm:grid-cols-3">
+              <div className="mt-4 grid gap-4">
                 <Field label="Specify Remarks">
                   <textarea
                     rows={3}
@@ -269,7 +255,7 @@ export function CaSection({
                     onChange={(e) =>
                       setCa(
                         "remarksSpecification",
-                        e.target.value,
+                        e.target.value
                       )
                     }
                   />
@@ -280,19 +266,17 @@ export function CaSection({
         </>
       )}
 
-      {/* -----------------------------------------------------------
-          CA PROGRESS
-         ----------------------------------------------------------- */}
+      {/* ================================================ */}
+      {/* CA PROGRESS */}
+      {/* ================================================ */}
 
       {caVisible && (
-        <div className="mt-3">
+        <div className="mt-4">
           <Field label="CA Progress">
             <select
               className={inputCls}
               value={value.caseProgress.ca}
-              disabled={
-                restrictCaProgressEditing
-              }
+              disabled={restrictCaProgressEditing}
               onChange={(e) => {
                 const selected =
                   e.target.value as StageProgress;
@@ -300,7 +284,6 @@ export function CaSection({
                 /*
                  * Check whether SC already contains ANY data.
                  */
-
                 const scHasData =
                   !!value.sc.date ||
                   !!value.sc.status ||
@@ -320,7 +303,6 @@ export function CaSection({
                  * If CA Progress changes away from
                  * Not Settled / Others, reset SC.
                  */
-
                 const shouldResetSc =
                   scHasData &&
                   selected !== "Not Settled" &&
@@ -330,7 +312,6 @@ export function CaSection({
                  * Clear Category when CA Progress becomes
                  * Not Settled or Others.
                  */
-
                 const shouldResetCategory =
                   selected === "Not Settled" ||
                   selected === "Others";
@@ -370,8 +351,7 @@ export function CaSection({
                           judgmentAwardComputedSpecification:
                             "",
                           remarks: "",
-                          remarksSpecification:
-                            "",
+                          remarksSpecification: "",
                         },
                       }
                     : {}),
@@ -392,15 +372,10 @@ export function CaSection({
               </option>
 
               {PROGRESS_OPTIONS.filter(
-                (
-                  p,
-                ): p is StageProgress =>
-                  p !== "All",
+                (p): p is StageProgress =>
+                  p !== "All"
               ).map((p) => (
-                <option
-                  key={p}
-                  value={p}
-                >
+                <option key={p} value={p}>
                   {p}
                 </option>
               ))}
@@ -409,22 +384,18 @@ export function CaSection({
         </div>
       )}
 
-      {/* -----------------------------------------------------------
-          CA PROGRESS SPECIFICATION
-         ----------------------------------------------------------- */}
+      {/* ================================================ */}
+      {/* SPECIFY CA PROGRESS */}
+      {/* ================================================ */}
 
       {caVisible &&
-        (value.caseProgress.ca ===
-          "Others" ||
-          value.caseProgress.ca ===
-            "Not Settled") && (
+        (value.caseProgress.ca === "Others" ||
+          value.caseProgress.ca === "Not Settled") && (
           <fieldset
-            disabled={
-              restrictCaProgressEditing
-            }
+            disabled={restrictCaProgressEditing}
             className="contents"
           >
-            <div className="mt-3 grid gap-4 sm:grid-cols-3">
+            <div className="mt-4 grid gap-4">
               <Field label="Specify CA Progress">
                 <textarea
                   rows={3}
@@ -432,17 +403,16 @@ export function CaSection({
                   placeholder="Enter progress"
                   value={
                     value.caseProgress
-                      .caSpecification ??
-                    ""
+                      .caSpecification ?? ""
                   }
                   onChange={(e) =>
                     setProgressSpecification(
                       "ca",
-                      e.target.value,
+                      e.target.value
                     )
                   }
-               />
-             </Field>
+                />
+              </Field>
             </div>
           </fieldset>
         )}
