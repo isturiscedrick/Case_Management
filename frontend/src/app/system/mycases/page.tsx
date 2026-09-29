@@ -20,6 +20,7 @@ import { loadSavedIds, saveSavedIds } from "@/lib/savedCases";
 import { cloneDraft, getCaseStatusSummary, getTotalJudgmentAward, type CaseStatusSummary } from "@/lib/caseHelpers";
 import { getCaseDraftErrors, getStageGates } from "@/lib/caseValidation";
 
+import { InlineAlert } from "@/components/shared/InlineAlert";
 import { CaseFilters, type StageFilterKey } from "@/components/dashboard/CaseFilters";
 import { CaseTable } from "@/components/dashboard/CaseTable";
 import { CaseFormModal } from "@/components/dashboard/CaseFormModal";
@@ -125,13 +126,15 @@ export default function MyCasesPage() {
 
         stopHeartbeat();
         lockedCaseIdRef.current = null;
-        alert(
+        setNotice(
           isDefiniteLoss
             ? `${error.message} Your unsaved changes were not saved — please reopen the case to see the latest version.`
             : "Lost the edit lock for this case. Please reopen it."
         );
         setModal(null);
         setActiveCase(null);
+        setShowErrors(false);
+        setSubmitError(null);
         resetEditRestrictions();
       }
     }, HEARTBEAT_INTERVAL_MS);
@@ -189,6 +192,25 @@ useEffect(() => {
   const [modal, setModal] = useState<ModalType>(null);
   const [activeCase, setActiveCase] = useState<CaseItem | null>(null);
   const [draft, setDraft] = useState<CaseDraft>(EMPTY_CASE);
+
+  /* =======================================================
+     INLINE ERROR STATE
+     - notice: page-level banner (lost lock, archive failure, ...)
+     - showErrors: flips on after the first failed Save attempt, after
+       which validation errors are recomputed live on every keystroke
+     - submitError: last save attempt's server-side error, shown in-form
+  ======================================================= */
+
+  const [notice, setNotice] = useState<string | null>(null);
+  const [showErrors, setShowErrors] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
+  const handleDraftChange = (next: CaseDraft) => {
+    setSubmitError(null);
+    setDraft(next);
+  };
+
+  const draftErrors = showErrors ? getCaseDraftErrors(draft) : [];
 
   /* =======================================================
      EDIT RESTRICTIONS — identical to the Dashboard
@@ -343,6 +365,10 @@ useEffect(() => {
   ======================================================= */
 
   const openCreate = () => {
+    setNotice(null);
+    setShowErrors(false);
+    setSubmitError(null);
+
     setDraft(cloneDraft(EMPTY_CASE));
     resetEditRestrictions();
     setActiveCase(null);
@@ -358,6 +384,10 @@ useEffect(() => {
   const openEdit = async (item: CaseItem) => {
     if (item.closed && !isAdmin) return;
 
+    setNotice(null);
+    setShowErrors(false);
+    setSubmitError(null);
+
     try {
       await acquireCaseLock(item.id);
     } catch (error) {
@@ -367,7 +397,7 @@ useEffect(() => {
         setModal("view");
         return;
       }
-      alert(error instanceof Error ? error.message : "Unable to open this case for editing right now.");
+      setNotice(error instanceof Error ? error.message : "Unable to open this case for editing right now.");
       return;
     }
 
@@ -413,6 +443,8 @@ useEffect(() => {
     setModal(null);
     setActiveCase(null);
     setLockedByUsername(null);
+    setShowErrors(false);
+    setSubmitError(null);
     resetEditRestrictions();
   };
 
@@ -423,18 +455,22 @@ useEffect(() => {
   const requestSaveCreate = () => {
     const errors = getCaseDraftErrors(draft);
     if (errors.length > 0) {
-      alert(errors.join("\n"));
+      setShowErrors(true);
       return;
     }
+    setShowErrors(false);
+    setSubmitError(null);
     setConfirmSave("create");
   };
 
   const requestSaveEdit = () => {
     const errors = getCaseDraftErrors(draft);
     if (errors.length > 0) {
-      alert(errors.join("\n"));
+      setShowErrors(true);
       return;
     }
+    setShowErrors(false);
+    setSubmitError(null);
     setConfirmSave("edit");
   };
 
@@ -456,7 +492,8 @@ useEffect(() => {
       setConfirmSave(null);
       closeModal();
     } catch (error) {
-      alert(error instanceof Error ? error.message : "Unable to create the case.");
+      setConfirmSave(null);
+      setSubmitError(error instanceof Error ? error.message : "Unable to create the case.");
     }
   };
 
@@ -479,7 +516,8 @@ useEffect(() => {
       setConfirmSave(null);
       closeModal();
     } catch (error) {
-      alert(error instanceof Error ? error.message : "Unable to save the case.");
+      setConfirmSave(null);
+      setSubmitError(error instanceof Error ? error.message : "Unable to save the case.");
     }
   };
 
@@ -503,7 +541,8 @@ useEffect(() => {
       await toggleArchive(confirmArchiveItem.id);
       setConfirmArchiveItem(null);
     } catch (error) {
-      alert(error instanceof Error ? error.message : "Unable to update the archive status.");
+      setConfirmArchiveItem(null);
+      setNotice(error instanceof Error ? error.message : "Unable to update the archive status.");
     }
   };
 
@@ -538,6 +577,10 @@ useEffect(() => {
             Retry
           </button>
         </div>
+      )}
+
+      {notice && (
+        <InlineAlert messages={[notice]} onDismiss={() => setNotice(null)} />
       )}
 
       {/* SUMMARY */}
@@ -654,8 +697,11 @@ useEffect(() => {
           mode="create"
           activeCase={null}
           draft={draft}
-          onChange={setDraft}
+          onChange={handleDraftChange}
           companies={companies}
+          errors={draftErrors}
+          submitError={submitError}
+          onDismissSubmitError={() => setSubmitError(null)}
           onCancel={closeModal}
           onSave={requestSaveCreate}
         />
@@ -682,9 +728,12 @@ useEffect(() => {
           mode="edit"
           activeCase={activeCase}
           draft={draft}
-          onChange={setDraft}
+          onChange={handleDraftChange}
           companies={companies}
           isAdmin={isAdmin}
+          errors={draftErrors}
+          submitError={submitError}
+          onDismissSubmitError={() => setSubmitError(null)}
           editRestrictions={{
             restrictSenaEditing,
             restrictSenaRemarksEditing,
