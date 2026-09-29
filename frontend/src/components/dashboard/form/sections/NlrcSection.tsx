@@ -12,11 +12,37 @@ import {
 
 import { Field } from "@/components/cases/Field";
 import {
-  JudgmentAwardField,
   inputCls,
+  JudgmentAwardField,
 } from "@/components/cases/CurrencyField";
 import { InfoBanner } from "@/components/dashboard/form/shared/InfoBanner";
 import { SectionHeader, STAGE_STYLES } from "@/components/dashboard/form/shared/SectionHeader";
+
+type NlrcSectionProps = {
+  value: CaseDraft;
+  onChange: (next: CaseDraft) => void;
+
+  setNlrc: <K extends keyof NlrcInfo>(
+    key: K,
+    value: NlrcInfo[K]
+  ) => void;
+
+  setProgressSpecification: (
+    key: "la" | "nlrc" | "ca" | "sc",
+    value: string
+  ) => void;
+
+  senaFilled: boolean;
+  laRequired: boolean;
+  laFilled: boolean;
+  nlrcEnabled: boolean;
+  nlrcFilled: boolean;
+  nlrcVisible: boolean;
+
+  restrictNlrcDetailsEditing: boolean;
+  restrictNlrcProgressOnly: boolean;
+  restrictNlrcProgressEditing: boolean;
+};
 
 export function NlrcSection({
   value,
@@ -32,27 +58,7 @@ export function NlrcSection({
   restrictNlrcDetailsEditing,
   restrictNlrcProgressOnly,
   restrictNlrcProgressEditing,
-}: {
-  value: CaseDraft;
-  onChange: (next: CaseDraft) => void;
-  setNlrc: <K extends keyof NlrcInfo>(
-    key: K,
-    v: NlrcInfo[K],
-  ) => void;
-  setProgressSpecification: (
-    key: "la" | "nlrc" | "ca" | "sc",
-    v: string,
-  ) => void;
-  senaFilled: boolean;
-  laRequired: boolean;
-  laFilled: boolean;
-  nlrcEnabled: boolean;
-  nlrcFilled: boolean;
-  nlrcVisible: boolean;
-  restrictNlrcDetailsEditing: boolean;
-  restrictNlrcProgressOnly: boolean;
-  restrictNlrcProgressEditing: boolean;
-}) {
+}: NlrcSectionProps) {
   return (
     <div
       className={`rounded-xl border ${STAGE_STYLES.nlrc.ring} bg-white p-4 shadow-sm sm:p-5`}
@@ -64,15 +70,12 @@ export function NlrcSection({
           !nlrcVisible
             ? "locked"
             : nlrcFilled
-            ? "done"
-            : "progress"
+              ? "done"
+              : "progress"
         }
       />
 
-      {/* -----------------------------------------------------------
-          INFORMATION BANNERS
-         ----------------------------------------------------------- */}
-
+      {/* NLRC DISABLED */}
       {senaFilled && !laRequired && (
         <InfoBanner tone="info">
           Disabled while LA Progress is "Select Progress" or
@@ -99,6 +102,7 @@ export function NlrcSection({
           </InfoBanner>
         )}
 
+      {/* NLRC DETAILS LOCKED */}
       {restrictNlrcProgressOnly && (
         <InfoBanner tone="warning">
           NLRC details are saved and locked. Update NLRC
@@ -107,14 +111,13 @@ export function NlrcSection({
         </InfoBanner>
       )}
 
-      {/* -----------------------------------------------------------
-          NLRC DETAILS
-         ----------------------------------------------------------- */}
+      {/* ================================================ */}
+      {/* NLRC DETAILS */}
+      {/* ================================================ */}
 
       {nlrcVisible && (
         <>
-          <div className="grid gap-4 sm:grid-cols-4">
-            {/* Date + Status */}
+          <div className="grid gap-4">
             <fieldset
               disabled={restrictNlrcDetailsEditing}
               className="contents"
@@ -143,17 +146,13 @@ export function NlrcSection({
                   </option>
 
                   {STAGE_STATUS_OPTIONS.map((status) => (
-                    <option
-                      key={status}
-                      value={status}
-                    >
+                    <option key={status} value={status}>
                       {status}
                     </option>
                   ))}
                 </select>
               </Field>
             </fieldset>
-
 
             <JudgmentAwardField
               label="Judgement Award"
@@ -167,22 +166,24 @@ export function NlrcSection({
               onAmountSpecChange={(v) =>
                 setNlrc(
                   "judgmentAwardSpecification",
-                  v,
+                  v
                 )
               }
               computedSpecValue={
-                value.nlrc
-                  .judgmentAwardComputedSpecification
+                value.nlrc.judgmentAwardComputedSpecification
               }
               onComputedSpecChange={(v) =>
                 setNlrc(
                   "judgmentAwardComputedSpecification",
-                  v,
+                  v
                 )
               }
             />
 
-            {/* Remarks */}
+            {/* ================================================= */}
+            {/* NLRC REMARKS */}
+            {/* ================================================= */}
+
             <fieldset
               disabled={restrictNlrcProgressEditing}
               className="contents"
@@ -200,6 +201,7 @@ export function NlrcSection({
                       nlrc: {
                         ...value.nlrc,
                         remarks: selected,
+
                         remarksSpecification:
                           selected === "Other"
                             ? value.nlrc
@@ -215,30 +217,30 @@ export function NlrcSection({
                   </option>
 
                   {APPEAL_STAGE_REMARKS_OPTIONS.map(
-  (option) => (
-    <option
-      key={option}
-      value={option}
-    >
-      {option}
-    </option>
-  ),
-)}
+                    (option) => (
+                      <option
+                        key={option}
+                        value={option}
+                      >
+                        {option}
+                      </option>
+                    )
+                  )}
                 </select>
               </Field>
             </fieldset>
           </div>
 
-          {/* -------------------------------------------------------
-              NLRC REMARK SPECIFICATION
-             ------------------------------------------------------- */}
+          {/* ================================================ */}
+          {/* SPECIFY NLRC REMARKS */}
+          {/* ================================================ */}
 
           {value.nlrc.remarks === "Other" && (
             <fieldset
               disabled={restrictNlrcProgressEditing}
               className="contents"
             >
-              <div className="mt-3 grid gap-4 sm:grid-cols-3">
+              <div className="mt-4 grid gap-4">
                 <Field label="Specify Remarks">
                   <textarea
                     rows={3}
@@ -252,7 +254,7 @@ export function NlrcSection({
                     onChange={(e) =>
                       setNlrc(
                         "remarksSpecification",
-                        e.target.value,
+                        e.target.value
                       )
                     }
                   />
@@ -263,19 +265,17 @@ export function NlrcSection({
         </>
       )}
 
-      {/* -----------------------------------------------------------
-          NLRC PROGRESS
-         ----------------------------------------------------------- */}
+      {/* ================================================ */}
+      {/* NLRC PROGRESS */}
+      {/* ================================================ */}
 
       {nlrcVisible && (
-        <div className="mt-3">
+        <div className="mt-4">
           <Field label="NLRC Progress">
             <select
               className={inputCls}
               value={value.caseProgress.nlrc}
-              disabled={
-                restrictNlrcProgressEditing
-              }
+              disabled={restrictNlrcProgressEditing}
               onChange={(e) => {
                 const selected =
                   e.target.value as StageProgress;
@@ -286,7 +286,6 @@ export function NlrcSection({
                  * changing NLRC Progress cannot leave stale CA
                  * information behind.
                  */
-
                 const caHasData =
                   !!value.ca.date ||
                   !!value.ca.status ||
@@ -308,7 +307,6 @@ export function NlrcSection({
                  * reset because the workflow can no longer
                  * proceed to CA.
                  */
-
                 const shouldResetCa =
                   caHasData &&
                   selected !== "Not Settled" &&
@@ -318,7 +316,6 @@ export function NlrcSection({
                  * Category should be cleared when NLRC
                  * Progress becomes Not Settled or Others.
                  */
-
                 const shouldResetCategory =
                   selected === "Not Settled" ||
                   selected === "Others";
@@ -379,15 +376,10 @@ export function NlrcSection({
               </option>
 
               {PROGRESS_OPTIONS.filter(
-                (
-                  p,
-                ): p is StageProgress =>
-                  p !== "All",
+                (p): p is StageProgress =>
+                  p !== "All"
               ).map((p) => (
-                <option
-                  key={p}
-                  value={p}
-                >
+                <option key={p} value={p}>
                   {p}
                 </option>
               ))}
@@ -396,22 +388,18 @@ export function NlrcSection({
         </div>
       )}
 
-      {/* -----------------------------------------------------------
-          NLRC PROGRESS SPECIFICATION
-         ----------------------------------------------------------- */}
+      {/* ================================================ */}
+      {/* SPECIFY NLRC PROGRESS */}
+      {/* ================================================ */}
 
       {nlrcVisible &&
-        (value.caseProgress.nlrc ===
-          "Others" ||
-          value.caseProgress.nlrc ===
-            "Not Settled") && (
+        (value.caseProgress.nlrc === "Others" ||
+          value.caseProgress.nlrc === "Not Settled") && (
           <fieldset
-            disabled={
-              restrictNlrcProgressEditing
-            }
+            disabled={restrictNlrcProgressEditing}
             className="contents"
           >
-            <div className="mt-3 grid gap-4 sm:grid-cols-3">
+            <div className="mt-4 grid gap-4">
               <Field label="Specify NLRC Progress">
                 <textarea
                   rows={3}
@@ -419,17 +407,16 @@ export function NlrcSection({
                   placeholder="Enter progress"
                   value={
                     value.caseProgress
-                      .nlrcSpecification ??
-                    ""
+                      .nlrcSpecification ?? ""
                   }
                   onChange={(e) =>
                     setProgressSpecification(
                       "nlrc",
-                      e.target.value,
+                      e.target.value
                     )
                   }
-               />
-             </Field>
+                />
+              </Field>
             </div>
           </fieldset>
         )}
