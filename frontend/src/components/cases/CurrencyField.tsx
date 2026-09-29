@@ -33,6 +33,20 @@ export function CurrencyField({
   );
 }
 
+function formatWithCommas(raw: string) {
+  if (!raw) return "";
+  const [int, dec] = raw.split(".");
+  const withCommas = int.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  return dec !== undefined ? `${withCommas}.${dec}` : withCommas;
+}
+
+function sanitizeAmount(input: string) {
+  const cleaned = input.replace(/[^0-9.]/g, "");
+  const [int, ...rest] = cleaned.split(".");
+  if (rest.length === 0) return int;
+  return `${int}.${rest.join("").slice(0, 2)}`;
+}
+
 const TO_BE_COMPUTED = "To be computed";
 
 export function JudgmentAwardField({
@@ -76,38 +90,34 @@ export function JudgmentAwardField({
               ₱
             </span>
             <input
-              type="number"
+              type="text"
               inputMode="decimal"
-              min="0"
-              step="0.01"
               className={`${inputCls} pl-7`}
-              value={value}
-              onChange={(e) => onChange(e.target.value)}
+              value={formatWithCommas(value)}
+              onChange={(e) => onChange(sanitizeAmount(e.target.value))}
               placeholder="0.00"
-            />
-          </div>
+            />          </div>
         )}
 
         {isComputed ? (
-          <input
+          <textarea
             required
-            type="text"
+            rows={3}
             className={inputCls}
             value={computedSpecValue ?? ""}
             onChange={(e) => onComputedSpecChange?.(e.target.value)}
             placeholder="Enter computation basis"
           />
         ) : (
-          <input
+          <textarea
             required
-            type="text"
+            rows={3}
             className={inputCls}
             value={amountSpecValue ?? ""}
             onChange={(e) => onAmountSpecChange?.(e.target.value)}
             placeholder="Enter remarks/basis for this amount"
           />
-        )}
-      </div>
+        )}      </div>
     </Field>
   );
 }

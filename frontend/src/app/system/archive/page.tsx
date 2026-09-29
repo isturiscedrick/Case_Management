@@ -238,14 +238,9 @@ export default function ArchivePage() {
           <div className="min-h-0 flex-1 overflow-auto">
             <table className="min-w-full table-fixed border-separate border-spacing-0 text-[11px]">
               <colgroup>
-                {/* Case Status */}
-                <col className="w-20" />
-                {/* Case ID */}
                 <col className="w-14" />
-                {/* Last Updated */}
+                <col className="w-20" />
                 <col className="w-16" />
-
-                {/* SEnA */}
                 <col className="w-32" />
                 <col className="w-16" />
                 <col className="w-28" />
@@ -256,50 +251,38 @@ export default function ArchivePage() {
                 <col className="w-28" />
                 <col className="w-16" />
                 <col className="w-24" />
-
-                {/* LA */}
                 <col className="w-16" />
                 <col className="w-20" />
                 <col className="w-20" />
                 <col className="w-24" />
                 <col className="w-16" />
-
-                {/* NLRC */}
                 <col className="w-20" />
                 <col className="w-20" />
                 <col className="w-24" />
                 <col className="w-16" />
                 <col className="w-20" />
-
-                {/* CA */}
                 <col className="w-20" />
                 <col className="w-20" />
                 <col className="w-24" />
                 <col className="w-16" />
                 <col className="w-20" />
-
-                {/* SC */}
                 <col className="w-20" />
                 <col className="w-20" />
                 <col className="w-24" />
                 <col className="w-16" />
                 <col className="w-20" />
-
-                {/* Total Paid */}
                 <col className="w-28" />
                 <col className="w-28" />
-
-                {/* Actions */}
                 <col className="w-16" />
               </colgroup>
 
               <thead className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
                 <tr>
                   <th rowSpan={2} className="sticky left-0 top-0 z-30 border-b border-r border-slate-200 bg-slate-50 p-2 text-left">
-                    Case Status
+                    Case ID
                   </th>
                   <th rowSpan={2} className="sticky top-0 z-20 border-b border-r border-slate-200 bg-slate-50 p-2 text-left">
-                    ID
+                    Case Status
                   </th>
                   <th rowSpan={2} className="sticky top-0 z-20 border-b border-r border-slate-200 bg-slate-50 p-2 text-left">
                     Last Updated

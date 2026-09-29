@@ -240,7 +240,8 @@ export function NlrcSection({
             >
               <div className="mt-3 grid gap-4 sm:grid-cols-3">
                 <Field label="Specify Remarks">
-                  <input
+                  <textarea
+                    rows={3}
                     className={inputCls}
                     placeholder="Enter remarks"
                     value={
