@@ -1,3 +1,4 @@
+
 import { Plus } from "lucide-react";
 
 import type { CaseDraft, CaseStatus } from "@/types/case";
@@ -35,7 +36,7 @@ export function SenaSection({
 }: SenaSectionProps) {
   return (
     <div
-      className={`rounded-xl border ${STAGE_STYLES.sena.ring} bg-white p-4 shadow-sm sm:p-5`}
+      className={`mx-auto w-full max-w-3xl rounded-xl border ${STAGE_STYLES.sena.ring} bg-white p-5 shadow-sm sm:p-8`}
     >
       <SectionHeader stage="sena" title="Single Entry Approach (SEnA)" />
 
@@ -47,11 +48,11 @@ export function SenaSection({
         </InfoBanner>
       )}
 
-      <div className="grid gap-4 sm:grid-cols-3">
-        {/* ------------------------------------------------ */}
-        {/* BASIC CASE INFORMATION */}
-        {/* ------------------------------------------------ */}
+      {/* ------------------------------------------------ */}
+      {/* BASIC CASE INFORMATION */}
+      {/* ------------------------------------------------ */}
 
+      <div className="grid grid-cols-1 gap-4">
         <fieldset disabled={restrictSenaEditing} className="contents">
           <Field label="Company">
             <select
