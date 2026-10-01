@@ -9,12 +9,15 @@ export function SummaryCards({
   hideTotal = false,
   activeStatus = "All",
   onSelect,
+  labelPrefix = "",
 }: {
   cases: CaseItem[];
   hideTotal?: boolean;
   // Optional: when onSelect is passed, the cards act as status filters.
   activeStatus?: "All" | CaseStatusSummary;
   onSelect?: (status: "All" | CaseStatusSummary) => void;
+  // Optional: e.g. "My " renders "My Cases", "My Settled", "My Pending", ...
+  labelPrefix?: string;
 }) {
   const counts: Record<CaseStatusSummary, number> = {
     Settled: 0,
@@ -29,11 +32,13 @@ export function SummaryCards({
   const pick = (status: CaseStatusSummary) =>
     onSelect ? () => onSelect(activeStatus === status ? "All" : status) : undefined;
 
+  const totalLabel = labelPrefix ? `${labelPrefix.trim()} Cases` : "Total Cases";
+
   return (
     <div className={`grid gap-2.5 sm:grid-cols-2 ${hideTotal ? "lg:grid-cols-4" : "lg:grid-cols-5"}`}>
       {!hideTotal && (
         <SummaryCard
-          label="Total Cases"
+          label={totalLabel}
           value={cases.length}
           icon={Briefcase}
           accent="bg-slate-100 text-slate-700"
@@ -42,7 +47,7 @@ export function SummaryCards({
       )}
 
       <SummaryCard
-        label="Settled"
+        label={`${labelPrefix}Settled`}
         value={counts.Settled}
         icon={CheckCircle2}
         accent="bg-emerald-50 text-emerald-600"
@@ -51,7 +56,7 @@ export function SummaryCards({
       />
 
       <SummaryCard
-        label="Pending"
+        label={`${labelPrefix}Pending`}
         value={counts.Pending}
         icon={Clock3}
         accent="bg-amber-50 text-amber-600"
@@ -60,7 +65,7 @@ export function SummaryCards({
       />
 
       <SummaryCard
-        label="Not Settled"
+        label={`${labelPrefix}Not Settled`}
         value={counts["Not Settled"]}
         icon={XCircle}
         accent="bg-rose-50 text-rose-600"
@@ -69,7 +74,7 @@ export function SummaryCards({
       />
 
       <SummaryCard
-        label="Closed"
+        label={`${labelPrefix}Closed`}
         value={counts.Closed}
         icon={Lock}
         accent="bg-slate-100 text-slate-600"

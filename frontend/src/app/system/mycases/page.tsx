@@ -21,6 +21,7 @@ import { cloneDraft, getCaseStatusSummary, getTotalJudgmentAward, type CaseStatu
 import { getCaseDraftErrors, getStageGates } from "@/lib/caseValidation";
 
 import { InlineAlert } from "@/components/shared/InlineAlert";
+import { SummaryCards } from "@/components/shared/SummaryCards";
 import { CaseFilters, type StageFilterKey } from "@/components/dashboard/CaseFilters";
 import { CaseTable } from "@/components/dashboard/CaseTable";
 import { CaseFormModal } from "@/components/dashboard/CaseFormModal";
@@ -151,23 +152,24 @@ export default function MyCasesPage() {
     }
   };
 
-useEffect(() => {
-  const handleUnload = () => {
-    if (lockedCaseIdRef.current !== null) {
-      releaseCaseLockOnUnload(lockedCaseIdRef.current);
-    }
-  };
+  useEffect(() => {
+    const handleUnload = () => {
+      if (lockedCaseIdRef.current !== null) {
+        releaseCaseLockOnUnload(lockedCaseIdRef.current);
+      }
+    };
 
-  window.addEventListener("pagehide", handleUnload);
-  window.addEventListener("beforeunload", handleUnload);
+    window.addEventListener("pagehide", handleUnload);
+    window.addEventListener("beforeunload", handleUnload);
 
-  return () => {
-    window.removeEventListener("pagehide", handleUnload);
-    window.removeEventListener("beforeunload", handleUnload);
-    void releaseLockIfHeld();
-  };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-}, []);
+    return () => {
+      window.removeEventListener("pagehide", handleUnload);
+      window.removeEventListener("beforeunload", handleUnload);
+      void releaseLockIfHeld();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   /* =======================================================
      FILTER STATE — same shape as the Dashboard, plus Source
   ======================================================= */
@@ -583,16 +585,14 @@ useEffect(() => {
         <InlineAlert messages={[notice]} onDismiss={() => setNotice(null)} />
       )}
 
-      {/* SUMMARY */}
-      <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:max-w-xs">
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100 text-slate-700">
-          <Briefcase size={18} />
-        </div>
-        <div>
-          <p className="text-[11px] uppercase tracking-wide text-slate-400">My Cases</p>
-          <p className="text-lg font-semibold tabular-nums text-[#12331F]">{myCases.length}</p>
-        </div>
-      </div>
+      {/* SUMMARY — same status cards as the Dashboard, scoped to My Cases.
+          Clicking a card filters the table; clicking the active card clears it. */}
+      <SummaryCards
+        cases={myCases}
+        labelPrefix="My "
+        activeStatus={statusFilter}
+        onSelect={handleStatusFilterChange}
+      />
 
       {/* SOURCE FILTER — extra chip row above the shared CaseFilters */}
       <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white p-2 shadow-sm">
