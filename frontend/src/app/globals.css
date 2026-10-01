@@ -131,3 +131,13 @@ div:has(> [role="dialog"]) {
     transform: none;
   }
 }
+
+/* ---------- Added in UI/UX batch 3 ---------- */
+
+/* Compact table density. Scoped to tables that use table-fixed (the case
+   table and the archive table) so History and Users keep their spacing.
+   This is unlayered CSS, so it beats the p-2 utility on each cell. */
+html[data-density="compact"] table.table-fixed td {
+  padding-top: 0.125rem;
+  padding-bottom: 0.125rem;
+}

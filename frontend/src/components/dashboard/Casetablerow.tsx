@@ -1,3 +1,4 @@
+import type { KeyboardEvent } from "react";
 import { Archive, ArchiveRestore, Bookmark, BookmarkCheck, Eye, RefreshCw } from "lucide-react";
 
 import type { CaseItem } from "@/types/case";
@@ -28,6 +29,15 @@ function formatJudgmentAward(info: {
     : amount;
 }
 
+// Full remarks text (with its specification when "Other"), used for the
+// cell tooltip so cut-off text can still be read on hover.
+function formatStageRemarks(info: { remarks: string; remarksSpecification?: string }) {
+  if (info.remarks === "Other" && info.remarksSpecification) {
+    return `${info.remarks} (${info.remarksSpecification})`;
+  }
+  return info.remarks;
+}
+
 export function CaseTableRow({
   item,
   onView,
@@ -35,9 +45,9 @@ export function CaseTableRow({
   onToggleArchive,
   hideEdit = false,
   canEditClosed = false,
-  onToggleSave,       // + NEW — bookmark toggle; omit to hide the action entirely
-  isSaved = false,    // + NEW — controls Save vs Unsave icon/label
-  saveActionLabel,    // + NEW — override label ("Save to My Cases" / "Remove from My Cases")
+  onToggleSave,       // bookmark toggle; omit to hide the action entirely
+  isSaved = false,    // controls Save vs Unsave icon/label
+  saveActionLabel,    // override label ("Save to My Cases" / "Remove from My Cases")
 }: {
   item: CaseItem;
   onView: (item: CaseItem) => void;
@@ -48,7 +58,7 @@ export function CaseTableRow({
   hideEdit?: boolean;
   // Admins can still edit a closed case (server enforces this too).
   canEditClosed?: boolean;
-  // + NEW — bookmark ("Save to My Cases") action. Optional so pages that
+  // Bookmark ("Save to My Cases") action. Optional so pages that
   // don't support saving (e.g. Archive) don't render the button at all.
   onToggleSave?: (item: CaseItem) => void;
   isSaved?: boolean;
@@ -64,10 +74,36 @@ export function CaseTableRow({
   const defaultSaveLabel = isSaved ? "Remove from My Cases" : "Save to My Cases";
   const saveLabel = saveActionLabel ?? defaultSaveLabel;
 
+  const handlingPersonnelText =
+    item.handlingPersonnel === "Others" && item.handlingPersonnelSpecification
+      ? `Others (${item.handlingPersonnelSpecification})`
+      : item.handlingPersonnel ?? "";
+
+  const causeText = item.causeSpecification
+    ? `${item.cause.join(", ")} (${item.causeSpecification})`
+    : item.cause.join(", ");
+
+  const laAward = formatJudgmentAward(item.la);
+  const nlrcAward = formatJudgmentAward(item.nlrc);
+  const caAward = formatJudgmentAward(item.ca);
+  const scAward = formatJudgmentAward(item.sc);
+
+  // Enter opens the case, same as double-click. Ignored when the key press
+  // came from a button inside the row, so it doesn't fire twice.
+  const handleRowKeyDown = (event: KeyboardEvent<HTMLTableRowElement>) => {
+    if (event.target !== event.currentTarget) return;
+    if (event.key === "Enter") {
+      event.preventDefault();
+      onView(item);
+    }
+  };
+
   return (
     <tr
-      className="group cursor-pointer border-b border-slate-100 last:border-0 hover:bg-slate-50"
+      tabIndex={0}
+      className="group cursor-pointer border-b border-slate-100 last:border-0 hover:bg-slate-50 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[#B08D57]"
       onDoubleClick={() => onView(item)}
+      onKeyDown={handleRowKeyDown}
     >
       {/* Case ID */}
       <td className="sticky left-0 z-10 border-r border-slate-200 bg-white p-2 font-mono text-[11px] text-slate-500 group-hover:bg-slate-50">
@@ -81,7 +117,7 @@ export function CaseTableRow({
 
 
       {/* Last Updated */}
-      <td className="border-r border-slate-100 p-2 text-slate-600">{formatDate(item.date)}</td>
+      <td className="border-r border-slate-100 p-2 tabular-nums text-slate-600">{formatDate(item.date)}</td>
 
       {/* Company */}
       <td title={item.company} className="truncate bg-yellow-50/30 p-2 font-medium text-slate-900">
@@ -92,19 +128,19 @@ export function CaseTableRow({
       <td className="bg-yellow-50/30 p-2 text-slate-600">{item.status}</td>
 
       {/* Case Title */}
-      <td className="truncate bg-yellow-50/30 p-2 text-slate-600">{item.caseTitle}</td>
+      <td title={item.caseTitle} className="truncate bg-yellow-50/30 p-2 text-slate-600">{item.caseTitle}</td>
 
       {/* Case Number */}
-      <td className="truncate bg-yellow-50/30 p-2 font-mono text-[11px] text-slate-500">{item.caseNo}</td>
+      <td title={item.caseNo} className="truncate bg-yellow-50/30 p-2 font-mono text-[11px] text-slate-500">{item.caseNo}</td>
 
       {/* Complainants */}
-      <td className="bg-yellow-50/30 p-2 text-slate-600">{item.complainants.join(", ")}</td>
+      <td title={item.complainants.join(", ")} className="bg-yellow-50/30 p-2 text-slate-600">{item.complainants.join(", ")}</td>
 
       {/* Venue */}
-      <td className="truncate bg-yellow-50/30 p-2 text-slate-600">{item.venue}</td>
+      <td title={item.venue} className="truncate bg-yellow-50/30 p-2 text-slate-600">{item.venue}</td>
 
       {/* Handling Personnel */}
-      <td className="truncate bg-yellow-50/30 p-2 text-slate-600">
+      <td title={handlingPersonnelText} className="truncate bg-yellow-50/30 p-2 text-slate-600">
         {item.handlingPersonnel}
         {item.handlingPersonnel === "Others" && item.handlingPersonnelSpecification && (
           <div className="text-[10px] text-slate-500">({item.handlingPersonnelSpecification})</div>
@@ -112,17 +148,17 @@ export function CaseTableRow({
       </td>
 
       {/* Cause of Action */}
-      <td className="truncate bg-yellow-50/30 p-2 text-slate-600">
+      <td title={causeText} className="truncate bg-yellow-50/30 p-2 text-slate-600">
         {item.cause.join(", ")}
         {item.causeSpecification && <div className="text-[10px] text-slate-500">({item.causeSpecification})</div>}
       </td>
 
       {/* Filing Date */}
-      <td className="bg-yellow-50/30 p-2 text-slate-600">{formatDate(item.filingDate)}</td>
+      <td className="bg-yellow-50/30 p-2 tabular-nums text-slate-600">{formatDate(item.filingDate)}</td>
 
       {/* Remarks */}
       <td className="border-r border-slate-100 bg-yellow-50/30 p-2 text-slate-600">
-        <div className="truncate">{item.remarks}</div>
+        <div className="truncate" title={item.remarks}>{item.remarks}</div>
       {item.remarkSpecification && (
         <div className="whitespace-pre-wrap wrap-break-word text-[10px] text-slate-500">
       ({item.remarkSpecification})
@@ -131,10 +167,10 @@ export function CaseTableRow({
       </td>
 
          {/* LABOR ARBITER */}
-      <td className="bg-sky-50/30 p-2 text-slate-600">{formatDate(item.la.date)}</td>
-      <td className="truncate bg-sky-50/30 p-2 text-slate-600">{item.la.status}</td>
-      <td className="truncate bg-sky-50/30 p-2 font-medium text-slate-700">{formatJudgmentAward(item.la)}</td>
-      <td className="truncate bg-sky-50/30 p-2 text-slate-600">
+      <td className="bg-sky-50/30 p-2 tabular-nums text-slate-600">{formatDate(item.la.date)}</td>
+      <td title={item.la.status} className="truncate bg-sky-50/30 p-2 text-slate-600">{item.la.status}</td>
+      <td title={laAward} className="truncate bg-sky-50/30 p-2 font-medium tabular-nums text-slate-700">{laAward}</td>
+      <td title={formatStageRemarks(item.la)} className="truncate bg-sky-50/30 p-2 text-slate-600">
         {item.la.remarks}
         {item.la.remarks === "Other" && item.la.remarksSpecification && (
           <div className="text-[10px] text-slate-500">({item.la.remarksSpecification})</div>
@@ -145,10 +181,10 @@ export function CaseTableRow({
       </td>
 
         {/* NLRC */}
-      <td className="bg-violet-50/30 p-2 text-slate-600">{formatDate(item.nlrc.date)}</td>
-      <td className="truncate bg-violet-50/30 p-2 text-slate-600">{item.nlrc.status}</td>
-      <td className="truncate bg-violet-50/30 p-2 font-medium text-slate-700">{formatJudgmentAward(item.nlrc)}</td>
-      <td className="truncate bg-violet-50/30 p-2 text-slate-600">
+      <td className="bg-violet-50/30 p-2 tabular-nums text-slate-600">{formatDate(item.nlrc.date)}</td>
+      <td title={item.nlrc.status} className="truncate bg-violet-50/30 p-2 text-slate-600">{item.nlrc.status}</td>
+      <td title={nlrcAward} className="truncate bg-violet-50/30 p-2 font-medium tabular-nums text-slate-700">{nlrcAward}</td>
+      <td title={formatStageRemarks(item.nlrc)} className="truncate bg-violet-50/30 p-2 text-slate-600">
         {item.nlrc.remarks}
         {item.nlrc.remarks === "Other" && item.nlrc.remarksSpecification && (
           <div className="text-[10px] text-slate-500">({item.nlrc.remarksSpecification})</div>
@@ -159,10 +195,10 @@ export function CaseTableRow({
       </td>
 
       {/* COURT OF APPEALS */}
-      <td className="bg-green-50/30 p-2 text-slate-600">{formatDate(item.ca.date)}</td>
-      <td className="truncate bg-green-50/30 p-2 text-slate-600">{item.ca.status}</td>
-      <td className="truncate bg-green-50/30 p-2 font-medium text-slate-700">{formatJudgmentAward(item.ca)}</td>
-      <td className="truncate bg-green-50/30 p-2 text-slate-600">
+      <td className="bg-green-50/30 p-2 tabular-nums text-slate-600">{formatDate(item.ca.date)}</td>
+      <td title={item.ca.status} className="truncate bg-green-50/30 p-2 text-slate-600">{item.ca.status}</td>
+      <td title={caAward} className="truncate bg-green-50/30 p-2 font-medium tabular-nums text-slate-700">{caAward}</td>
+      <td title={formatStageRemarks(item.ca)} className="truncate bg-green-50/30 p-2 text-slate-600">
         {item.ca.remarks}
         {item.ca.remarks === "Other" && item.ca.remarksSpecification && (
           <div className="text-[10px] text-slate-500">({item.ca.remarksSpecification})</div>
@@ -173,10 +209,10 @@ export function CaseTableRow({
       </td>
 
       {/* SUPREME COURT */}
-      <td className="bg-pink-50/30 p-2 text-slate-600">{formatDate(item.sc.date)}</td>
-      <td className="truncate bg-pink-50/30 p-2 text-slate-600">{item.sc.status}</td>
-      <td className="truncate bg-pink-50/30 p-2 font-medium text-slate-700">{formatJudgmentAward(item.sc)}</td>
-      <td className="truncate bg-pink-50/30 p-2 text-slate-600">
+      <td className="bg-pink-50/30 p-2 tabular-nums text-slate-600">{formatDate(item.sc.date)}</td>
+      <td title={item.sc.status} className="truncate bg-pink-50/30 p-2 text-slate-600">{item.sc.status}</td>
+      <td title={scAward} className="truncate bg-pink-50/30 p-2 font-medium tabular-nums text-slate-700">{scAward}</td>
+      <td title={formatStageRemarks(item.sc)} className="truncate bg-pink-50/30 p-2 text-slate-600">
         {item.sc.remarks}
         {item.sc.remarks === "Other" && item.sc.remarksSpecification && (
           <div className="text-[10px] text-slate-500">({item.sc.remarksSpecification})</div>
@@ -187,7 +223,7 @@ export function CaseTableRow({
       </td>
 
       {/* TOTAL PAID */}
-      <td className="bg-emerald-50/30 p-2 font-medium text-slate-700">
+      <td className="bg-emerald-50/30 p-2 font-medium tabular-nums text-slate-700">
         {item.totalPaid ? formatCurrency(item.totalPaid.amount) : "-"}
       </td>
       <td className="border-r border-slate-200 bg-emerald-50/30 p-2 text-slate-600">
