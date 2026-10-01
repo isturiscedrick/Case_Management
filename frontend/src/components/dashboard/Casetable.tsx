@@ -96,12 +96,12 @@ export function CaseTable({
         <div className="min-h-0 flex-1 overflow-auto overscroll-contain">
           <table className="min-w-full table-fixed border-separate border-spacing-0 text-[11px]">
             <colgroup>
-              {/* Case Status */}
-              <col className="w-14" />
               {/* Case ID */}
               <col className="w-20" />
+              {/* Case Status */}
+              <col className="w-28" />
               {/* Last Updated */}
-              <col className="w-16" />
+              <col className="w-24" />
 
               {/* SEnA */}
               <col className="w-32" />

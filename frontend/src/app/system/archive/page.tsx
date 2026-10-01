@@ -238,9 +238,9 @@ export default function ArchivePage() {
           <div className="min-h-0 flex-1 overflow-auto">
             <table className="min-w-full table-fixed border-separate border-spacing-0 text-[11px]">
               <colgroup>
-                <col className="w-14" />
                 <col className="w-20" />
-                <col className="w-16" />
+                <col className="w-28" />
+                <col className="w-24" />
                 <col className="w-32" />
                 <col className="w-16" />
                 <col className="w-28" />

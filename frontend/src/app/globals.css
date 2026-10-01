@@ -1,4 +1,3 @@
-@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600&display=swap");
 @import "tailwindcss";
 
 :root {
@@ -8,19 +7,22 @@
   --muted: #64748b;
   --accent: #b08d57;
   --forest: #12331f;
+  --forest-hover: #1b4a2c;
+  --line: #ded7c5;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: "DM Sans", sans-serif;
-  --font-serif: "Playfair Display", Georgia, serif;
+  --font-sans: var(--font-dm-sans), "DM Sans", sans-serif;
+  --font-serif: var(--font-playfair), Georgia, serif;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: "DM Sans", sans-serif;
+  font-family: var(--font-dm-sans), "DM Sans", sans-serif;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
 }
@@ -40,4 +42,58 @@ select:focus-visible,
 textarea:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
+}
+
+/* ---------- Added in UI/UX batch 1 ---------- */
+
+/* Thin, quiet scrollbars. The case table is wide, so this matters. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #cfc8b2 transparent;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--accent) 35%, white);
+}
+
+/* Every Modal and ConfirmDialog already uses role="dialog" inside a fixed
+   overlay, so this animates both without touching either component. */
+div:has(> [role="dialog"]) {
+  animation: overlay-in 160ms ease-out;
+}
+
+[role="dialog"] {
+  animation: dialog-in 220ms var(--ease-out);
+}
+
+@keyframes overlay-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes dialog-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Respect users who turn motion off. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

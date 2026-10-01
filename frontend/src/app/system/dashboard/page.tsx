@@ -604,7 +604,11 @@ useEffect(() => {
       )}
       <DashboardHeader onCreate={openCreate} />
 
-      <SummaryCards cases={activeCases} />
+      <SummaryCards
+        cases={activeCases}
+        activeStatus={statusFilter}
+        onSelect={handleStatusFilterChange}
+      />
 
       <CaseFilters
         search={search}
