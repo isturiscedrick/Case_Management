@@ -8,6 +8,7 @@ import type { CaseItem } from "@/types/case";
 import type { HistoryEntry } from "@/data/historyEvents";
 import { createCase, fetchCases, fetchHistory, setCaseClosed, toggleArchiveCase, UnauthorizedError, updateCase as updateCaseApi } from "@/lib/api";
 import { mapCaseOutToCaseItem } from "@/lib/caseMapper";
+import { useToast } from "@/components/shared/Toast";
 
 type CasesContextValue = {
   cases: CaseItem[];
@@ -39,6 +40,7 @@ function mapHistory(out: Awaited<ReturnType<typeof fetchHistory>>[number]): Hist
 
 export function CasesProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
+  const toast = useToast();
   const [cases, setCases] = useState<CaseItem[]>([]);
   const [historyLog, setHistoryLog] = useState<HistoryEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -106,26 +108,30 @@ export function CasesProvider({ children }: { children: ReactNode }) {
   const addCase = useCallback(async (newCase: CaseItem) => {
     const saved = await createCase(newCase);
     setCases((prev) => [...prev, mapCaseOutToCaseItem(saved)]);
+    toast.success(`Case ${saved.case_no} created.`);
     await reloadHistory();
-  }, [reloadHistory]);
+  }, [reloadHistory, toast]);
 
   const updateCase = useCallback(async (updatedCase: CaseItem) => {
     const saved = await updateCaseApi(updatedCase.id, updatedCase);
     setCases((prev) => prev.map((item) => (item.id === updatedCase.id ? mapCaseOutToCaseItem(saved) : item)));
+    toast.success(`Changes saved to case ${saved.case_no}.`);
     await reloadHistory();
-  }, [reloadHistory]);
+  }, [reloadHistory, toast]);
 
   const toggleArchive = useCallback(async (id: number) => {
     const saved = await toggleArchiveCase(id);
     setCases((prev) => prev.map((item) => (item.id === id ? mapCaseOutToCaseItem(saved) : item)));
+    toast.success(`Case ${saved.case_no} ${saved.archived ? "archived" : "restored"}.`);
     await reloadHistory();
-  }, [reloadHistory]);
+  }, [reloadHistory, toast]);
 
   const closeCase = useCallback(async (id: number, closed: boolean) => {
     const saved = await setCaseClosed(id, closed);
     setCases((prev) => prev.map((item) => (item.id === id ? mapCaseOutToCaseItem(saved) : item)));
+    toast.success(`Case ${saved.case_no} ${closed ? "closed" : "reopened"}.`);
     await reloadHistory();
-  }, [reloadHistory]);
+  }, [reloadHistory, toast]);
 
   const value = useMemo(
     () => ({ cases, historyLog, isLoading, loadError, refetch, addCase, updateCase, toggleArchive, setCaseClosed: closeCase }),

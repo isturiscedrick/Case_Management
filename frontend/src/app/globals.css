@@ -97,3 +97,37 @@ div:has(> [role="dialog"]) {
     scroll-behavior: auto !important;
   }
 }
+
+/* ---------- Added in UI/UX batch 2 ---------- */
+
+/* Loading placeholders. No border-radius here on purpose: set it with a
+   Tailwind class (rounded-md / rounded-full) on each skeleton. */
+.skeleton {
+  background: linear-gradient(90deg, #ebe7d8 25%, #f5f2e6 50%, #ebe7d8 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s linear infinite;
+}
+
+@keyframes shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+.toast-in {
+  animation: toast-in 220ms var(--ease-out);
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}

@@ -597,11 +597,6 @@ useEffect(() => {
         <InlineAlert messages={[notice]} onDismiss={() => setNotice(null)} />
       )}
 
-      {isLoading && cases.length === 0 && !loadError && (
-        <div className="flex items-center justify-center rounded-xl border border-slate-200 bg-white p-16 text-sm text-slate-400 shadow-sm">
-          Loading cases…
-        </div>
-      )}
       <DashboardHeader onCreate={openCreate} />
 
       <SummaryCards
@@ -639,28 +634,55 @@ useEffect(() => {
         onResetFilters={resetFilters}
       />
 
-      <CaseTable
-        cases={paginatedCases}
-        onView={openView}
-        onEdit={openEdit}
-        onToggleArchive={requestToggleArchive}
-        canEditClosed={isAdmin}
-        onToggleSave={toggleSave}
-        savedIds={savedIds}
-        pagination={
-          filteredCases.length > 0
-            ? {
-                currentPage,
-                totalPages,
-                onPrevious: () => setCurrentPage((page) => Math.max(1, page - 1)),
-                onNext: () => setCurrentPage((page) => Math.min(totalPages, page + 1)),
-                rangeStart: (currentPage - 1) * PAGE_SIZE + 1,
-                rangeEnd: Math.min(currentPage * PAGE_SIZE, filteredCases.length),
-                totalCount: filteredCases.length,
-              }
-            : undefined
-        }
-      />
+      {isLoading && cases.length === 0 && !loadError ? (
+        <div
+          role="status"
+          aria-live="polite"
+          className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm"
+        >
+          <span className="sr-only">Loading cases</span>
+
+          <div className="border-b border-slate-200 bg-slate-50 p-3">
+            <div className="skeleton h-3 w-40 rounded-md" />
+          </div>
+
+          <div className="min-h-0 flex-1 divide-y divide-slate-100 overflow-hidden">
+            {Array.from({ length: PAGE_SIZE }).map((_, index) => (
+              <div key={index} className="flex items-center gap-4 p-3">
+                <div className="skeleton h-3.5 w-10 rounded-md" />
+                <div className="skeleton h-6 w-24 rounded-full" />
+                <div className="skeleton h-3.5 w-20 rounded-md" />
+                <div className="skeleton h-3.5 w-48 rounded-md" />
+                <div className="skeleton hidden h-3.5 flex-1 rounded-md sm:block" />
+                <div className="skeleton hidden h-3.5 w-28 rounded-md md:block" />
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <CaseTable
+          cases={paginatedCases}
+          onView={openView}
+          onEdit={openEdit}
+          onToggleArchive={requestToggleArchive}
+          canEditClosed={isAdmin}
+          onToggleSave={toggleSave}
+          savedIds={savedIds}
+          pagination={
+            filteredCases.length > 0
+              ? {
+                  currentPage,
+                  totalPages,
+                  onPrevious: () => setCurrentPage((page) => Math.max(1, page - 1)),
+                  onNext: () => setCurrentPage((page) => Math.min(totalPages, page + 1)),
+                  rangeStart: (currentPage - 1) * PAGE_SIZE + 1,
+                  rangeEnd: Math.min(currentPage * PAGE_SIZE, filteredCases.length),
+                  totalCount: filteredCases.length,
+                }
+              : undefined
+          }
+        />
+      )}
       {/* CREATE CASE MODAL */}
       {modal === "create" && (
         <CaseFormModal
