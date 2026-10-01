@@ -266,6 +266,7 @@ def update_case(
         db.refresh(case)
         after = _snapshot_case(case)
         changes = _diff(before, after)
+        print(f"[history-debug] case {case.case_id}: {len(changes)} change(s) -> {changes}", flush=True)
 
         entry = history_crud.create_history_entry(
             db, case_id=case.case_id, case_no=case.case_no, company=case.company_name,

@@ -47,6 +47,22 @@ export function CasesProvider({ children }: { children: ReactNode }) {
 
   const refetch = useCallback(() => setReloadToken((t) => t + 1), []);
 
+  // Re-reads the history log from the server. Called after every mutation
+  // so the History page shows the new entry (and its before/after
+  // comparison) immediately, instead of only after a full page reload.
+  const reloadHistory = useCallback(async () => {
+    try {
+      const historyOut = await fetchHistory();
+      setHistoryLog(historyOut.map(mapHistory));
+    } catch (err) {
+      if (err instanceof UnauthorizedError) {
+        router.push("/login");
+        return;
+      }
+      console.error("Failed to refresh history:", err);
+    }
+  }, [router]);
+
   useEffect(() => {
     let cancelled = false;
 
@@ -90,22 +106,26 @@ export function CasesProvider({ children }: { children: ReactNode }) {
   const addCase = useCallback(async (newCase: CaseItem) => {
     const saved = await createCase(newCase);
     setCases((prev) => [...prev, mapCaseOutToCaseItem(saved)]);
-  }, []);
+    await reloadHistory();
+  }, [reloadHistory]);
 
   const updateCase = useCallback(async (updatedCase: CaseItem) => {
     const saved = await updateCaseApi(updatedCase.id, updatedCase);
     setCases((prev) => prev.map((item) => (item.id === updatedCase.id ? mapCaseOutToCaseItem(saved) : item)));
-  }, []);
+    await reloadHistory();
+  }, [reloadHistory]);
 
   const toggleArchive = useCallback(async (id: number) => {
     const saved = await toggleArchiveCase(id);
     setCases((prev) => prev.map((item) => (item.id === id ? mapCaseOutToCaseItem(saved) : item)));
-  }, []);
+    await reloadHistory();
+  }, [reloadHistory]);
 
   const closeCase = useCallback(async (id: number, closed: boolean) => {
     const saved = await setCaseClosed(id, closed);
     setCases((prev) => prev.map((item) => (item.id === id ? mapCaseOutToCaseItem(saved) : item)));
-  }, []);
+    await reloadHistory();
+  }, [reloadHistory]);
 
   const value = useMemo(
     () => ({ cases, historyLog, isLoading, loadError, refetch, addCase, updateCase, toggleArchive, setCaseClosed: closeCase }),
