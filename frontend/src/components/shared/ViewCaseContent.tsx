@@ -120,7 +120,7 @@ export function ViewCaseContent({ item }: { item: CaseItem }) {
         <div className="grid gap-x-6 sm:grid-cols-5">
           <DetailRow label="Date" value={formatDate(item.la.date)} />
           <DetailRow label="Status" value={item.la.status} />
-          <DetailRow label="Judgment Reward" value={formatJudgmentAward(item.la)} />
+          <DetailRow label="Judgment Award" value={formatJudgmentAward(item.la)} />
           <DetailRow label="Progress" value={formatProgress(item.caseProgress.la, item.caseProgress.laSpecification)} />
           <DetailRow
             label="Remarks"
@@ -180,7 +180,7 @@ export function ViewCaseContent({ item }: { item: CaseItem }) {
         <div className="grid gap-x-6 sm:grid-cols-5">
           <DetailRow label="Date" value={formatDate(item.sc.date)} />
           <DetailRow label="Status" value={item.sc.status} />
-          <DetailRow label="ment Award" value={formatJudgmentAward(item.sc)} />
+          <DetailRow label="Judgment Award" value={formatJudgmentAward(item.sc)} />
           <DetailRow label="Progress" value={formatProgress(item.caseProgress.sc, item.caseProgress.scSpecification)} />
           <DetailRow
             label="Remarks"
@@ -197,7 +197,7 @@ export function ViewCaseContent({ item }: { item: CaseItem }) {
       <div className="rounded-xl border border-emerald-200 bg-emerald-50/40 p-4 shadow-sm sm:p-5">
         <h3 className="mb-3 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-emerald-700">
           <Landmark size={13} />
-          Total Judgment Reward
+          Total Judgment Award
         </h3>
         <div className="max-w-sm space-y-3">
           <DetailRow label="Amount" value={formatCurrency(totalJudgmentAward)} />
