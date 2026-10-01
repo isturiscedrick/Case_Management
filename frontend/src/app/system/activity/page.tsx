@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ClipboardList, Search, User as UserIcon } from "lucide-react";
+import { ChevronRight, ClipboardList, Search, User as UserIcon } from "lucide-react";
 import { fetchCurrentUser, fetchDecidedNotifications, fetchMyHistory, fetchMyNotifications, UnauthorizedError, type HistoryOut, type PasswordResetNotification } from "@/lib/api";
 import { formatDateTime } from "@/lib/caseHelpers";
+import { clickableRowProps, CLICKABLE_ROW_CLS } from "@/lib/clickableRow";
 import { ChangeDetailsModal, historyOutToDetails } from "@/components/shared/ChangeDetailsModal";
 
 const PAGE_SIZE = 9;
@@ -35,7 +36,7 @@ export default function ActivityPage() {
   const [casePage, setCasePage] = useState(1);
   const [requestPage, setRequestPage] = useState(1);
   const [allPage, setAllPage] = useState(1);
-  // + NEW — history entry whose before/after details are open (double-click a row)
+  // History entry whose before/after details are open (click a row)
   const [selectedHistory, setSelectedHistory] = useState<HistoryOut | null>(null);
 
   useEffect(() => {
@@ -121,10 +122,9 @@ export default function ActivityPage() {
     return [...passwordItems, ...historyItems].sort((a, b) => byNewestFirst(a.sortKey, b.sortKey));
   }, [filteredPasswordChanges, filteredActions]);
 
-  // + NEW — when "All Activities" is selected, every kind of event (case
+  // When "All Activities" is selected, every kind of event (case
   // actions, password changes, and request decisions) is merged into one
-  // single newest-first feed, paginated together at PAGE_SIZE instead of
-  // the two sections each carrying their own separate pagination.
+  // single newest-first feed, paginated together at PAGE_SIZE.
   const unifiedAllItems: UnifiedItem[] = useMemo(() => {
     const requestItems: UnifiedItem[] = filteredNotifications.map((notification) => ({
       kind: "request",
@@ -173,12 +173,45 @@ export default function ActivityPage() {
   const showActionSelect = showCaseActions || showUnified;
   const showStatusSelect = showRequestDecisions || showUnified;
 
+  // Shared by both lists so a case-action row looks and behaves the same
+  // wherever it appears.
+  function renderHistoryRow(entry: HistoryOut, key: string) {
+    return (
+      <div
+        key={key}
+        role="button"
+        {...clickableRowProps(() => setSelectedHistory(entry))}
+        title="Click to view details"
+        aria-label={`View details for ${entry.action} case ${entry.case_no}`}
+        className={`group flex items-start gap-3 rounded-lg bg-slate-50 p-3 sm:items-center sm:justify-between ${CLICKABLE_ROW_CLS}`}
+      >
+        <div className="flex items-center gap-3">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[#B08D57]/40 bg-[#12331F] text-white">
+            {entry.performed_by_profile_picture ? (
+              <img src={entry.performed_by_profile_picture} alt="" className="h-full w-full object-cover" />
+            ) : (
+              <UserIcon size={12} />
+            )}
+          </div>
+          <div>
+            <p className="text-sm font-medium capitalize text-slate-700">{entry.action} case {entry.case_no}</p>
+            <p className="text-xs text-slate-500">{entry.company}{entry.detail ? ` - ${entry.detail}` : ""}</p>
+          </div>
+        </div>
+        <div className="flex shrink-0 items-center gap-2">
+          <time className="text-xs text-slate-400">{formatDateTime(entry.created_at)}</time>
+          <ChevronRight size={14} className="text-slate-300 transition group-hover:text-[#B08D57] group-focus-visible:text-[#B08D57]" />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="h-full overflow-y-auto bg-[#F5F1E3] p-4 sm:p-6">
       <div className="mx-auto max-w-3xl">
         <p className="text-xs font-medium uppercase tracking-wide text-[#B08D57]">Account</p>
         <h1 className="mt-1 font-serif text-2xl font-medium text-[#12331F]">My Activity</h1>
-        <p className="mt-1 text-sm text-slate-500">{isAdmin ? "Review decisions made on password reset requests." : "Only actions and account events performed by you are shown here."} Double-click a case action to see what changed.</p>
+        <p className="mt-1 text-sm text-slate-500">{isAdmin ? "Review decisions made on password reset requests." : "Only actions and account events performed by you are shown here."} Click a case action to see what changed.</p>
 
         {/* SHOW pill filter, same pattern as My Cases' source filter */}
         <div className="mt-5 flex items-center gap-2 rounded-xl border border-slate-200 bg-white p-2 shadow-sm">
@@ -293,29 +326,7 @@ export default function ActivityPage() {
                     }
 
                     if (entry.kind === "history") {
-                      return (
-                        <div
-                          key={`hist-${entry.data.history_id}`}
-                          onDoubleClick={() => setSelectedHistory(entry.data)}
-                          title="Double-click to view details"
-                          className="flex cursor-pointer select-none items-start gap-3 rounded-lg bg-slate-50 p-3 transition hover:bg-slate-100 sm:items-center sm:justify-between"
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[#B08D57]/40 bg-[#12331F] text-white">
-                              {entry.data.performed_by_profile_picture ? (
-                                <img src={entry.data.performed_by_profile_picture} alt="" className="h-full w-full object-cover" />
-                              ) : (
-                                <UserIcon size={12} />
-                              )}
-                            </div>
-                            <div>
-                              <p className="text-sm font-medium capitalize text-slate-700">{entry.data.action} case {entry.data.case_no}</p>
-                              <p className="text-xs text-slate-500">{entry.data.company}{entry.data.detail ? ` - ${entry.data.detail}` : ""}</p>
-                            </div>
-                          </div>
-                          <time className="shrink-0 text-xs text-slate-400">{formatDateTime(entry.data.created_at)}</time>
-                        </div>
-                      );
+                      return renderHistoryRow(entry.data, `hist-${entry.data.history_id}`);
                     }
 
                     // entry.kind === "request"
@@ -403,27 +414,7 @@ export default function ActivityPage() {
                         </time>
                       </div>
                     ) : (
-                      <div
-                        key={entry.data.history_id}
-                        onDoubleClick={() => setSelectedHistory(entry.data)}
-                        title="Double-click to view details"
-                        className="flex cursor-pointer select-none items-start gap-3 rounded-lg bg-slate-50 p-3 transition hover:bg-slate-100 sm:items-center sm:justify-between"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[#B08D57]/40 bg-[#12331F] text-white">
-                            {entry.data.performed_by_profile_picture ? (
-                              <img src={entry.data.performed_by_profile_picture} alt="" className="h-full w-full object-cover" />
-                            ) : (
-                              <UserIcon size={12} />
-                            )}
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium capitalize text-slate-700">{entry.data.action} case {entry.data.case_no}</p>
-                            <p className="text-xs text-slate-500">{entry.data.company}{entry.data.detail ? ` - ${entry.data.detail}` : ""}</p>
-                          </div>
-                        </div>
-                        <time className="shrink-0 text-xs text-slate-400">{formatDateTime(entry.data.created_at)}</time>
-                      </div>
+                      renderHistoryRow(entry.data, String(entry.data.history_id))
                     )
                   )}
                 </div>
@@ -520,7 +511,7 @@ export default function ActivityPage() {
         )}
       </div>
 
-      {/* + NEW — before/after details */}
+      {/* Before/after details */}
       {selectedHistory && (
         <ChangeDetailsModal
           details={historyOutToDetails(selectedHistory)}

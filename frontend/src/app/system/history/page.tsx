@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { History, Search, User as UserIcon } from "lucide-react";
+import { ChevronRight, History, Search, User as UserIcon } from "lucide-react";
 import type { HistoryAction, HistoryEntry } from "@/data/historyEvents";
 import { useCases } from "@/context/CasesContext";
 import { fetchCurrentUser, fetchMyHistory, UnauthorizedError, type HistoryOut } from "@/lib/api";
 import { formatDateTime } from "@/lib/caseHelpers";
+import { clickableRowProps, CLICKABLE_ROW_CLS } from "@/lib/clickableRow";
 import { ChangeDetailsModal, historyEntryToDetails } from "@/components/shared/ChangeDetailsModal";
 
 function mapHistoryOut(out: HistoryOut): HistoryEntry {
@@ -47,7 +48,7 @@ export default function HistoryPage() {
   const [ownHistory, setOwnHistory] = useState<HistoryEntry[]>([]);
   const [ownHistoryLoading, setOwnHistoryLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
-  // + NEW — entry whose before/after details are open (double-click a row)
+  // Entry whose before/after details are open (click a row)
   const [selectedEntry, setSelectedEntry] = useState<HistoryEntry | null>(null);
 
   useEffect(() => {
@@ -109,13 +110,11 @@ export default function HistoryPage() {
     setCurrentPage((page) => Math.min(page, totalPages));
   }, [totalPages]);
 
-  // + NEW
   const activeFilterCount =
     (actionFilter !== "All" ? 1 : 0) +
     (search ? 1 : 0) +
     (dateStart || dateEnd ? 1 : 0);
 
-  // + NEW
   const resetFilters = () => {
     setSearch("");
     setActionFilter("All");
@@ -129,7 +128,7 @@ export default function HistoryPage() {
       <div>
         <h1 className="font-serif text-lg font-medium tracking-tight text-[#12331F] md:text-xl">History</h1>
         <p className="mt-0.5 text-xs text-slate-500">
-          A record of changes made across all cases. Double-click an entry to see what changed.
+          A record of changes made across all cases. Click an entry to see what changed.
         </p>
       </div>
 
@@ -204,6 +203,9 @@ export default function HistoryPage() {
                   <th className="sticky top-0 z-10 border-b border-slate-200 bg-slate-50 p-2 text-left">Detail</th>
                   <th className="sticky top-0 z-10 border-b border-slate-200 bg-slate-50 p-2 text-left">Performed By</th>
                   <th className="sticky top-0 z-10 border-b border-slate-200 bg-slate-50 p-2 text-left">Timestamp</th>
+                  <th className="sticky top-0 z-10 w-8 border-b border-slate-200 bg-slate-50 p-2">
+                    <span className="sr-only">View details</span>
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -212,9 +214,10 @@ export default function HistoryPage() {
                   return (
                     <tr
                       key={entry.id}
-                      onDoubleClick={() => setSelectedEntry(entry)}
-                      title="Double-click to view details"
-                      className="cursor-pointer select-none border-b border-slate-100 last:border-0 hover:bg-slate-50"
+                      {...clickableRowProps(() => setSelectedEntry(entry))}
+                      title="Click to view details"
+                      aria-label={`View details for ${style.label} ${entry.caseNo}`}
+                      className={`group border-b border-slate-100 last:border-0 ${CLICKABLE_ROW_CLS}`}
                     >
                       <td className="p-2">
                         <span
@@ -240,13 +243,16 @@ export default function HistoryPage() {
                         </div>
                       </td>
                       <td className="p-2 text-slate-500">{formatTimestamp(entry.timestamp)}</td>
+                      <td className="p-2 text-slate-300 transition group-hover:text-[#B08D57] group-focus-visible:text-[#B08D57]">
+                        <ChevronRight size={14} />
+                      </td>
                     </tr>
                   );
                 })}
 
                 {filtered.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="p-8 text-center text-sm text-slate-400">
+                    <td colSpan={7} className="p-8 text-center text-sm text-slate-400">
                       No history events match your filters.
                     </td>
                   </tr>
@@ -290,7 +296,7 @@ export default function HistoryPage() {
         </div>
       )}
 
-      {/* + NEW — before/after details */}
+      {/* Before/after details */}
       {selectedEntry && (
         <ChangeDetailsModal
           details={historyEntryToDetails(selectedEntry)}

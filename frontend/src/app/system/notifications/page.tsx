@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Bell, User as UserIcon } from "lucide-react";
+import { Bell, ChevronRight, User as UserIcon } from "lucide-react";
 import { decideNotification, disregardLockout, fetchCurrentUser, fetchMyNotifications, fetchPendingNotifications, markNotificationRead, UnauthorizedError, type PasswordResetNotification } from "@/lib/api";
 import { formatDateTime } from "@/lib/caseHelpers";
+import { clickableRowProps, CLICKABLE_ROW_CLS } from "@/lib/clickableRow";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { ChangeDetailsModal, notificationToDetails, type ChangeDetails } from "@/components/shared/ChangeDetailsModal";
 
@@ -21,7 +22,7 @@ export default function NotificationsPage() {
   const [confirmDisregardId, setConfirmDisregardId] = useState<number | null>(null);
 
   const [currentPage, setCurrentPage] = useState(1);
-  // + NEW — before/after details for a case_update notification (double-click a row)
+  // Before/after details for a case_update notification (click a row)
   const [selectedDetails, setSelectedDetails] = useState<ChangeDetails | null>(null);
 
   useEffect(() => {
@@ -77,7 +78,7 @@ export default function NotificationsPage() {
     }
   }
 
-  // + NEW — same eligibility rule as the per-item "Mark as read" button:
+  // Same eligibility rule as the per-item "Mark as read" button:
   // unread case updates, plus already-decided password reset requests.
   const readableItems = useMemo(
     () =>
@@ -114,15 +115,6 @@ export default function NotificationsPage() {
     }
   }
 
-  // + NEW — double-click on a case_update row opens its before/after
-  // comparison. Double-clicking a button inside the row (Mark as read,
-  // etc.) is ignored so it doesn't also open the modal.
-  function openCaseUpdateDetails(item: PasswordResetNotification, event: React.MouseEvent) {
-    if ((event.target as HTMLElement).closest("button")) return;
-    if (item.notification_type !== "case_update") return;
-    setSelectedDetails(notificationToDetails(item));
-  }
-
   function matchesDateRange(iso: string | null | undefined) {
     if (!dateStart && !dateEnd) return true;
     if (!iso) return false;
@@ -139,6 +131,7 @@ export default function NotificationsPage() {
           const bTime = b.created_at ? new Date(b.created_at).getTime() : 0;
           return bTime - aTime;
         }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [items, dateStart, dateEnd]
   );
 
@@ -166,7 +159,7 @@ export default function NotificationsPage() {
           <p className="text-xs font-medium uppercase tracking-wide text-[#B08D57]">Account</p>
           <h1 className="mt-1 font-serif text-2xl font-medium text-[#12331F]">Notifications</h1>
           <p className="mt-1 text-sm text-slate-500">
-            {isAdmin ? "Review requests from users, updates to cases you created, and account lockout alerts." : "View notifications about your account."} Double-click a case update to see what changed.
+            {isAdmin ? "Review requests from users, updates to cases you created, and account lockout alerts." : "View notifications about your account."} Click a case update to see what changed.
           </p>
 
           {/* DATE RANGE FILTER */}
@@ -238,14 +231,25 @@ export default function NotificationsPage() {
                 const isLockoutAlert = item.notification_type === "account_lockout";
                 const isCaseUpdate = item.notification_type === "case_update";
 
+                // Only case updates carry a before/after comparison, so only
+                // they are clickable. Buttons inside the row (Mark as read)
+                // are ignored by the helper and never open the modal.
+                const rowProps = isCaseUpdate
+                  ? {
+                      role: "button" as const,
+                      ...clickableRowProps(() => setSelectedDetails(notificationToDetails(item))),
+                    }
+                  : {};
+
                 return (
                   <div
                     key={item.notification_id}
-                    onDoubleClick={(event) => openCaseUpdateDetails(item, event)}
-                    title={isCaseUpdate ? "Double-click to view details" : undefined}
-                    className={`flex flex-col gap-3 rounded-lg p-3 sm:flex-row sm:items-center sm:justify-between ${
+                    {...rowProps}
+                    title={isCaseUpdate ? "Click to view details" : undefined}
+                    aria-label={isCaseUpdate ? `View changes: ${item.message}` : undefined}
+                    className={`group flex flex-col gap-3 rounded-lg p-3 sm:flex-row sm:items-center sm:justify-between ${
                       isLockoutAlert && item.status === "pending" ? "bg-rose-50" : "bg-slate-50"
-                    } ${isCaseUpdate ? "cursor-pointer select-none transition hover:bg-slate-100" : ""}`}
+                    } ${isCaseUpdate ? CLICKABLE_ROW_CLS : ""}`}
                   >
                     <div className="flex items-start gap-3">
                       <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[#B08D57]/40 bg-[#12331F] text-white">
@@ -285,6 +289,12 @@ export default function NotificationsPage() {
                         {item.created_at && (
                           <p className="mt-0.5 text-[11px] text-slate-400">
                             {formatDateTime(item.created_at)}
+                          </p>
+                        )}
+                        {isCaseUpdate && (
+                          <p className="mt-1 inline-flex items-center gap-0.5 text-[11px] font-medium text-slate-400 transition group-hover:text-[#B08D57] group-focus-visible:text-[#B08D57]">
+                            View changes
+                            <ChevronRight size={12} />
                           </p>
                         )}
                       </div>
@@ -372,15 +382,11 @@ export default function NotificationsPage() {
         </section>
       </div>
 
-      {/* + NEW — before/after details */}
+      {/* Before/after details */}
       {selectedDetails && (
         <ChangeDetailsModal details={selectedDetails} onClose={() => setSelectedDetails(null)} />
       )}
 
-      {/* The file you shared computed pendingReadItem / pendingDisregardItem and
-          imported ConfirmDialog, but never rendered the dialogs, so "Mark as read"
-          and "Disregard offense" set state and then did nothing. Added below.
-          If your copy already renders them, delete these two blocks. */}
       {pendingReadItem && (
         <ConfirmDialog
           title="Mark as read"
