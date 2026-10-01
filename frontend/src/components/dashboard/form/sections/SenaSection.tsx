@@ -36,7 +36,7 @@ export function SenaSection({
 }: SenaSectionProps) {
   return (
     <div
-      className={`mx-auto w-full max-w-3xl rounded-xl border ${STAGE_STYLES.sena.ring} bg-white p-5 shadow-sm sm:p-8`}
+      className={`rounded-xl border ${STAGE_STYLES.sena.ring} bg-white p-4 shadow-sm sm:p-5`}
     >
       <SectionHeader stage="sena" title="Single Entry Approach (SEnA)" />
 

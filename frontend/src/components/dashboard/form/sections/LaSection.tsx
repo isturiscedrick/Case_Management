@@ -60,7 +60,7 @@ export function LaSection({
 }: LaSectionProps) {
   return (
     <div
-      className={`mx-auto w-full max-w-3xl rounded-xl border ${STAGE_STYLES.la.ring} bg-white p-5 shadow-sm sm:p-8`}
+      className={`rounded-xl border ${STAGE_STYLES.la.ring} bg-white p-4 shadow-sm sm:p-5`}
     >
       <SectionHeader
         stage="la"
@@ -102,7 +102,7 @@ export function LaSection({
 
       {laVisible && (
         <>
-          <div className="mt-6 grid grid-cols-1 gap-4">
+          <div className="grid gap-4">
             <fieldset
               disabled={restrictLaDetailsEditing}
               className="contents"
@@ -225,7 +225,7 @@ export function LaSection({
               disabled={restrictLaProgressEditing}
               className="contents"
             >
-              <div className="mt-3 grid grid-cols-1 gap-4">
+              <div className="mt-4 grid gap-4">
                 <Field label="Specify Remarks">
                   <textarea
                     rows={3}
@@ -381,7 +381,7 @@ export function LaSection({
             disabled={restrictLaProgressEditing}
             className="contents"
           >
-            <div className="mt-3 grid grid-cols-1 gap-4">
+            <div className="mt-4 grid gap-4">
               <Field label="Specify LA Progress">
                 <textarea
                   rows={3}
