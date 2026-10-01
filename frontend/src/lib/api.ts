@@ -176,6 +176,14 @@ export async function fetchCases(archived: boolean): Promise<CaseOut[]> {
   return all;
 }
 
+// + NEW — one changed field in a history/notification entry. Mirrors
+// FieldChange in backend/app/schemas/history.py.
+export interface FieldChange {
+  field: string;
+  before: string;
+  after: string;
+}
+
 export interface HistoryOut {
   history_id: number;
   case_id: number;
@@ -185,6 +193,7 @@ export interface HistoryOut {
   performed_by_username: string | null;
   performed_by_profile_picture: string | null;
   detail: string | null;
+  changes?: FieldChange[] | null; // + NEW — null for entries made before this existed
   created_at: string | null;
 }
 
@@ -290,6 +299,11 @@ export interface PasswordResetNotification {
   // populated for notification_type "case_update".
   actor_full_name: string | null;
   actor_profile_picture: string | null;
+  // + NEW — only populated for notification_type "case_update"; read from
+  // the linked history row.
+  case_no?: string | null;
+  company?: string | null;
+  changes?: FieldChange[] | null;
   created_at: string | null;
   resolved_at: string | null;
 }

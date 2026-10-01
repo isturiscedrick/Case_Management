@@ -109,7 +109,7 @@ def update_case(db: Session, case_id: int, payload: CaseUpdate, current_user: Us
                 )
 
     try:
-        updated_case = case_workflow_manager.update_case(
+        updated_case, history_id = case_workflow_manager.update_case(
             db, case, payload,
             updated_by_user_id=current_user.user_id, updated_by_username=current_user.full_name,
             reset_stages=reset_stages,
@@ -120,6 +120,7 @@ def update_case(db: Session, case_id: int, payload: CaseUpdate, current_user: Us
                 case.created_by_user_id,
                 f"{current_user.full_name} updated your case {case.case_no} ({case.company_name}).",
                 actor_user_id=current_user.user_id,   # + NEW
+                history_id=history_id,                # + NEW — links to the before/after comparison
             )
             db.commit()
         return updated_case

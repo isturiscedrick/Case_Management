@@ -22,8 +22,14 @@ class Notification(Base):
     # crud/user.py::delete_user) so old notifications survive intact.
     actor_user_id = Column(BigInteger, ForeignKey("users.user_id"), nullable=True)
 
+    # + NEW — the case_history row this notification is about (only set
+    # for "case_update"). Lets the notification show the same
+    # before/after comparison as the History and Activity pages.
+    history_id = Column(BigInteger, ForeignKey("case_history.history_id"), nullable=True)
+
     user = relationship("User", foreign_keys=[user_id], viewonly=True)
     actor = relationship("User", foreign_keys=[actor_user_id], viewonly=True)
+    history = relationship("CaseHistory", foreign_keys=[history_id], viewonly=True)
 
     @property
     def user_profile_picture(self) -> str | None:
@@ -41,3 +47,16 @@ class Notification(Base):
     @property
     def actor_full_name(self) -> str | None:
         return self.actor.full_name if self.actor else None
+
+    # + NEW — read-through to the linked history row
+    @property
+    def case_no(self) -> str | None:
+        return self.history.case_no if self.history else None
+
+    @property
+    def company(self) -> str | None:
+        return self.history.company if self.history else None
+
+    @property
+    def changes(self) -> str | None:
+        return self.history.changes if self.history else None

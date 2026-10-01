@@ -20,7 +20,8 @@ def create_password_reset_request(db: Session, user_id: int, message: str) -> No
 
 
 def create_case_update_notification(
-    db: Session, user_id: int, message: str, *, actor_user_id: int | None = None
+    db: Session, user_id: int, message: str, *, actor_user_id: int | None = None,
+    history_id: int | None = None,
 ) -> Notification:
     notification = Notification(
         user_id=user_id,
@@ -30,6 +31,8 @@ def create_case_update_notification(
         actor_user_id=actor_user_id,  # + NEW — who performed the update, so
         # the notification can show their profile picture instead of the
         # recipient's own.
+        history_id=history_id,  # + NEW — links to the case_history row that
+        # holds the before/after comparison.
     )
     db.add(notification)
     db.flush()

@@ -1,3 +1,5 @@
+import type { FieldChange } from "@/lib/api";
+
 export type HistoryAction = "created" | "updated" | "archived" | "restored";
 
 export interface HistoryEntry {
@@ -9,6 +11,8 @@ export interface HistoryEntry {
   performedByProfilePicture?: string | null;
   timestamp: string; // ISO string
   detail?: string;
+  // + NEW — before/after comparison, shown on double-click.
+  changes?: FieldChange[];
 }
 
 // ---- Sample data ------------------------------------------------------

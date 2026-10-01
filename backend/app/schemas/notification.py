@@ -1,8 +1,9 @@
 from datetime import datetime
-from typing import Optional
+from typing import List, Optional
 from pydantic import BaseModel, ConfigDict, field_validator
 
 from app.schemas.base import as_utc
+from app.schemas.history import FieldChange, parse_changes
 
 
 class NotificationOut(BaseModel):
@@ -20,6 +21,10 @@ class NotificationOut(BaseModel):
     # notification types with no distinct actor.
     actor_full_name: Optional[str] = None
     actor_profile_picture: Optional[str] = None
+    # + NEW — filled from the linked history row (case_update only).
+    case_no: Optional[str] = None
+    company: Optional[str] = None
+    changes: Optional[List[FieldChange]] = None
     created_at: datetime | None = None
     resolved_at: datetime | None = None
 
@@ -27,3 +32,8 @@ class NotificationOut(BaseModel):
     @classmethod
     def _tag_utc(cls, value):
         return as_utc(value)
+
+    @field_validator("changes", mode="before")
+    @classmethod
+    def _parse_changes(cls, value):
+        return parse_changes(value)

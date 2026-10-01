@@ -1,4 +1,5 @@
 from sqlalchemy import Column, BigInteger, String, DateTime, ForeignKey, Enum as SAEnum, func
+from sqlalchemy.dialects.mysql import MEDIUMTEXT
 from sqlalchemy.orm import relationship
 
 from app.core.database import Base
@@ -20,6 +21,11 @@ class CaseHistory(Base):
     performed_by_username = Column(String(150), nullable=True)
 
     detail = Column(String(500), nullable=True)
+
+    # JSON list of {"field", "before", "after"} — field-level comparison for
+    # this event. NULL for older entries and for events with no field changes.
+    changes = Column(MEDIUMTEXT, nullable=True)
+
     created_at = Column(DateTime, server_default=func.now())
 
     case = relationship("Case", back_populates="history_entries")

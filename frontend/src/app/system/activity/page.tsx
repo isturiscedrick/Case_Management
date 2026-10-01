@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ClipboardList, Search, User as UserIcon } from "lucide-react";
 import { fetchCurrentUser, fetchDecidedNotifications, fetchMyHistory, fetchMyNotifications, UnauthorizedError, type HistoryOut, type PasswordResetNotification } from "@/lib/api";
 import { formatDateTime } from "@/lib/caseHelpers";
+import { ChangeDetailsModal, historyOutToDetails } from "@/components/shared/ChangeDetailsModal";
 
 const PAGE_SIZE = 9;
 
@@ -34,6 +35,8 @@ export default function ActivityPage() {
   const [casePage, setCasePage] = useState(1);
   const [requestPage, setRequestPage] = useState(1);
   const [allPage, setAllPage] = useState(1);
+  // + NEW — history entry whose before/after details are open (double-click a row)
+  const [selectedHistory, setSelectedHistory] = useState<HistoryOut | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -175,7 +178,7 @@ export default function ActivityPage() {
       <div className="mx-auto max-w-3xl">
         <p className="text-xs font-medium uppercase tracking-wide text-[#B08D57]">Account</p>
         <h1 className="mt-1 font-serif text-2xl font-medium text-[#12331F]">My Activity</h1>
-        <p className="mt-1 text-sm text-slate-500">{isAdmin ? "Review decisions made on password reset requests." : "Only actions and account events performed by you are shown here."}</p>
+        <p className="mt-1 text-sm text-slate-500">{isAdmin ? "Review decisions made on password reset requests." : "Only actions and account events performed by you are shown here."} Double-click a case action to see what changed.</p>
 
         {/* SHOW pill filter, same pattern as My Cases' source filter */}
         <div className="mt-5 flex items-center gap-2 rounded-xl border border-slate-200 bg-white p-2 shadow-sm">
@@ -291,7 +294,12 @@ export default function ActivityPage() {
 
                     if (entry.kind === "history") {
                       return (
-                        <div key={`hist-${entry.data.history_id}`} className="flex items-start gap-3 rounded-lg bg-slate-50 p-3 sm:items-center sm:justify-between">
+                        <div
+                          key={`hist-${entry.data.history_id}`}
+                          onDoubleClick={() => setSelectedHistory(entry.data)}
+                          title="Double-click to view details"
+                          className="flex cursor-pointer select-none items-start gap-3 rounded-lg bg-slate-50 p-3 transition hover:bg-slate-100 sm:items-center sm:justify-between"
+                        >
                           <div className="flex items-center gap-3">
                             <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[#B08D57]/40 bg-[#12331F] text-white">
                               {entry.data.performed_by_profile_picture ? (
@@ -395,7 +403,12 @@ export default function ActivityPage() {
                         </time>
                       </div>
                     ) : (
-                      <div key={entry.data.history_id} className="flex items-start gap-3 rounded-lg bg-slate-50 p-3 sm:items-center sm:justify-between">
+                      <div
+                        key={entry.data.history_id}
+                        onDoubleClick={() => setSelectedHistory(entry.data)}
+                        title="Double-click to view details"
+                        className="flex cursor-pointer select-none items-start gap-3 rounded-lg bg-slate-50 p-3 transition hover:bg-slate-100 sm:items-center sm:justify-between"
+                      >
                         <div className="flex items-center gap-3">
                           <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[#B08D57]/40 bg-[#12331F] text-white">
                             {entry.data.performed_by_profile_picture ? (
@@ -506,6 +519,14 @@ export default function ActivityPage() {
           </section>
         )}
       </div>
+
+      {/* + NEW — before/after details */}
+      {selectedHistory && (
+        <ChangeDetailsModal
+          details={historyOutToDetails(selectedHistory)}
+          onClose={() => setSelectedHistory(null)}
+        />
+      )}
     </div>
   );
 }

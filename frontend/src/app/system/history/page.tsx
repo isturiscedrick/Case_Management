@@ -6,6 +6,7 @@ import type { HistoryAction, HistoryEntry } from "@/data/historyEvents";
 import { useCases } from "@/context/CasesContext";
 import { fetchCurrentUser, fetchMyHistory, UnauthorizedError, type HistoryOut } from "@/lib/api";
 import { formatDateTime } from "@/lib/caseHelpers";
+import { ChangeDetailsModal, historyEntryToDetails } from "@/components/shared/ChangeDetailsModal";
 
 function mapHistoryOut(out: HistoryOut): HistoryEntry {
   return {
@@ -17,6 +18,7 @@ function mapHistoryOut(out: HistoryOut): HistoryEntry {
     performedByProfilePicture: out.performed_by_profile_picture,
     timestamp: out.created_at ?? "",
     detail: out.detail ?? undefined,
+    changes: out.changes ?? undefined,
   };
 }
 
@@ -45,6 +47,8 @@ export default function HistoryPage() {
   const [ownHistory, setOwnHistory] = useState<HistoryEntry[]>([]);
   const [ownHistoryLoading, setOwnHistoryLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
+  // + NEW — entry whose before/after details are open (double-click a row)
+  const [selectedEntry, setSelectedEntry] = useState<HistoryEntry | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -124,7 +128,9 @@ export default function HistoryPage() {
       {/* HEADER */}
       <div>
         <h1 className="font-serif text-lg font-medium tracking-tight text-[#12331F] md:text-xl">History</h1>
-        <p className="mt-0.5 text-xs text-slate-500">A record of changes made across all cases.</p>
+        <p className="mt-0.5 text-xs text-slate-500">
+          A record of changes made across all cases. Double-click an entry to see what changed.
+        </p>
       </div>
 
       {/* SEARCH & FILTERS */}
@@ -204,7 +210,12 @@ export default function HistoryPage() {
                 {paginated.map((entry) => {
                   const style = ACTION_STYLES[entry.action];
                   return (
-                    <tr key={entry.id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50">
+                    <tr
+                      key={entry.id}
+                      onDoubleClick={() => setSelectedEntry(entry)}
+                      title="Double-click to view details"
+                      className="cursor-pointer select-none border-b border-slate-100 last:border-0 hover:bg-slate-50"
+                    >
                       <td className="p-2">
                         <span
                           className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium ring-1 ring-inset ${style.badge}`}
@@ -277,6 +288,14 @@ export default function HistoryPage() {
             </div>
           )}
         </div>
+      )}
+
+      {/* + NEW — before/after details */}
+      {selectedEntry && (
+        <ChangeDetailsModal
+          details={historyEntryToDetails(selectedEntry)}
+          onClose={() => setSelectedEntry(null)}
+        />
       )}
     </div>
   );

@@ -5,6 +5,7 @@ import { Bell, User as UserIcon } from "lucide-react";
 import { decideNotification, disregardLockout, fetchCurrentUser, fetchMyNotifications, fetchPendingNotifications, markNotificationRead, UnauthorizedError, type PasswordResetNotification } from "@/lib/api";
 import { formatDateTime } from "@/lib/caseHelpers";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
+import { ChangeDetailsModal, notificationToDetails, type ChangeDetails } from "@/components/shared/ChangeDetailsModal";
 
 const PAGE_SIZE = 9;
 
@@ -20,6 +21,8 @@ export default function NotificationsPage() {
   const [confirmDisregardId, setConfirmDisregardId] = useState<number | null>(null);
 
   const [currentPage, setCurrentPage] = useState(1);
+  // + NEW — before/after details for a case_update notification (double-click a row)
+  const [selectedDetails, setSelectedDetails] = useState<ChangeDetails | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -111,6 +114,15 @@ export default function NotificationsPage() {
     }
   }
 
+  // + NEW — double-click on a case_update row opens its before/after
+  // comparison. Double-clicking a button inside the row (Mark as read,
+  // etc.) is ignored so it doesn't also open the modal.
+  function openCaseUpdateDetails(item: PasswordResetNotification, event: React.MouseEvent) {
+    if ((event.target as HTMLElement).closest("button")) return;
+    if (item.notification_type !== "case_update") return;
+    setSelectedDetails(notificationToDetails(item));
+  }
+
   function matchesDateRange(iso: string | null | undefined) {
     if (!dateStart && !dateEnd) return true;
     if (!iso) return false;
@@ -154,7 +166,7 @@ export default function NotificationsPage() {
           <p className="text-xs font-medium uppercase tracking-wide text-[#B08D57]">Account</p>
           <h1 className="mt-1 font-serif text-2xl font-medium text-[#12331F]">Notifications</h1>
           <p className="mt-1 text-sm text-slate-500">
-            {isAdmin ? "Review requests from users, updates to cases you created, and account lockout alerts." : "View notifications about your account."}
+            {isAdmin ? "Review requests from users, updates to cases you created, and account lockout alerts." : "View notifications about your account."} Double-click a case update to see what changed.
           </p>
 
           {/* DATE RANGE FILTER */}
@@ -224,13 +236,16 @@ export default function NotificationsPage() {
             <div className="min-h-0 flex-1 space-y-2 overflow-y-auto pr-1">
               {paginatedItems.map((item) => {
                 const isLockoutAlert = item.notification_type === "account_lockout";
+                const isCaseUpdate = item.notification_type === "case_update";
 
                 return (
                   <div
                     key={item.notification_id}
+                    onDoubleClick={(event) => openCaseUpdateDetails(item, event)}
+                    title={isCaseUpdate ? "Double-click to view details" : undefined}
                     className={`flex flex-col gap-3 rounded-lg p-3 sm:flex-row sm:items-center sm:justify-between ${
                       isLockoutAlert && item.status === "pending" ? "bg-rose-50" : "bg-slate-50"
-                    }`}
+                    } ${isCaseUpdate ? "cursor-pointer select-none transition hover:bg-slate-100" : ""}`}
                   >
                     <div className="flex items-start gap-3">
                       <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[#B08D57]/40 bg-[#12331F] text-white">
@@ -356,6 +371,34 @@ export default function NotificationsPage() {
           )}
         </section>
       </div>
+
+      {/* + NEW — before/after details */}
+      {selectedDetails && (
+        <ChangeDetailsModal details={selectedDetails} onClose={() => setSelectedDetails(null)} />
+      )}
+
+      {/* The file you shared computed pendingReadItem / pendingDisregardItem and
+          imported ConfirmDialog, but never rendered the dialogs, so "Mark as read"
+          and "Disregard offense" set state and then did nothing. Added below.
+          If your copy already renders them, delete these two blocks. */}
+      {pendingReadItem && (
+        <ConfirmDialog
+          title="Mark as read"
+          message="Mark this notification as read? It will be removed from your list."
+          confirmLabel="Mark as read"
+          onConfirm={confirmMarkRead}
+          onCancel={() => setConfirmReadId(null)}
+        />
+      )}
+      {pendingDisregardItem && (
+        <ConfirmDialog
+          title="Disregard offense"
+          message="Clear this account's lockout offense count and unlock it now?"
+          confirmLabel="Disregard offense"
+          onConfirm={confirmDisregard}
+          onCancel={() => setConfirmDisregardId(null)}
+        />
+      )}
     </div>
   );
 }

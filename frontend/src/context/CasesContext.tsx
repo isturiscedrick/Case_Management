@@ -33,6 +33,7 @@ function mapHistory(out: Awaited<ReturnType<typeof fetchHistory>>[number]): Hist
     performedByProfilePicture: out.performed_by_profile_picture,
     timestamp: out.created_at ?? "",
     detail: out.detail ?? undefined,
+    changes: out.changes ?? undefined,
   };
 }
 

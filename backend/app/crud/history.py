@@ -9,11 +9,12 @@ def create_history_entry(
     db: Session, *, case_id: int, case_no: str, company: str, action: CaseHistoryAction,
     performed_by_user_id: Optional[int], performed_by_username: Optional[str],
     detail: Optional[str] = None,
+    changes: Optional[str] = None,
 ) -> CaseHistory:
     entry = CaseHistory(
         case_id=case_id, case_no=case_no, company=company, action=action,
         performed_by_user_id=performed_by_user_id, performed_by_username=performed_by_username,
-        detail=detail,
+        detail=detail, changes=changes,
     )
     db.add(entry)
     db.flush()
