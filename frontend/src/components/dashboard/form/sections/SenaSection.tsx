@@ -1,4 +1,3 @@
-
 import { Plus } from "lucide-react";
 
 import type { CaseDraft, CaseStatus } from "@/types/case";
@@ -8,6 +7,7 @@ import {
   REMARK_OPTIONS,
   HANDLING_PERSONNEL_OPTIONS,
 } from "@/constants/caseOptions";
+import type { FieldErrors } from "@/lib/caseValidation";
 
 import { Field } from "@/components/cases/Field";
 import { inputCls } from "@/components/cases/CurrencyField";
@@ -20,10 +20,8 @@ type SenaSectionProps = {
   companies: string[];
   restrictSenaEditing: boolean;
   restrictSenaRemarksEditing: boolean;
-  setTop: <K extends keyof CaseDraft>(
-    key: K,
-    value: CaseDraft[K]
-  ) => void;
+  setTop: <K extends keyof CaseDraft>(key: K, value: CaseDraft[K]) => void;
+  errors?: FieldErrors;
 };
 
 export function SenaSection({
@@ -33,11 +31,10 @@ export function SenaSection({
   restrictSenaEditing,
   restrictSenaRemarksEditing,
   setTop,
+  errors = {},
 }: SenaSectionProps) {
   return (
-    <div
-      className={`rounded-xl border ${STAGE_STYLES.sena.ring} bg-white p-4 shadow-sm sm:p-5`}
-    >
+    <div className={`rounded-xl border ${STAGE_STYLES.sena.ring} bg-white p-4 shadow-sm sm:p-5`}>
       <SectionHeader stage="sena" title="Single Entry Approach (SEnA)" />
 
       {restrictSenaEditing && (
@@ -48,20 +45,15 @@ export function SenaSection({
         </InfoBanner>
       )}
 
-      {/* ------------------------------------------------ */}
-      {/* BASIC CASE INFORMATION */}
-      {/* ------------------------------------------------ */}
-
       <div className="grid grid-cols-1 gap-4">
         <fieldset disabled={restrictSenaEditing} className="contents">
-          <Field label="Company">
+          <Field label="Company" error={errors["sena.company"]}>
             <select
               className={inputCls}
               value={value.company}
               onChange={(e) => setTop("company", e.target.value)}
             >
               <option value="">Select Company</option>
-
               {companies.map((company) => (
                 <option key={company} value={company}>
                   {company}
@@ -74,9 +66,7 @@ export function SenaSection({
             <select
               className={inputCls}
               value={value.status}
-              onChange={(e) =>
-                setTop("status", e.target.value as CaseStatus)
-              }
+              onChange={(e) => setTop("status", e.target.value as CaseStatus)}
             >
               {SENA_STATUS_OPTIONS.map((status) => (
                 <option key={status} value={status}>
@@ -86,7 +76,7 @@ export function SenaSection({
             </select>
           </Field>
 
-          <Field label="Case Title">
+          <Field label="Case Title" error={errors["sena.caseTitle"]}>
             <input
               className={inputCls}
               value={value.caseTitle}
@@ -94,7 +84,7 @@ export function SenaSection({
             />
           </Field>
 
-          <Field label="Case No.">
+          <Field label="Case No." error={errors["sena.caseNo"]}>
             <input
               className={inputCls}
               value={value.caseNo}
@@ -102,7 +92,7 @@ export function SenaSection({
             />
           </Field>
 
-          <Field label="Complainants">
+          <Field label="Complainants" error={errors["sena.complainants"]}>
             <div className="space-y-2">
               {value.complainants.map((name, index) => (
                 <div key={index} className="flex gap-2">
@@ -113,7 +103,6 @@ export function SenaSection({
                     onChange={(e) => {
                       const next = [...value.complainants];
                       next[index] = e.target.value;
-
                       setTop("complainants", next);
                     }}
                   />
@@ -122,12 +111,10 @@ export function SenaSection({
                     type="button"
                     onClick={() => {
                       if (value.complainants.length === 1) return;
-
-                      const next = value.complainants.filter(
-                        (_, i) => i !== index
+                      setTop(
+                        "complainants",
+                        value.complainants.filter((_, i) => i !== index)
                       );
-
-                      setTop("complainants", next);
                     }}
                     className="rounded-lg border border-red-200 px-3 text-red-600 transition-colors hover:bg-red-50"
                   >
@@ -138,12 +125,7 @@ export function SenaSection({
 
               <button
                 type="button"
-                onClick={() =>
-                  setTop("complainants", [
-                    ...value.complainants,
-                    "",
-                  ])
-                }
+                onClick={() => setTop("complainants", [...value.complainants, ""])}
                 className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium transition-colors hover:border-slate-300 hover:bg-slate-50"
               >
                 <Plus size={16} />
@@ -152,7 +134,7 @@ export function SenaSection({
             </div>
           </Field>
 
-          <Field label="Venue">
+          <Field label="Venue" error={errors["sena.venue"]}>
             <input
               className={inputCls}
               value={value.venue}
@@ -161,29 +143,22 @@ export function SenaSection({
           </Field>
         </fieldset>
 
-        {/* ------------------------------------------------ */}
         {/* HANDLING PERSONNEL */}
-        {/* ------------------------------------------------ */}
-
-        <Field label="Handling Personnel">
+        <Field label="Handling Personnel" error={errors["sena.handlingPersonnel"]}>
           <select
             className={inputCls}
             value={value.handlingPersonnel ?? ""}
             onChange={(e) => {
               const selected = e.target.value;
-
               onChange({
                 ...value,
                 handlingPersonnel: selected,
                 handlingPersonnelSpecification:
-                  selected === "Others"
-                    ? value.handlingPersonnelSpecification ?? ""
-                    : "",
+                  selected === "Others" ? value.handlingPersonnelSpecification ?? "" : "",
               });
             }}
           >
             <option value="">Select Handling Personnel</option>
-
             {HANDLING_PERSONNEL_OPTIONS.map((person) => (
               <option key={person} value={person}>
                 {person}
@@ -193,55 +168,40 @@ export function SenaSection({
         </Field>
 
         {value.handlingPersonnel === "Others" && (
-          <Field label="Specify Handling Personnel *">
+          <Field label="Specify Handling Personnel *" error={errors["sena.handlingPersonnelSpec"]}>
             <input
               required
               className={inputCls}
               placeholder="Enter handling personnel"
               value={value.handlingPersonnelSpecification ?? ""}
-              onChange={(e) =>
-                setTop(
-                  "handlingPersonnelSpecification",
-                  e.target.value
-                )
-              }
+              onChange={(e) => setTop("handlingPersonnelSpecification", e.target.value)}
             />
           </Field>
         )}
 
-        {/* ------------------------------------------------ */}
         {/* CAUSE OF ACTION */}
-        {/* ------------------------------------------------ */}
-
         <fieldset disabled={restrictSenaEditing} className="contents">
-          <Field label="Cause of Action">
+          <Field label="Cause of Action" error={errors["sena.cause"]}>
             <div className="flex flex-wrap gap-x-4 gap-y-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
               {CAUSE_OPTIONS.map((cause) => (
-                <label
-                  key={cause}
-                  className="inline-flex items-center gap-1.5 text-xs text-slate-700"
-                >
+                <label key={cause} className="inline-flex items-center gap-1.5 text-xs text-slate-700">
                   <input
                     type="checkbox"
                     checked={value.cause.includes(cause)}
                     onChange={(e) => {
-                      const checked = e.target.checked;
-
-                      const nextCauses = checked
+                      const nextCauses = e.target.checked
                         ? [...value.cause, cause]
                         : value.cause.filter((c) => c !== cause);
 
                       onChange({
                         ...value,
                         cause: nextCauses,
-                        causeSpecification:
-                          nextCauses.includes("Others")
-                            ? value.causeSpecification
-                            : "",
+                        causeSpecification: nextCauses.includes("Others")
+                          ? value.causeSpecification
+                          : "",
                       });
                     }}
                   />
-
                   {cause}
                 </label>
               ))}
@@ -249,39 +209,29 @@ export function SenaSection({
           </Field>
 
           {value.cause.includes("Others") && (
-            <Field label="Specify Cause of Action *">
+            <Field label="Specify Cause of Action *" error={errors["sena.causeSpec"]}>
               <input
                 required
                 className={inputCls}
                 placeholder="Enter cause of action"
                 value={value.causeSpecification ?? ""}
-                onChange={(e) =>
-                  setTop("causeSpecification", e.target.value)
-                }
+                onChange={(e) => setTop("causeSpecification", e.target.value)}
               />
             </Field>
           )}
 
-          <Field label="Filing Date">
+          <Field label="Filing Date" error={errors["sena.filingDate"]}>
             <input
               type="date"
               className={inputCls}
               value={value.filingDate}
-              onChange={(e) =>
-                setTop("filingDate", e.target.value)
-              }
+              onChange={(e) => setTop("filingDate", e.target.value)}
             />
           </Field>
         </fieldset>
 
-        {/* ------------------------------------------------ */}
         {/* REMARKS */}
-        {/* ------------------------------------------------ */}
-
-        <fieldset
-          disabled={restrictSenaRemarksEditing}
-          className="contents"
-        >
+        <fieldset disabled={restrictSenaRemarksEditing} className="contents">
           <Field label="Remarks">
             <select
               className={inputCls}
@@ -301,14 +251,10 @@ export function SenaSection({
                   !!value.caseProgress.laSpecification;
 
                 const shouldResetLa =
-                  laHasData &&
-                  selected !== "Not Settled" &&
-                  selected !== "Others";
+                  laHasData && selected !== "Not Settled" && selected !== "Others";
 
                 const shouldResetCategory =
-                  selected === "" ||
-                  selected === "Not Settled" ||
-                  selected === "Others";
+                  selected === "" || selected === "Not Settled" || selected === "Others";
 
                 onChange({
                   ...value,
@@ -316,8 +262,7 @@ export function SenaSection({
                   remarks: selected,
 
                   remarkSpecification:
-                    selected === "Others" ||
-                    selected === "Not Settled"
+                    selected === "Others" || selected === "Not Settled"
                       ? value.remarkSpecification ?? ""
                       : "",
 
@@ -333,7 +278,6 @@ export function SenaSection({
                           remarks: "",
                           remarksSpecification: "",
                         },
-
                         caseProgress: {
                           ...value.caseProgress,
                           la: "",
@@ -343,18 +287,12 @@ export function SenaSection({
                     : {}),
 
                   ...(shouldResetCategory
-                    ? {
-                        totalPaid: {
-                          ...value.totalPaid,
-                          category: "",
-                        },
-                      }
+                    ? { totalPaid: { ...value.totalPaid, category: "" } }
                     : {}),
                 });
               }}
             >
               <option value="">Select Remarks</option>
-
               {REMARK_OPTIONS.map((remark) => (
                 <option key={remark} value={remark}>
                   {remark}
@@ -363,21 +301,15 @@ export function SenaSection({
             </select>
           </Field>
 
-          {(value.remarks === "Others" ||
-            value.remarks === "Not Settled") && (
-            <Field label="Specify *">
+          {(value.remarks === "Others" || value.remarks === "Not Settled") && (
+            <Field label="Specify *" error={errors["sena.remarkSpec"]}>
               <textarea
                 required
                 rows={3}
                 className={inputCls}
                 placeholder="Enter remarks"
                 value={value.remarkSpecification ?? ""}
-                onChange={(e) =>
-                  onChange({
-                    ...value,
-                    remarkSpecification: e.target.value,
-                  })
-                }
+                onChange={(e) => onChange({ ...value, remarkSpecification: e.target.value })}
               />
             </Field>
           )}

@@ -99,6 +99,7 @@ export function CaseFormModal({
         {...(mode === "edit" && editRestrictions ? editRestrictions : {})}
         isNewUnsavedCase={mode === "create"}
         isAdmin={isAdmin}   // + NEW
+        showErrors={errors.length > 0}
       />
     </Modal>
   );

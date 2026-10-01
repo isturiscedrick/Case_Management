@@ -1,9 +1,6 @@
 import { Landmark, Lock } from "lucide-react";
 
-import type {
-  CaseDraft,
-  TotalPaidCategory,
-} from "@/types/case";
+import type { CaseDraft, TotalPaidCategory } from "@/types/case";
 
 import { Field } from "@/components/cases/Field";
 import { inputCls } from "@/components/cases/CurrencyField";
@@ -16,14 +13,14 @@ export function TotalJudgmentAwardSection({
   anyStageSettled,
   isNewUnsavedCase,
   setTotalPaidCategory,
+  categoryError,
 }: {
   value: CaseDraft;
   totalJudgmentAward: string;
   anyStageSettled: boolean;
   isNewUnsavedCase: boolean;
-  setTotalPaidCategory: (
-    category: TotalPaidCategory | ""
-  ) => void;
+  setTotalPaidCategory: (category: TotalPaidCategory | "") => void;
+  categoryError?: string;
 }) {
   return (
     <div className="rounded-xl border border-emerald-200 bg-emerald-50/40 p-4 shadow-sm sm:p-5">
@@ -37,43 +34,29 @@ export function TotalJudgmentAwardSection({
       </div>
 
       <p className="mt-1.5 text-[11px] text-emerald-700/70">
-        Reflects the latest stage&apos;s Judgment Award
-        (SC, then CA, NLRC, LA) — not a sum of all stages.
+        Reflects the latest stage&apos;s Judgment Award (SC, then CA, NLRC, LA) — not a sum of all
+        stages.
       </p>
 
       <div className="mt-3 max-w-sm">
-        <Field label="Category">
+        <Field label="Category" error={categoryError}>
           <select
             className={inputCls}
             value={value.totalPaid.category}
             disabled={!anyStageSettled && !isNewUnsavedCase}
-            onChange={(e) =>
-              setTotalPaidCategory(
-                e.target.value as TotalPaidCategory | ""
-              )
-            }
+            onChange={(e) => setTotalPaidCategory(e.target.value as TotalPaidCategory | "")}
           >
             <option value="">Select Category</option>
-
-            <option value="Judgment-Award-L">
-              Judgment (Not In Favor)
-            </option>
-
-            <option value="Judgment-Award-W">
-              Judgment (In Favor)
-            </option>
-
-            <option value="Settlement">
-              Settlement
-            </option>
+            <option value="Judgment-Award-L">Judgment (Not In Favor)</option>
+            <option value="Judgment-Award-W">Judgment (In Favor)</option>
+            <option value="Settlement">Settlement</option>
           </select>
         </Field>
 
         {!anyStageSettled && !isNewUnsavedCase && (
           <p className="mt-1 flex items-center gap-1 text-[10px] text-emerald-700/60">
             <Lock size={10} />
-            Enabled once a stage&apos;s Remarks/Progress is marked
-            &quot;Settled&quot;.
+            Enabled once a stage&apos;s Remarks/Progress is marked &quot;Settled&quot;.
           </p>
         )}
       </div>

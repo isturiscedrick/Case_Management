@@ -1,7 +1,10 @@
-import { Field } from "./Field";
+import { Field, FieldError } from "./Field";
 
 export const inputCls =
   "w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-[#12331F] focus:bg-white focus:ring-2 focus:ring-[#12331F]/10";
+
+// Trailing "!" (Tailwind v4 important) so it beats inputCls's border/bg regardless of CSS order.
+const INVALID_CLS = "border-rose-300! bg-rose-50/40!";
 
 export function CurrencyField({
   label,
@@ -57,6 +60,8 @@ export function JudgmentAwardField({
   onAmountSpecChange,
   computedSpecValue,
   onComputedSpecChange,
+  amountError,
+  specError,
 }: {
   label: string;
   value: string;
@@ -67,8 +72,12 @@ export function JudgmentAwardField({
   // Manual entry shown when mode is "To be computed".
   computedSpecValue?: string;
   onComputedSpecChange?: (v: string) => void;
+  // Inline validation messages (amount input / basis textarea).
+  amountError?: string;
+  specError?: string;
 }) {
   const isComputed = value === TO_BE_COMPUTED;
+  const specInvalid = specError ? INVALID_CLS : "";
 
   return (
     <Field label={label}>
@@ -85,25 +94,29 @@ export function JudgmentAwardField({
         </select>
 
         {!isComputed && (
-          <div className="relative">
-            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-400">
-              ₱
-            </span>
-            <input
-              type="text"
-              inputMode="decimal"
-              className={`${inputCls} pl-7`}
-              value={formatWithCommas(value)}
-              onChange={(e) => onChange(sanitizeAmount(e.target.value))}
-              placeholder="0.00"
-            />          </div>
+          <div className="space-y-1.5">
+            <div className="relative">
+              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-400">
+                ₱
+              </span>
+              <input
+                type="text"
+                inputMode="decimal"
+                className={`${inputCls} pl-7 ${amountError ? INVALID_CLS : ""}`}
+                value={formatWithCommas(value)}
+                onChange={(e) => onChange(sanitizeAmount(e.target.value))}
+                placeholder="0.00"
+              />
+            </div>
+            <FieldError message={amountError} />
+          </div>
         )}
 
         {isComputed ? (
           <textarea
             required
             rows={3}
-            className={inputCls}
+            className={`${inputCls} ${specInvalid}`}
             value={computedSpecValue ?? ""}
             onChange={(e) => onComputedSpecChange?.(e.target.value)}
             placeholder="Enter computation basis"
@@ -112,12 +125,15 @@ export function JudgmentAwardField({
           <textarea
             required
             rows={3}
-            className={inputCls}
+            className={`${inputCls} ${specInvalid}`}
             value={amountSpecValue ?? ""}
             onChange={(e) => onAmountSpecChange?.(e.target.value)}
             placeholder="Enter remarks/basis for this amount"
           />
-        )}      </div>
+        )}
+
+        <FieldError message={specError} />
+      </div>
     </Field>
   );
 }

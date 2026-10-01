@@ -419,3 +419,85 @@ export function getCaseDraftErrors(draft: CaseDraft): string[] {
 export function isCaseDraftValid(draft: CaseDraft): boolean {
   return getCaseDraftErrors(draft).length === 0;
 }
+
+/**
+ * Per-field errors for inline display. Keys are "<step>.<field>", e.g.
+ * "sena.caseNo", "la.date", "nlrc.progressSpec", "review.category".
+ * Mirrors getCaseDraftErrors: if SEnA is incomplete, only SEnA fields are
+ * reported (later stages are locked behind it anyway).
+ */
+export type FieldErrors = Partial<Record<string, string>>;
+
+export function getFieldErrors(draft: CaseDraft): FieldErrors {
+  const errors: FieldErrors = {};
+  const need = (key: string, value: string | undefined, message: string) => {
+    if ((value ?? "").trim() === "") errors[key] = message;
+  };
+
+  // SEnA
+  need("sena.company", draft.company, "Select a company.");
+  need("sena.caseTitle", draft.caseTitle, "Enter the case title.");
+  need("sena.caseNo", draft.caseNo, "Enter the case number.");
+  if (draft.complainants.length === 0 || draft.complainants.some((c) => c.trim() === "")) {
+    errors["sena.complainants"] = "Enter a name for every complainant, or remove the empty rows.";
+  }
+  need("sena.venue", draft.venue, "Enter the venue.");
+  need("sena.handlingPersonnel", draft.handlingPersonnel, "Select the handling personnel.");
+  if (draft.handlingPersonnel === "Others") {
+    need("sena.handlingPersonnelSpec", draft.handlingPersonnelSpecification, "Specify the handling personnel.");
+  }
+  if (draft.cause.length === 0) {
+    errors["sena.cause"] = "Select at least one cause of action.";
+  } else if (draft.cause.includes("Others")) {
+    need("sena.causeSpec", draft.causeSpecification, "Specify the cause of action.");
+  }
+  need("sena.filingDate", draft.filingDate, "Select the filing date.");
+
+  if (Object.keys(errors).length > 0) return errors;
+
+  if (draft.remarks === "Not Settled" || draft.remarks === "Others") {
+    need("sena.remarkSpec", draft.remarkSpecification, "Specify the remarks.");
+  }
+
+  // LA / NLRC / CA / SC — a stage is only validated once it has been started.
+  for (const key of ["la", "nlrc", "ca", "sc"] as const) {
+    const stage = draft[key];
+    const progress = draft.caseProgress[key];
+    const progressSpec = draft.caseProgress[`${key}Specification` as const];
+
+    if (isStageStarted(stage, progress, progressSpec)) {
+      need(`${key}.date`, stage.date, "Select the date.");
+      need(`${key}.status`, stage.status, "Select the status.");
+
+      if (stage.judgmentAward.trim() === TO_BE_COMPUTED) {
+        need(`${key}.judgmentAwardSpec`, stage.judgmentAwardComputedSpecification, "Explain how the award will be computed.");
+      } else {
+        if (stage.judgmentAward.trim() === "") {
+          errors[`${key}.judgmentAward`] = "Enter an amount, or choose \"To be computed\".";
+        }
+        need(`${key}.judgmentAwardSpec`, stage.judgmentAwardSpecification, "Add the basis for this amount.");
+      }
+
+      if (stage.remarks === "Other") {
+        need(`${key}.remarksSpec`, stage.remarksSpecification, "Specify the remarks.");
+      }
+    }
+
+    if (progress === "Not Settled" || progress === "Others") {
+      need(`${key}.progressSpec`, progressSpec, "Specify the progress.");
+    }
+  }
+
+  const anyStageSettled =
+    draft.remarks === "Settled" ||
+    draft.caseProgress.la === "Settled" ||
+    draft.caseProgress.nlrc === "Settled" ||
+    draft.caseProgress.ca === "Settled" ||
+    draft.caseProgress.sc === "Settled";
+
+  if (anyStageSettled && !draft.totalPaid.category) {
+    errors["review.category"] = "Select a category.";
+  }
+
+  return errors;
+}

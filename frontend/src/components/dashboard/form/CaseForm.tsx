@@ -17,11 +17,8 @@ import { CaSection } from "./sections/CaSection";
 import { ScSection } from "./sections/ScSection";
 import { TotalJudgmentAwardSection } from "./sections/TotalJudgmentAwardSection";
 
-import {
-  StageStepper,
-  type StageStep,
-} from "./shared/StageStepper";
-import { getStageGates, isStageFilled } from "@/lib/caseValidation";
+import { StageStepper, type StageStep } from "./shared/StageStepper";
+import { getFieldErrors, getStageGates } from "@/lib/caseValidation";
 import { getTotalJudgmentAward } from "@/lib/caseHelpers";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 
@@ -44,7 +41,8 @@ export function CaseForm({
   restrictCaProgressOnly = false,
   restrictCaProgressEditing = false,
   isNewUnsavedCase = false,
-  isAdmin = false,   // + NEW
+  isAdmin = false,
+  showErrors = false,
 }: {
   value: CaseDraft;
   onChange: (next: CaseDraft) => void;
@@ -61,7 +59,10 @@ export function CaseForm({
   restrictCaProgressOnly?: boolean;
   restrictCaProgressEditing?: boolean;
   isNewUnsavedCase?: boolean;
-  isAdmin?: boolean;   // + NEW
+  isAdmin?: boolean;
+  // True after a failed Save attempt: turns on inline field errors and the
+  // red "Needs attention" markers in the step bar.
+  showErrors?: boolean;
 }) {
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
 
@@ -132,13 +133,13 @@ export function CaseForm({
   const {
     senaFilled,
     laEnabled,
-    laRequired,
     laFilled,
     nlrcEnabled,
     nlrcFilled,
     caEnabled,
     caFilled,
     scEnabled,
+    scFilled,
   } = getStageGates(value);
   const totalJudgmentAward = getTotalJudgmentAward(value);
   const canProceedPastLa = value.caseProgress.la === "Not Settled" || value.caseProgress.la === "Others";
@@ -167,14 +168,27 @@ export function CaseForm({
   const laProgressSet = value.caseProgress.la !== "";
   const nlrcProgressSet = value.caseProgress.nlrc !== "";
   const caProgressSet = value.caseProgress.ca !== "";
+  const scProgressSet = value.caseProgress.sc !== "";
+
+  // Inline errors only appear after a failed Save (showErrors), then update live.
+  const fieldErrors = showErrors ? getFieldErrors(value) : {};
+  const errorSteps = new Set(Object.keys(fieldErrors).map((key) => key.split(".")[0]));
 
   const stageSteps: StageStep[] = [
-    { key: "sena", label: "SENA", status: senaFilled ? "done" : "current" },
+    { key: "sena", label: "SEnA", status: senaFilled ? "done" : "current" },
     { key: "la", label: "LA", status: !laVisible ? "locked" : laFilled && laProgressSet ? "done" : "current" },
     { key: "nlrc", label: "NLRC", status: !nlrcVisible ? "locked" : nlrcFilled && nlrcProgressSet ? "done" : "current" },
     { key: "ca", label: "CA", status: !caVisible ? "locked" : caFilled && caProgressSet ? "done" : "current" },
-    { key: "sc", label: "SC", status: !scVisible ? "locked" : "current" },
+    { key: "sc", label: "SC", status: !scVisible ? "locked" : scFilled && scProgressSet ? "done" : "current" },
   ];
+
+  // Kept separate from stageSteps: it is not a case stage, and
+  // computeInitialStep() below reads stageSteps by stage key.
+  const reviewStep: StageStep = {
+    key: "review",
+    label: "Review",
+    status: value.totalPaid.category ? "done" : "current",
+  };
 
   function isStepVisible(step: WizardStep): boolean {
     if (step === "sena") return true;
@@ -182,7 +196,7 @@ export function CaseForm({
     if (step === "nlrc") return nlrcVisible;
     if (step === "ca") return caVisible;
     if (step === "sc") return scVisible;
-    return anyStageSettled; 
+    return anyStageSettled;
   }
 
   function computeInitialStep(): WizardStep {
@@ -219,6 +233,7 @@ export function CaseForm({
       (progressSpec ?? "").trim() !== ""
     );
   }
+
   const [activeStep, setActiveStep] = useState<WizardStep>(computeInitialStep);
   const [maxReachedIndex, setMaxReachedIndex] = useState<number>(STEP_ORDER.indexOf(activeStep));
 
@@ -236,16 +251,20 @@ export function CaseForm({
       }
     }
   }, [laVisible, nlrcVisible, caVisible, scVisible, anyStageSettled]);
-const isClosed = !!value.closed;
-const isSettled = !!value.totalPaid?.category;
 
-// Only a CLOSED case locks the entire form — except for admins, who are
-// allowed to edit closed cases (backend enforces this too, see
-// case_service.py::update_case). A settled case can still reselect/change
-// the Total Judgment Award category before saving.
-const isFieldsetLocked = isClosed && !isAdmin;   // + admin exemption
+  const isClosed = !!value.closed;
+  const isSettled = !!value.totalPaid?.category;
 
-  const visibleStageSteps = stageSteps.filter((s) => isStepVisible(s.key as WizardStep));
+  // Only a CLOSED case locks the entire form — except for admins, who are
+  // allowed to edit closed cases (backend enforces this too, see
+  // case_service.py::update_case). A settled case can still reselect/change
+  // the Total Judgment Award category before saving.
+  const isFieldsetLocked = isClosed && !isAdmin;
+
+  const visibleStageSteps: StageStep[] = [
+    ...stageSteps.filter((s) => isStepVisible(s.key as WizardStep)),
+    ...(anyStageSettled ? [reviewStep] : []),
+  ].map((step) => ({ ...step, hasError: errorSteps.has(step.key) }));
 
   function canGoToStep(step: WizardStep): boolean {
     return isStepVisible(step);
@@ -286,8 +305,7 @@ const isFieldsetLocked = isClosed && !isAdmin;   // + admin exemption
 
       const causeComplete =
         value.cause.length > 0 &&
-        (!value.cause.includes("Others") ||
-          (value.causeSpecification ?? "").trim() !== "");
+        (!value.cause.includes("Others") || (value.causeSpecification ?? "").trim() !== "");
 
       const senaComplete =
         value.company.trim() !== "" &&
@@ -306,8 +324,7 @@ const isFieldsetLocked = isClosed && !isAdmin;   // + admin exemption
     if (activeStep === "la") {
       const laRemarksComplete =
         value.la.remarks.trim() !== "" &&
-        (value.la.remarks !== "Other" ||
-          (value.la.remarksSpecification ?? "").trim() !== "");
+        (value.la.remarks !== "Other" || (value.la.remarksSpecification ?? "").trim() !== "");
 
       const laStageComplete =
         value.la.date.trim() !== "" &&
@@ -321,8 +338,7 @@ const isFieldsetLocked = isClosed && !isAdmin;   // + admin exemption
     if (activeStep === "nlrc") {
       const nlrcRemarksComplete =
         value.nlrc.remarks.trim() !== "" &&
-        (value.nlrc.remarks !== "Other" ||
-          (value.nlrc.remarksSpecification ?? "").trim() !== "");
+        (value.nlrc.remarks !== "Other" || (value.nlrc.remarksSpecification ?? "").trim() !== "");
 
       const nlrcStageComplete =
         value.nlrc.date.trim() !== "" &&
@@ -339,8 +355,7 @@ const isFieldsetLocked = isClosed && !isAdmin;   // + admin exemption
     if (activeStep === "ca") {
       const caRemarksComplete =
         value.ca.remarks.trim() !== "" &&
-        (value.ca.remarks !== "Other" ||
-          (value.ca.remarksSpecification ?? "").trim() !== "");
+        (value.ca.remarks !== "Other" || (value.ca.remarksSpecification ?? "").trim() !== "");
 
       const caStageComplete =
         value.ca.date.trim() !== "" &&
@@ -354,8 +369,7 @@ const isFieldsetLocked = isClosed && !isAdmin;   // + admin exemption
     if (activeStep === "sc") {
       const scRemarksComplete =
         value.sc.remarks.trim() !== "" &&
-        (value.sc.remarks !== "Other" ||
-          (value.sc.remarksSpecification ?? "").trim() !== "");
+        (value.sc.remarks !== "Other" || (value.sc.remarksSpecification ?? "").trim() !== "");
 
       const scStageComplete =
         value.sc.date.trim() !== "" &&
@@ -366,7 +380,7 @@ const isFieldsetLocked = isClosed && !isAdmin;   // + admin exemption
       return scStageComplete && progressComplete(value.caseProgress.sc, value.caseProgress.scSpecification);
     }
 
-    return true; 
+    return true;
   }
 
   const isCurrentStepComplete = isCurrentStageFullyFilled();
@@ -413,8 +427,8 @@ const isFieldsetLocked = isClosed && !isAdmin;   // + admin exemption
       <div className="flex flex-wrap items-center justify-between gap-3">
         <StageStepper
           steps={visibleStageSteps}
-          activeKey={activeStep === "review" ? undefined : activeStep}
-          onStepClick={(key) => goToStep(key as WizardStep)}
+          activeKey={activeStep}
+          onStepClick={(key) => goToStep(key)}
         />
 
         {isClosed ? (
@@ -424,7 +438,7 @@ const isFieldsetLocked = isClosed && !isAdmin;   // + admin exemption
               {isAdmin ? "Case Closed — editable as admin" : "Case Closed — form locked"}
             </span>
 
-            {isAdmin && (   // + gate: only admins see Unclose
+            {isAdmin && (
               <button
                 type="button"
                 onClick={uncloseCase}
@@ -440,7 +454,7 @@ const isFieldsetLocked = isClosed && !isAdmin;   // + admin exemption
             {isSettled && (
               <span className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-500">
                 <Lock size={13} />
-                Settled — fields locked
+                Settled — close the case to lock it
               </span>
             )}
 
@@ -465,6 +479,7 @@ const isFieldsetLocked = isClosed && !isAdmin;   // + admin exemption
             restrictSenaEditing={restrictSenaEditing}
             restrictSenaRemarksEditing={restrictSenaRemarksEditing}
             setTop={setTop}
+            errors={fieldErrors}
           />
         )}
 
@@ -475,12 +490,12 @@ const isFieldsetLocked = isClosed && !isAdmin;   // + admin exemption
             setLa={setLa}
             setProgressSpecification={setProgressSpecification}
             senaFilled={senaFilled}
-            laRequired={laRequired}
             laFilled={laFilled}
             laVisible={laVisible}
             restrictLaDetailsEditing={restrictLaDetailsEditing}
             restrictLaProgressOnly={restrictLaProgressOnly}
             restrictLaProgressEditing={restrictLaProgressEditing}
+            errors={fieldErrors}
           />
         )}
 
@@ -491,14 +506,13 @@ const isFieldsetLocked = isClosed && !isAdmin;   // + admin exemption
             setNlrc={setNlrc}
             setProgressSpecification={setProgressSpecification}
             senaFilled={senaFilled}
-            laRequired={laRequired}
             laFilled={laFilled}
-            nlrcEnabled={nlrcEnabled}
             nlrcFilled={nlrcFilled}
             nlrcVisible={nlrcVisible}
             restrictNlrcDetailsEditing={restrictNlrcDetailsEditing}
             restrictNlrcProgressOnly={restrictNlrcProgressOnly}
             restrictNlrcProgressEditing={restrictNlrcProgressEditing}
+            errors={fieldErrors}
           />
         )}
 
@@ -517,6 +531,7 @@ const isFieldsetLocked = isClosed && !isAdmin;   // + admin exemption
             restrictCaDetailsEditing={restrictCaDetailsEditing}
             restrictCaProgressOnly={restrictCaProgressOnly}
             restrictCaProgressEditing={restrictCaProgressEditing}
+            errors={fieldErrors}
           />
         )}
 
@@ -527,12 +542,12 @@ const isFieldsetLocked = isClosed && !isAdmin;   // + admin exemption
             setSc={setSc}
             setProgress={setProgress}
             setProgressSpecification={setProgressSpecification}
-            setTotalPaidCategory={setTotalPaidCategory}
             senaFilled={senaFilled}
             caEnabled={caEnabled}
             caFilled={caFilled}
             scEnabled={scEnabled}
             scVisible={scVisible}
+            errors={fieldErrors}
           />
         )}
 
@@ -543,6 +558,7 @@ const isFieldsetLocked = isClosed && !isAdmin;   // + admin exemption
             anyStageSettled={anyStageSettled}
             isNewUnsavedCase={isNewUnsavedCase}
             setTotalPaidCategory={setTotalPaidCategory}
+            categoryError={fieldErrors["review.category"]}
           />
         )}
       </fieldset>
@@ -563,20 +579,27 @@ const isFieldsetLocked = isClosed && !isAdmin;   // + admin exemption
         </button>
 
         {!isLastStep && (
-          <button
-            type="button"
-            onClick={goNext}
-            disabled={!isCurrentStepComplete}
-            title={!isCurrentStepComplete ? "Complete this stage's required fields to continue." : undefined}
-            className={`inline-flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-xs font-medium transition ${
-              isCurrentStepComplete
-                ? "bg-[#12331F] text-white hover:bg-[#1B4A2C]"
-                : "cursor-not-allowed bg-slate-200 text-slate-400"
-            }`}
-          >
-            Next
-            <ArrowRight size={14} />
-          </button>
+          <div className="flex items-center gap-3">
+            {!isCurrentStepComplete && (
+              <p className="hidden text-[11px] text-slate-400 sm:block">
+                Complete this stage&apos;s required fields to continue.
+              </p>
+            )}
+
+            <button
+              type="button"
+              onClick={goNext}
+              disabled={!isCurrentStepComplete}
+              className={`inline-flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-xs font-medium transition ${
+                isCurrentStepComplete
+                  ? "bg-[#12331F] text-white hover:bg-[#1B4A2C]"
+                  : "cursor-not-allowed bg-slate-200 text-slate-400"
+              }`}
+            >
+              Next
+              <ArrowRight size={14} />
+            </button>
+          </div>
         )}
       </div>
 
