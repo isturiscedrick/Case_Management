@@ -245,6 +245,7 @@ export interface CurrentUser {
   full_name: string;
   profile_picture: string | null;
   role: "admin" | "handling_personnel" | "viewer";
+  is_active: boolean;
 }
 
 export async function fetchCurrentUser(): Promise<CurrentUser> {
@@ -359,9 +360,6 @@ export async function updateUserRole(userId: number, role: UserRole): Promise<Cu
   return res.json();
 }
 
-export async function deleteUser(userId: number): Promise<void> {
-  await authMutation(`/api/auth/users/${userId}`, "DELETE");
-}
 
 // ---------------------------------------------------------------------
 // Case edit locking - prevents two users from editing the same case
@@ -444,4 +442,9 @@ export function releaseCaseLockOnUnload(caseId: number) {
   } catch {
     // ignore — best-effort
   }
+}
+
+export async function updateUserStatus(userId: number, isActive: boolean): Promise<CurrentUser> {
+  const res = await authMutation(`/api/auth/users/${userId}/status`, "PUT", { is_active: isActive });
+  return res.json();
 }

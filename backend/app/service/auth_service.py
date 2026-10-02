@@ -9,7 +9,7 @@ from app.crud import user as user_crud
 from app.crud import notification as notification_crud
 from app.core.security import hash_password, verify_password
 from app.models.enums import UserRole
-from app.schemas.auth import LoginRequest, UserCreate, UserPasswordReset, UserProfileUpdate, UserRoleUpdate, TokenResponse
+from app.schemas.auth import LoginRequest, UserCreate, UserPasswordReset, UserProfileUpdate, UserRoleUpdate, UserStatusUpdate, TokenResponse
 
 
 def _format_wait(delta_seconds: float) -> str:
@@ -88,6 +88,18 @@ def update_user_role(db: Session, user_id: int, payload: UserRoleUpdate, current
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found.")
     user_crud.update_user(db, user, role=payload.role)
+    db.commit()
+    db.refresh(user)
+    return user
+
+
+def update_user_status(db: Session, user_id: int, payload: UserStatusUpdate, current_user):
+    if user_id == current_user.user_id:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="You cannot disable your own account.")
+    user = user_crud.get_user_by_id(db, user_id)
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found.")
+    user_crud.update_user(db, user, is_active="Y" if payload.is_active else "N")
     db.commit()
     db.refresh(user)
     return user

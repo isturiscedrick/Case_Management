@@ -1,8 +1,8 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
-import { Bell, Check, Eye, EyeOff, Pencil, Trash2, User, UserPlus, X } from "lucide-react";
-import { deleteUser, fetchCurrentUser, fetchPendingNotifications, fetchUsers, registerUser, resetUserPassword, UnauthorizedError, updateUserRole, type CurrentUser, type PasswordResetNotification, type UserRole } from "@/lib/api";
+import { Bell, Check, Eye, EyeOff, Pencil, Power, User, UserPlus, X } from "lucide-react";
+import { fetchCurrentUser, fetchPendingNotifications, fetchUsers, registerUser, resetUserPassword, UnauthorizedError, updateUserRole, updateUserStatus, type CurrentUser, type PasswordResetNotification, type UserRole } from "@/lib/api";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { UsersSkeleton } from "@/components/shared/LoadingSkeleton";
 import { Modal } from "@/components/shared/Modal";
@@ -28,7 +28,7 @@ export default function UsersPage() {
   const [showResetPassword, setShowResetPassword] = useState(false);
   const [isResettingPassword, setIsResettingPassword] = useState(false);
   const [notifications, setNotifications] = useState<PasswordResetNotification[]>([]);
-  const [deletingUser, setDeletingUser] = useState<CurrentUser | null>(null);
+  const [statusUser, setStatusUser] = useState<CurrentUser | null>(null);
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
   const [editingUserId, setEditingUserId] = useState<number | null>(null);
   const [draftRole, setDraftRole] = useState<UserRole | null>(null);
@@ -173,17 +173,16 @@ export default function UsersPage() {
     if (action.type === "cancelEdit") cancelEditing();
   }
 
-  async function handleDeleteUser() {
-    if (!deletingUser) return;
+  async function handleStatusChange() {
+    if (!statusUser) return;
     try {
-      await deleteUser(deletingUser.user_id);
-      setUsers((currentUsers) => currentUsers.filter((user) => user.user_id !== deletingUser.user_id));
-      setNotifications((current) => current.filter((notification) => notification.user_id !== deletingUser.user_id));
-      setMessage({ type: "success", text: "User deleted successfully." });
+      const updated = await updateUserStatus(statusUser.user_id, !statusUser.is_active);
+      setUsers((currentUsers) => currentUsers.map((user) => user.user_id === updated.user_id ? updated : user));
+      setMessage({ type: "success", text: `Account ${updated.is_active ? "enabled" : "disabled"} successfully.` });
     } catch (error) {
-      setMessage({ type: "error", text: error instanceof Error ? error.message : "Unable to delete user." });
+      setMessage({ type: "error", text: error instanceof Error ? error.message : "Unable to update account status." });
     } finally {
-      setDeletingUser(null);
+      setStatusUser(null);
     }
   }
 
@@ -351,7 +350,7 @@ export default function UsersPage() {
                         ) : (
                           <button type="button" onClick={() => startEditing(user.user_id)} aria-label={`Edit ${user.full_name}`} title="Edit user" className="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-[#12331F] transition hover:bg-emerald-50"><Pencil className="h-4 w-4" />Edit</button>
                         ))}
-                        <button type="button" disabled={user.user_id === currentUserId} onClick={() => setDeletingUser(user)} aria-label={`Delete ${user.full_name}`} title={user.user_id === currentUserId ? "You cannot delete your own account" : "Delete user"} className="rounded-lg p-2 text-rose-600 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-30"><Trash2 className="h-4 w-4" /></button>
+                        <button type="button" disabled={user.user_id === currentUserId} onClick={() => setStatusUser(user)} aria-label={`${user.is_active ? "Disable" : "Enable"} ${user.full_name}`} title={user.user_id === currentUserId ? "You cannot change your own account status" : user.is_active ? "Disable account" : "Enable account"} className={`rounded-lg p-2 transition disabled:cursor-not-allowed disabled:opacity-30 ${user.is_active ? "text-rose-600 hover:bg-rose-50" : "text-emerald-600 hover:bg-emerald-50"}`}><Power className="h-4 w-4" /></button>
                       </div>
                     </td>
                   </tr>
@@ -423,14 +422,13 @@ export default function UsersPage() {
         </Modal>
       )}
 
-      {deletingUser && (
+      {statusUser && (
         <ConfirmDialog
-          title="Delete user"
-          message={`Delete ${deletingUser.full_name}? Their account and notifications will be removed, while case records will be preserved.`}
-          confirmLabel="Delete user"
-          onConfirm={handleDeleteUser}
-          onCancel={() => setDeletingUser(null)}
-          confirmPhrase={deletingUser.username}
+          title={`${statusUser.is_active ? "Disable" : "Enable"} account`}
+          message={`${statusUser.is_active ? "Disable" : "Enable"} ${statusUser.full_name}'s account?`}
+          confirmLabel={statusUser.is_active ? "Disable account" : "Enable account"}
+          onConfirm={handleStatusChange}
+          onCancel={() => setStatusUser(null)}
         />
       )}
       {confirmAction?.type === "create" && (
