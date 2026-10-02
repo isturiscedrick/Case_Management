@@ -6,6 +6,7 @@ import { decideNotification, disregardLockout, fetchCurrentUser, fetchMyNotifica
 import { formatDateTime } from "@/lib/caseHelpers";
 import { clickableRowProps, CLICKABLE_ROW_CLS } from "@/lib/clickableRow";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
+import { InlineSkeleton } from "@/components/shared/LoadingSkeleton";
 import { ChangeDetailsModal, notificationToDetails, type ChangeDetails } from "@/components/shared/ChangeDetailsModal";
 
 const PAGE_SIZE = 9;
@@ -220,7 +221,7 @@ export default function NotificationsPage() {
           </div>
 
           {loading ? (
-            <p className="text-sm text-slate-400">Loading notifications...</p>
+            <InlineSkeleton label="Loading notifications" rows={PAGE_SIZE} />
           ) : filteredItems.length === 0 ? (
             <p className="text-sm text-slate-400">
               {items.length === 0 ? "No notifications." : "No notifications match the selected date range."}

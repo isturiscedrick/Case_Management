@@ -1,8 +1,8 @@
-import type { KeyboardEvent } from "react";
 import { Archive, ArchiveRestore, Bookmark, BookmarkCheck, Eye, RefreshCw } from "lucide-react";
 
 import type { CaseItem } from "@/types/case";
 import { formatCurrency, formatDate, formatTotalPaidCategory, getCaseStatusSummary } from "@/lib/caseHelpers";
+import { clickableRowProps } from "@/lib/clickableRow";
 import { formatProgress } from "@/components/shared/caseTableHelpers";
 import { CaseStatusSummaryBadge } from "@/components/dashboard/CaseStatusSummaryBadge";
 
@@ -88,22 +88,12 @@ export function CaseTableRow({
   const caAward = formatJudgmentAward(item.ca);
   const scAward = formatJudgmentAward(item.sc);
 
-  // Enter opens the case, same as double-click. Ignored when the key press
-  // came from a button inside the row, so it doesn't fire twice.
-  const handleRowKeyDown = (event: KeyboardEvent<HTMLTableRowElement>) => {
-    if (event.target !== event.currentTarget) return;
-    if (event.key === "Enter") {
-      event.preventDefault();
-      onView(item);
-    }
-  };
-
   return (
     <tr
-      tabIndex={0}
+      // Single click (or Enter/Space when focused) opens the case. Clicks on
+      // the Actions buttons are ignored by the helper so they don't also open it.
+      {...clickableRowProps(() => onView(item))}
       className="group cursor-pointer border-b border-slate-100 last:border-0 hover:bg-slate-50 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[#B08D57]"
-      onDoubleClick={() => onView(item)}
-      onKeyDown={handleRowKeyDown}
     >
       {/* Case ID */}
       <td className="sticky left-0 z-10 border-r border-slate-200 bg-white p-2 font-mono text-[11px] text-slate-500 group-hover:bg-slate-50">

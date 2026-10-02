@@ -17,6 +17,7 @@ import { useCases } from "@/context/CasesContext";
 import { formatCurrency, getCaseStatusSummary } from "@/lib/caseHelpers";
 import { STAGE_STYLES, type StageKey } from "@/components/dashboard/form/shared/SectionHeader";
 import { SummaryCards } from "@/components/shared/SummaryCards";
+import { TableSkeleton } from "@/components/shared/LoadingSkeleton";
 
 type StatusBucket = "Pending" | "Settled" | "Not Settled" | "Closed";
 
@@ -174,7 +175,7 @@ function SectionTitle({
 }
 
 export default function AnalyticsPage() {
-  const { cases: allCases } = useCases();
+  const { cases: allCases, isLoading } = useCases();
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
 
@@ -278,6 +279,22 @@ export default function AnalyticsPage() {
       .map(([name, caseList]) => ({ name, count: caseList.length, caseList }))
       .sort((a, b) => b.count - a.count);
   }, [cases]);
+
+  // LOADING — same skeleton as the Dashboard. Placed after every hook so
+  // hook order never changes between renders.
+  if (isLoading && allCases.length === 0) {
+    return (
+      <div className="flex h-full min-w-0 flex-col gap-5 overflow-hidden bg-[#F5F1E3] p-4 sm:p-6">
+        <div>
+          <p className="text-xs font-medium uppercase tracking-wide text-[#B08D57]">Reporting</p>
+          <h1 className="mt-1 font-serif text-2xl font-medium tracking-tight text-[#12331F]">Analytics</h1>
+          <p className="mt-1 text-sm text-slate-500">Case status and judgment award breakdown by stage.</p>
+        </div>
+
+        <TableSkeleton label="Loading analytics" />
+      </div>
+    );
+  }
 
   return (
     <div className="h-full min-w-0 space-y-5 overflow-y-auto bg-[#F5F1E3] p-4 sm:p-6">

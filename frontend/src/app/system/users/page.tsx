@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { Bell, Check, Eye, EyeOff, Pencil, Trash2, User, UserPlus, X } from "lucide-react";
 import { deleteUser, fetchCurrentUser, fetchPendingNotifications, fetchUsers, registerUser, resetUserPassword, UnauthorizedError, updateUserRole, type CurrentUser, type PasswordResetNotification, type UserRole } from "@/lib/api";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
+import { TableSkeleton } from "@/components/shared/LoadingSkeleton";
 import { Modal } from "@/components/shared/Modal";
 
 const ROLE_OPTIONS: Array<{ value: UserRole; label: string }> = [
@@ -187,7 +188,12 @@ export default function UsersPage() {
   }
 
   if (authorized === null) {
-    return <div className="p-6 text-sm text-slate-500">Loading user management...</div>;
+    // Same skeleton and page wrapper as the Dashboard's loading state.
+    return (
+      <div className="flex h-full min-w-0 flex-col gap-4 overflow-hidden bg-[#F5F1E3] p-4">
+        <TableSkeleton label="Loading user management" />
+      </div>
+    );
   }
 
   if (!authorized) {

@@ -5,6 +5,7 @@ import { ChevronRight, ClipboardList, Search, User as UserIcon } from "lucide-re
 import { fetchCurrentUser, fetchDecidedNotifications, fetchMyHistory, fetchMyNotifications, UnauthorizedError, type HistoryOut, type PasswordResetNotification } from "@/lib/api";
 import { formatDateTime } from "@/lib/caseHelpers";
 import { clickableRowProps, CLICKABLE_ROW_CLS } from "@/lib/clickableRow";
+import { InlineSkeleton } from "@/components/shared/LoadingSkeleton";
 import { ChangeDetailsModal, historyOutToDetails } from "@/components/shared/ChangeDetailsModal";
 
 const PAGE_SIZE = 9;
@@ -295,7 +296,7 @@ export default function ActivityPage() {
             </div>
 
             {loading ? (
-              <p className="text-sm text-slate-400">Loading activity...</p>
+              <InlineSkeleton label="Loading activity" rows={PAGE_SIZE} />
             ) : unifiedAllItems.length === 0 ? (
               <p className="text-sm text-slate-400">No activity matches your filters.</p>
             ) : (
@@ -387,7 +388,7 @@ export default function ActivityPage() {
               <div><h2 className="text-sm font-semibold text-[#12331F]">Case actions</h2><p className="mt-1 text-xs text-slate-500">Cases you created, updated, archived, or restored — plus your own password changes.</p></div>
             </div>
             {loading ? (
-              <p className="text-sm text-slate-400">Loading actions...</p>
+              <InlineSkeleton label="Loading actions" rows={PAGE_SIZE} />
             ) : combinedCaseActions.length === 0 ? (
               <p className="text-sm text-slate-400">No case actions match your filters.</p>
             ) : (
@@ -457,7 +458,7 @@ export default function ActivityPage() {
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#12331F] text-[#B08D57]"><ClipboardList className="h-4 w-4" /></div>
               <div><h2 className="text-sm font-semibold text-[#12331F]">{isAdmin ? "Request decisions" : "Password reset requests"}</h2><p className="mt-1 text-xs text-slate-500">{isAdmin ? "Approved and declined requests appear here." : "Requests sent to an administrator appear here."}</p></div>
             </div>
-            {loading ? <p className="text-sm text-slate-400">Loading activity...</p> : filteredNotifications.length === 0 ? <p className="text-sm text-slate-400">No password reset activity matches your filters.</p> : (
+            {loading ? <InlineSkeleton label="Loading activity" rows={PAGE_SIZE} /> : filteredNotifications.length === 0 ? <p className="text-sm text-slate-400">No password reset activity matches your filters.</p> : (
               <>
                 <div className="max-h-112 space-y-2 overflow-y-auto pr-1">
                   {paginatedNotifications.map((item) => (

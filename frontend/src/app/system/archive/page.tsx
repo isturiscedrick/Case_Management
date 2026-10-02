@@ -9,6 +9,7 @@ import { useCases } from "@/context/CasesContext";
 import { getCaseStatusSummary, type CaseStatusSummary } from "@/lib/caseHelpers";
 
 import { Modal } from "@/components/shared/Modal";
+import { TableSkeleton } from "@/components/shared/LoadingSkeleton";
 import { ArchiveConfirmDialog } from "@/components/dashboard/ArchiveConfirmDialog";
 import { ViewCaseContent } from "@/components/shared/ViewCaseContent";
 import { CaseTableRow } from "@/components/dashboard/CaseTableRow";
@@ -16,7 +17,7 @@ import { CaseTableRow } from "@/components/dashboard/CaseTableRow";
 const PAGE_SIZE = 9;
 
 export default function ArchivePage() {
-  const { cases, toggleArchive } = useCases();
+  const { cases, toggleArchive, isLoading } = useCases();
   const [search, setSearch] = useState("");
   const [progressFilter, setProgressFilter] = useState<"All" | StageProgress>("All");
   const [statusFilter, setStatusFilter] = useState<"All" | CaseStatusSummary>("All");
@@ -30,6 +31,10 @@ export default function ArchivePage() {
   const [currentPage, setCurrentPage] = useState(1);
 
   const archivedCases = useMemo(() => cases.filter((item) => item.archived), [cases]);
+
+  // Same condition the Dashboard uses: only show the skeleton on the first
+  // load, before any cases have arrived.
+  const showSkeleton = isLoading && cases.length === 0;
 
   const filteredCases = useMemo(() => {
     const keyword = search.toLowerCase();
@@ -217,8 +222,11 @@ export default function ArchivePage() {
         </p>
       </div>
 
+      {/* LOADING — same skeleton as the Dashboard */}
+      {showSkeleton && <TableSkeleton label="Loading archived cases" />}
+
       {/* EMPTY STATE */}
-      {archivedCases.length === 0 && (
+      {!showSkeleton && archivedCases.length === 0 && (
         <div className="flex flex-col items-center justify-center rounded-xl border border-slate-200 bg-white p-16 text-center shadow-sm">
           <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#12331F]/5">
             <Archive className="h-5 w-5 text-[#12331F]/40" />
