@@ -3,11 +3,12 @@
 import { useEffect, useState } from "react";
 import { Clock3, Landmark, User as UserIcon } from "lucide-react";
 import type { CaseItem } from "@/types/case";
-import { formatDate, formatDateTime, formatCurrency, formatTotalPaidCategory, getTotalJudgmentAward } from "@/lib/caseHelpers";
+import { formatDate, formatDateTime, formatCurrency, formatTotalPaidCategory, getCaseStatusSummary, getTotalJudgmentAward } from "@/lib/caseHelpers";
 import { isStageFilled } from "@/lib/caseValidation";
 import { fetchCaseHistory, type HistoryOut } from "@/lib/api";
 import { DetailRow } from "@/components/shared/DetailRow";
 import { StatusBadge } from "./StatusBadge";
+import { CaseStatusSummaryBadge } from "@/components/dashboard/CaseStatusSummaryBadge";
 import { SectionHeader, STAGE_STYLES } from "@/components/dashboard/form/shared/SectionHeader";
 
 const TO_BE_COMPUTED = "To be computed";
@@ -37,6 +38,48 @@ function formatJudgmentAward(info: {
   return info.judgmentAwardSpecification
     ? `${amount} (${info.judgmentAwardSpecification})`
     : amount;
+}
+
+function formatStageRemarks(info: { remarks: string; remarksSpecification?: string }) {
+  return info.remarks === "Other" && info.remarksSpecification
+    ? `${info.remarks} (${info.remarksSpecification})`
+    : info.remarks;
+}
+
+// Small label/value pair used in the summary bar at the top of the modal.
+function SummaryStat({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex flex-col gap-1">
+      <span className="text-[11px] uppercase tracking-wide text-slate-400">{label}</span>
+      <div className="text-sm text-slate-800">{children}</div>
+    </div>
+  );
+}
+
+// Shared layout for the four tribunal stages (LA / NLRC / CA / SC).
+// Short fields share one row; long, wrap-prone fields get a full-width row.
+function StageFields({
+  info,
+  progress,
+  progressSpecification,
+}: {
+  info: CaseItem["la"];
+  progress: string;
+  progressSpecification?: string;
+}) {
+  return (
+    <div className="grid gap-x-6 sm:grid-cols-3">
+      <DetailRow label="Date" value={formatDate(info.date)} />
+      <DetailRow label="Status" value={info.status} />
+      <DetailRow label="Progress" value={formatProgress(progress, progressSpecification)} />
+      <div className="sm:col-span-3">
+        <DetailRow label="Judgment Award" value={formatJudgmentAward(info)} />
+      </div>
+      <div className="sm:col-span-3">
+        <DetailRow label="Remarks" value={formatStageRemarks(info)} />
+      </div>
+    </div>
+  );
 }
 
 export function ViewCaseContent({ item }: { item: CaseItem }) {
@@ -69,25 +112,29 @@ export function ViewCaseContent({ item }: { item: CaseItem }) {
 
   return (
     <div className="space-y-4">
+      {/* SUMMARY BAR — Case ID + Case Status (same badge as the table's
+          second column) + Last Updated */}
+      <div className="flex flex-wrap items-center gap-x-10 gap-y-3 rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3">
+        <SummaryStat label="Case ID">
+          <span className="font-mono">{item.id}</span>
+        </SummaryStat>
+        <SummaryStat label="Case Status">
+          <CaseStatusSummaryBadge status={getCaseStatusSummary(item)} />
+        </SummaryStat>
+        <SummaryStat label="Last Updated">{formatDate(item.date)}</SummaryStat>
+        {item.closed && item.closedDate && (
+          <SummaryStat label="Closed Date">{formatDate(item.closedDate)}</SummaryStat>
+        )}
+      </div>
+
       <div className={`rounded-xl border ${STAGE_STYLES.sena.ring} bg-white p-4 shadow-sm sm:p-5`}>
         <SectionHeader stage="sena" title="Single Entry Approach (SEnA)" size={7} />
         <div className="grid gap-x-6 sm:grid-cols-2">
           <DetailRow label="Company" value={item.company} />
-          <DetailRow label="Status" value={<StatusBadge status={item.status} />} />
-          <DetailRow label="Last Updated" value={formatDate(item.date)} />
-          <DetailRow label="Filing Date" value={formatDate(item.filingDate)} />
+          <DetailRow label="SEnA Status" value={<StatusBadge status={item.status} />} />
           <DetailRow label="Case Title" value={item.caseTitle} />
           <DetailRow label="Case No." value={item.caseNo} />
-          <DetailRow
-            label="Complainants"
-            value={
-              <ul className="list-disc pl-5">
-                {item.complainants.map((person, index) => (
-                  <li key={index}>{person}</li>
-                ))}
-              </ul>
-            }
-          />
+          <DetailRow label="Filing Date" value={formatDate(item.filingDate)} />
           <DetailRow label="Venue" value={item.venue} />
           <DetailRow
             label="Handling Personnel"
@@ -107,91 +154,69 @@ export function ViewCaseContent({ item }: { item: CaseItem }) {
                 : "-"
             }
           />
-          <DetailRow
-            label="Remarks"
-            value={item.remarkSpecification ? `${item.remarks} (${item.remarkSpecification})` : item.remarks}
-          />
+          <div className="sm:col-span-2">
+            <DetailRow
+              label="Complainants"
+              value={
+                <ul className="list-disc pl-5">
+                  {item.complainants.map((person, index) => (
+                    <li key={index}>{person}</li>
+                  ))}
+                </ul>
+              }
+            />
+          </div>
+          <div className="sm:col-span-2">
+            <DetailRow
+              label="Remarks"
+              value={item.remarkSpecification ? `${item.remarks} (${item.remarkSpecification})` : item.remarks}
+            />
+          </div>
         </div>
       </div>
 
       {laEnabled && (
-      <div className={`rounded-xl border ${STAGE_STYLES.la.ring} bg-white p-4 shadow-sm sm:p-5`}>
-        <SectionHeader stage="la" title="Labor Arbiter (LA)" size={7} />
-        <div className="grid gap-x-6 sm:grid-cols-5">
-          <DetailRow label="Date" value={formatDate(item.la.date)} />
-          <DetailRow label="Status" value={item.la.status} />
-          <DetailRow label="Judgment Award" value={formatJudgmentAward(item.la)} />
-          <DetailRow label="Progress" value={formatProgress(item.caseProgress.la, item.caseProgress.laSpecification)} />
-          <DetailRow
-            label="Remarks"
-            value={
-              item.la.remarks === "Other" && item.la.remarksSpecification
-                ? `${item.la.remarks} (${item.la.remarksSpecification})`
-                : item.la.remarks
-            }
+        <div className={`rounded-xl border ${STAGE_STYLES.la.ring} bg-white p-4 shadow-sm sm:p-5`}>
+          <SectionHeader stage="la" title="Labor Arbiter (LA)" size={7} />
+          <StageFields
+            info={item.la}
+            progress={item.caseProgress.la}
+            progressSpecification={item.caseProgress.laSpecification}
           />
         </div>
-      </div>
       )}
 
       {nlrcEnabled && (
-      <div className={`rounded-xl border ${STAGE_STYLES.nlrc.ring} bg-white p-4 shadow-sm sm:p-5`}>
-        <SectionHeader stage="nlrc" title="NLRC" size={7} />
-        <div className="grid gap-x-6 sm:grid-cols-5">
-          <DetailRow label="Date" value={formatDate(item.nlrc.date)} />
-          <DetailRow label="Status" value={item.nlrc.status} />
-          <DetailRow label="Judgment Award" value={formatJudgmentAward(item.nlrc)} />
-          <DetailRow label="Progress" value={formatProgress(item.caseProgress.nlrc, item.caseProgress.nlrcSpecification)} />
-          <DetailRow
-            label="Remarks"
-            value={
-              item.nlrc.remarks === "Other" && item.nlrc.remarksSpecification
-                ? `${item.nlrc.remarks} (${item.nlrc.remarksSpecification})`
-                : item.nlrc.remarks
-            }
+        <div className={`rounded-xl border ${STAGE_STYLES.nlrc.ring} bg-white p-4 shadow-sm sm:p-5`}>
+          <SectionHeader stage="nlrc" title="NLRC" size={7} />
+          <StageFields
+            info={item.nlrc}
+            progress={item.caseProgress.nlrc}
+            progressSpecification={item.caseProgress.nlrcSpecification}
           />
         </div>
-      </div>
       )}
 
       {caEnabled && (
-      <div className={`rounded-xl border ${STAGE_STYLES.ca.ring} bg-white p-4 shadow-sm sm:p-5`}>
-        <SectionHeader stage="ca" title="Court of Appeals (CA)" size={7} />
-        <div className="grid gap-x-6 sm:grid-cols-5">
-          <DetailRow label="Date" value={formatDate(item.ca.date)} />
-          <DetailRow label="Status" value={item.ca.status} />
-          <DetailRow label="Judgment Award" value={formatJudgmentAward(item.ca)} />
-          <DetailRow label="Progress" value={formatProgress(item.caseProgress.ca, item.caseProgress.caSpecification)} />
-          <DetailRow
-            label="Remarks"
-            value={
-              item.ca.remarks === "Other" && item.ca.remarksSpecification
-                ? `${item.ca.remarks} (${item.ca.remarksSpecification})`
-                : item.ca.remarks
-            }
+        <div className={`rounded-xl border ${STAGE_STYLES.ca.ring} bg-white p-4 shadow-sm sm:p-5`}>
+          <SectionHeader stage="ca" title="Court of Appeals (CA)" size={7} />
+          <StageFields
+            info={item.ca}
+            progress={item.caseProgress.ca}
+            progressSpecification={item.caseProgress.caSpecification}
           />
         </div>
-      </div>
       )}
 
       {scEnabled && (
-      <div className={`rounded-xl border ${STAGE_STYLES.sc.ring} bg-white p-4 shadow-sm sm:p-5`}>
-        <SectionHeader stage="sc" title="Supreme Court (SC)" size={7} />
-        <div className="grid gap-x-6 sm:grid-cols-5">
-          <DetailRow label="Date" value={formatDate(item.sc.date)} />
-          <DetailRow label="Status" value={item.sc.status} />
-          <DetailRow label="Judgment Award" value={formatJudgmentAward(item.sc)} />
-          <DetailRow label="Progress" value={formatProgress(item.caseProgress.sc, item.caseProgress.scSpecification)} />
-          <DetailRow
-            label="Remarks"
-            value={
-              item.sc.remarks === "Other" && item.sc.remarksSpecification
-                ? `${item.sc.remarks} (${item.sc.remarksSpecification})`
-                : item.sc.remarks
-            }
+        <div className={`rounded-xl border ${STAGE_STYLES.sc.ring} bg-white p-4 shadow-sm sm:p-5`}>
+          <SectionHeader stage="sc" title="Supreme Court (SC)" size={7} />
+          <StageFields
+            info={item.sc}
+            progress={item.caseProgress.sc}
+            progressSpecification={item.caseProgress.scSpecification}
           />
         </div>
-      </div>
       )}
 
       <div className="rounded-xl border border-emerald-200 bg-emerald-50/40 p-4 shadow-sm sm:p-5">
@@ -199,7 +224,7 @@ export function ViewCaseContent({ item }: { item: CaseItem }) {
           <Landmark size={13} />
           Total Judgment Award
         </h3>
-        <div className="max-w-sm space-y-3">
+        <div className="grid max-w-sm gap-x-6">
           <DetailRow label="Amount" value={formatCurrency(totalJudgmentAward)} />
           <DetailRow label="Category" value={formatTotalPaidCategory(item.totalPaid?.category)} />
         </div>
