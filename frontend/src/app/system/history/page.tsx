@@ -8,6 +8,7 @@ import { fetchCurrentUser, fetchMyHistory, UnauthorizedError, type HistoryOut } 
 import { formatDateTime } from "@/lib/caseHelpers";
 import { clickableRowProps, CLICKABLE_ROW_CLS } from "@/lib/clickableRow";
 import { ChangeDetailsModal, historyEntryToDetails } from "@/components/shared/ChangeDetailsModal";
+import { TableSkeleton } from "@/components/shared/LoadingSkeleton";
 
 function mapHistoryOut(out: HistoryOut): HistoryEntry {
   return {
@@ -39,7 +40,7 @@ function formatTimestamp(iso: string) {
 }
 
 export default function HistoryPage() {
-  const { historyLog: globalHistory } = useCases();
+  const { historyLog: globalHistory, isLoading: casesLoading } = useCases();
   const [search, setSearch] = useState("");
   const [actionFilter, setActionFilter] = useState<"All" | HistoryAction>("All");
   const [dateStart, setDateStart] = useState("");
@@ -81,7 +82,15 @@ export default function HistoryPage() {
   }, []);
 
   const history = isAdmin === false ? ownHistory : globalHistory;
-  const isLoadingHistory = isAdmin === null || (isAdmin === false && ownHistoryLoading);
+
+  // Admins read from the shared cases context, which starts empty and fills
+  // in after its first fetch - so they are still "loading" until that
+  // finishes, not just until the role check returns. Non-admins wait on
+  // their own history fetch. Only the first load shows the skeleton; later
+  // refreshes (after a mutation) keep the existing rows on screen.
+  const isLoadingHistory =
+    isAdmin === null ||
+    (isAdmin ? casesLoading && globalHistory.length === 0 : ownHistoryLoading);
 
   const filtered = useMemo(() => {
     const keyword = search.toLowerCase();
@@ -176,6 +185,9 @@ export default function HistoryPage() {
           )}
         </p>
       </div>
+
+      {/* LOADING - same skeleton as the Dashboard and Archive */}
+      {isLoadingHistory && <TableSkeleton label="Loading history" />}
 
       {/* EMPTY STATE */}
       {!isLoadingHistory && history.length === 0 && (

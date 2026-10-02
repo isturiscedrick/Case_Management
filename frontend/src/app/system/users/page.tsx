@@ -4,7 +4,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { Bell, Check, Eye, EyeOff, Pencil, Trash2, User, UserPlus, X } from "lucide-react";
 import { deleteUser, fetchCurrentUser, fetchPendingNotifications, fetchUsers, registerUser, resetUserPassword, UnauthorizedError, updateUserRole, type CurrentUser, type PasswordResetNotification, type UserRole } from "@/lib/api";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
-import { TableSkeleton } from "@/components/shared/LoadingSkeleton";
+import { UsersSkeleton } from "@/components/shared/LoadingSkeleton";
 import { Modal } from "@/components/shared/Modal";
 
 const ROLE_OPTIONS: Array<{ value: UserRole; label: string }> = [
@@ -188,14 +188,19 @@ export default function UsersPage() {
   }
 
   if (authorized === null) {
-    // Same skeleton and page wrapper as the Dashboard's loading state.
     return (
-      <div className="flex h-full min-w-0 flex-col gap-4 overflow-hidden bg-[#F5F1E3] p-4">
-        <TableSkeleton label="Loading user management" />
+      <div className="min-h-full bg-[#F5F1E3] p-4 sm:p-5">
+        <div className="mx-auto flex max-w-7xl flex-col">
+          <div className="mb-4 shrink-0">
+            <p className="text-xs font-medium uppercase tracking-wide text-[#B08D57]">Administration</p>
+            <h1 className="mt-1 font-serif text-2xl font-medium text-[#12331F]">User Management</h1>
+            <p className="mt-1 text-sm text-slate-500">Create accounts and assign their access role.</p>
+          </div>
+          <UsersSkeleton />
+        </div>
       </div>
     );
   }
-
   if (!authorized) {
     return <div className="p-6 text-sm text-rose-700">You do not have permission to manage users.</div>;
   }

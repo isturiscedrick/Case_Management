@@ -17,8 +17,7 @@ import { useCases } from "@/context/CasesContext";
 import { formatCurrency, getCaseStatusSummary } from "@/lib/caseHelpers";
 import { STAGE_STYLES, type StageKey } from "@/components/dashboard/form/shared/SectionHeader";
 import { SummaryCards } from "@/components/shared/SummaryCards";
-import { TableSkeleton } from "@/components/shared/LoadingSkeleton";
-
+import { AnalyticsSkeleton } from "@/components/shared/LoadingSkeleton";
 type StatusBucket = "Pending" | "Settled" | "Not Settled" | "Closed";
 
 const STAGE_KEYS: StageKey[] = ["sena", "la", "nlrc", "ca", "sc"];
@@ -291,7 +290,7 @@ export default function AnalyticsPage() {
           <p className="mt-1 text-sm text-slate-500">Case status and judgment award breakdown by stage.</p>
         </div>
 
-        <TableSkeleton label="Loading analytics" />
+        <AnalyticsSkeleton />
       </div>
     );
   }
