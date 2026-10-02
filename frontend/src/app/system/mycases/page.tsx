@@ -58,7 +58,11 @@ export default function MyCasesPage() {
     };
   }, []);
 
+  // True admin only — the only role that can unclose a closed case.
   const [isAdmin, setIsAdmin] = useState(false);
+  // Admin OR handling personnel — can edit closed cases and bypass the
+  // per-stage field locks. Cannot unclose.
+  const [canEditAll, setCanEditAll] = useState(false);
   const [currentUserName, setCurrentUserName] = useState<string | null>(null);
   const [savedIds, setSavedIds] = useState<Set<number>>(new Set());
   const [userLoading, setUserLoading] = useState(true);
@@ -69,6 +73,7 @@ export default function MyCasesPage() {
       .then((user) => {
         if (cancelled) return;
         setIsAdmin(user.role === "admin");
+        setCanEditAll(user.role === "admin" || user.role === "handling_personnel");
         setCurrentUserName(user.full_name);
         setSavedIds(loadSavedIds(user.full_name));
       })
@@ -384,7 +389,7 @@ export default function MyCasesPage() {
   };
 
   const openEdit = async (item: CaseItem) => {
-    if (item.closed && !isAdmin) return;
+    if (item.closed && !canEditAll) return;
 
     setNotice(null);
     setShowErrors(false);
@@ -416,7 +421,7 @@ export default function MyCasesPage() {
     setActiveCase(item);
     setDraft(cloneDraft(item));
 
-    const bypassFieldLocks = isAdmin;
+    const bypassFieldLocks = canEditAll;
 
     setRestrictSenaEditing(!bypassFieldLocks && (isSenaOnlyCase(item) || gates.laFilled));
     setRestrictSenaRemarksEditing(!bypassFieldLocks && gates.laFilled);
@@ -692,7 +697,7 @@ export default function MyCasesPage() {
             onView={openView}
             onEdit={openEdit}
             onToggleArchive={requestToggleArchive}
-            canEditClosed={isAdmin}
+            canEditClosed={canEditAll}
             onToggleSave={toggleSave}
             savedIds={savedIds}
             pagination={
@@ -736,7 +741,7 @@ export default function MyCasesPage() {
           lockedByUsername={lockedByUsername ?? undefined}
           onEdit={openEdit}
           onToggleArchive={requestToggleArchive}
-          canEditClosed={isAdmin}
+          canEditClosed={canEditAll}
           onToggleSave={toggleSave}
           isSaved={savedIds.has(activeCase.id)}
         />
@@ -752,6 +757,7 @@ export default function MyCasesPage() {
           onChange={handleDraftChange}
           companies={companies}
           isAdmin={isAdmin}
+          canEditClosed={canEditAll}
           errors={draftErrors}
           submitError={submitError}
           onDismissSubmitError={() => setSubmitError(null)}

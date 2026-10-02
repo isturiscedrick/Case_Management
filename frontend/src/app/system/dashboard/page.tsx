@@ -64,7 +64,11 @@ export default function CasesPage() {
     };
   }, []);
 
+  // True admin only — the only role that can unclose a closed case.
   const [isAdmin, setIsAdmin] = useState(false);
+  // Admin OR handling personnel — can edit closed cases and bypass the
+  // per-stage field locks. Cannot unclose.
+  const [canEditAll, setCanEditAll] = useState(false);
 
   const [currentUserName, setCurrentUserName] = useState<string | null>(null);
   const [savedIds, setSavedIds] = useState<Set<number>>(new Set());
@@ -76,6 +80,7 @@ export default function CasesPage() {
       .then((user) => {
         if (cancelled) return;
         setIsAdmin(user.role === "admin");
+        setCanEditAll(user.role === "admin" || user.role === "handling_personnel");
         setCurrentUserName(user.full_name);
         setSavedIds(loadSavedIds(user.full_name));
       })
@@ -378,7 +383,7 @@ useEffect(() => {
   };
 
   const openEdit = async (item: CaseItem) => {
-    if (item.closed && !isAdmin) {   // + admin exemption
+    if (item.closed && !canEditAll) {   // admin + handling personnel exemption
       return;
     }
 
@@ -413,7 +418,7 @@ useEffect(() => {
     setActiveCase(item);
     setDraft(cloneDraft(item));
 
-    const bypassFieldLocks = isAdmin;
+    const bypassFieldLocks = canEditAll;
 
     /* SEnA */
     setRestrictSenaEditing(!bypassFieldLocks && (isSenaOnlyCase(item) || gates.laFilled));
@@ -665,7 +670,7 @@ useEffect(() => {
           onView={openView}
           onEdit={openEdit}
           onToggleArchive={requestToggleArchive}
-          canEditClosed={isAdmin}
+          canEditClosed={canEditAll}
           onToggleSave={toggleSave}
           savedIds={savedIds}
           pagination={
@@ -707,7 +712,7 @@ useEffect(() => {
           lockedByUsername={lockedByUsername ?? undefined}
           onEdit={openEdit}
           onToggleArchive={requestToggleArchive}
-          canEditClosed={isAdmin}
+          canEditClosed={canEditAll}
           onToggleSave={toggleSave}
           isSaved={savedIds.has(activeCase.id)}
         />
@@ -722,7 +727,8 @@ useEffect(() => {
           draft={draft}
           onChange={handleDraftChange}
           companies={companies}
-          isAdmin={isAdmin}   // + NEW
+          isAdmin={isAdmin}   // + NEW — admin only: gates "Unclose Case"
+          canEditClosed={canEditAll}
           errors={draftErrors}
           submitError={submitError}
           onDismissSubmitError={() => setSubmitError(null)}

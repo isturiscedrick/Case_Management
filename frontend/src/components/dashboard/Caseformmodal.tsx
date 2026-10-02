@@ -24,6 +24,7 @@ export function CaseFormModal({
   companies,
   editRestrictions,
   isAdmin = false,   // + NEW
+  canEditClosed = false,
   errors = [],
   submitError = null,
   onDismissSubmitError,
@@ -37,7 +38,10 @@ export function CaseFormModal({
   companies: string[];
   // Only required (and applied) in edit mode.
   editRestrictions?: EditRestrictions;
+  // True admin only — gates "Unclose Case".
   isAdmin?: boolean;   // + NEW
+  // Admin or handling personnel — may edit a closed case.
+  canEditClosed?: boolean;
   // Live validation errors, shown in a banner pinned to the top of the
   // modal body. Empty = nothing shown.
   errors?: string[];
@@ -99,6 +103,7 @@ export function CaseFormModal({
         {...(mode === "edit" && editRestrictions ? editRestrictions : {})}
         isNewUnsavedCase={mode === "create"}
         isAdmin={isAdmin}   // + NEW
+        canEditClosed={canEditClosed}
         showErrors={errors.length > 0}
       />
     </Modal>

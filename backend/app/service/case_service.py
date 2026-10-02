@@ -58,7 +58,12 @@ def create_case(db: Session, payload: CaseCreate, current_user: User) -> Case:
 def update_case(db: Session, case_id: int, payload: CaseUpdate, current_user: User) -> Case:
     case = get_case_or_404(db, case_id)
 
-    if case.closed and current_user.role != UserRole.admin:   # + admin bypass
+    # Admins and handling personnel have no edit restrictions (closed-case
+    # lock, per-stage field locks). Only admins can unclose — see
+    # CAN_UNCLOSE in case_router.py, which this does not touch.
+    can_bypass_locks = current_user.role in (UserRole.admin, UserRole.handling_personnel)
+
+    if case.closed and not can_bypass_locks:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="This case is closed and can no longer be updated.")
 
     validate_case_payload(payload)
@@ -77,9 +82,8 @@ def update_case(db: Session, case_id: int, payload: CaseUpdate, current_user: Us
     # Server-side mirror of the frontend's per-stage disabled fieldsets:
     # once a stage was already filled, its details can't be silently
     # rewritten by a non-UI client — only Remarks and Progress may still change.
-    # Admins are exempt, matching the frontend's bypassFieldLocks behavior
-    # in dashboard/page.tsx::openEdit — same exemption pattern already used
-    # for the closed-case lock a few lines above.
+    # Admins and handling personnel are exempt, matching the frontend's
+    # bypassFieldLocks behavior in dashboard/page.tsx::openEdit.
     existing_stage_dicts = {
         stage_key: decision_crud.get_decision_as_stage_dict(db, case_id, level)
         for stage_key, level in STAGE_LEVEL_MAP.items()
@@ -88,7 +92,7 @@ def update_case(db: Session, case_id: int, payload: CaseUpdate, current_user: Us
         k: DecisionIn(**v) if v else None for k, v in existing_stage_dicts.items()
     }
     locked_stages = (
-        [] if current_user.role == UserRole.admin
+        [] if can_bypass_locks
         else determine_locked_stage_edits(existing_stages_typed)
     )
 

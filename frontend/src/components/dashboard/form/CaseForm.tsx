@@ -42,6 +42,7 @@ export function CaseForm({
   restrictCaProgressEditing = false,
   isNewUnsavedCase = false,
   isAdmin = false,
+  canEditClosed = false,
   showErrors = false,
 }: {
   value: CaseDraft;
@@ -59,7 +60,10 @@ export function CaseForm({
   restrictCaProgressOnly?: boolean;
   restrictCaProgressEditing?: boolean;
   isNewUnsavedCase?: boolean;
+  // True admin only — gates "Unclose Case".
   isAdmin?: boolean;
+  // Admin or handling personnel — may edit a closed case (but not unclose it).
+  canEditClosed?: boolean;
   // True after a failed Save attempt: turns on inline field errors and the
   // red "Needs attention" markers in the step bar.
   showErrors?: boolean;
@@ -255,11 +259,12 @@ export function CaseForm({
   const isClosed = !!value.closed;
   const isSettled = !!value.totalPaid?.category;
 
-  // Only a CLOSED case locks the entire form — except for admins, who are
-  // allowed to edit closed cases (backend enforces this too, see
-  // case_service.py::update_case). A settled case can still reselect/change
-  // the Total Judgment Award category before saving.
-  const isFieldsetLocked = isClosed && !isAdmin;
+  // Only a CLOSED case locks the entire form — except for admins and
+  // handling personnel, who are allowed to edit closed cases (backend
+  // enforces this too, see case_service.py::update_case). Only admins can
+  // unclose. A settled case can still reselect/change the Total Judgment
+  // Award category before saving.
+  const isFieldsetLocked = isClosed && !(isAdmin || canEditClosed);
 
   const visibleStageSteps: StageStep[] = [
     ...stageSteps.filter((s) => isStepVisible(s.key as WizardStep)),
@@ -435,7 +440,11 @@ export function CaseForm({
           <div className="flex items-center gap-2">
             <span className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-500">
               <Lock size={13} />
-              {isAdmin ? "Case Closed — editable as admin" : "Case Closed — form locked"}
+              {isAdmin
+                ? "Case Closed — editable as admin"
+                : canEditClosed
+                  ? "Case Closed — editable"
+                  : "Case Closed — form locked"}
             </span>
 
             {isAdmin && (
