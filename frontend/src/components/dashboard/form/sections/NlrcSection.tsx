@@ -3,7 +3,7 @@ import type { CaseDraft, NlrcInfo, StageProgress } from "@/types/case";
 import {
   PROGRESS_OPTIONS,
   APPEAL_STAGE_REMARKS_OPTIONS,
-  STAGE_STATUS_OPTIONS,
+  NLRC_STATUS_OPTIONS,
 } from "@/constants/caseOptions";
 import type { FieldErrors } from "@/lib/caseValidation";
 
@@ -97,7 +97,7 @@ export function NlrcSection({
                   onChange={(e) => setNlrc("status", e.target.value)}
                 >
                   <option value="">Select Status</option>
-                  {STAGE_STATUS_OPTIONS.map((status) => (
+                  {NLRC_STATUS_OPTIONS.map((status) => (
                     <option key={status} value={status}>
                       {status}
                     </option>

@@ -106,6 +106,7 @@ export const TOTAL_PAID_CATEGORY_OPTIONS = [
   "Settlement",
 ] as const;
 
+/* CHANGE TO */
 export const STAGE_STATUS_OPTIONS = [
   "Valid Dismissal",
   "Illegal Dismissal",
@@ -117,6 +118,8 @@ export const STAGE_STATUS_OPTIONS = [
   "Closed",
   "Execution",
 ] as const;
+
+export const NLRC_STATUS_OPTIONS = [...STAGE_STATUS_OPTIONS, "Denied"] as const;
 
 export const TABLE_COLUMN_COUNT = 36;
 

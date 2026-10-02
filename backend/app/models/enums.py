@@ -31,6 +31,7 @@ class TribunalDecisionStatus(str, enum.Enum):
     Pending = "Pending"
     Closed = "Closed"
     Execution = "Execution"
+    Denied = "Denied"
 
 
 class TribunalRemarks(str, enum.Enum):
